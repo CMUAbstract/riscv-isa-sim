@@ -78,6 +78,8 @@ void sim_t::interactive()
   funcs["quit"] = &sim_t::interactive_quit;
   funcs["q"] = funcs["quit"];
   funcs["help"] = &sim_t::interactive_help;
+  funcs["count"] = &sim_t::interactive_count;
+  funcs["reset"] = &sim_t::interactive_reset;
   funcs["h"] = funcs["help"];
 
   while (!done())
@@ -130,6 +132,8 @@ void sim_t::interactive_help(const std::string& cmd, const std::vector<std::stri
     "run [count]                     # Resume noisy execution (until CTRL+C, or [count] insns)\n"
     "r [count]                         Alias for run\n"
     "rs [count]                      # Resume silent execution (until CTRL+C, or [count] insns)\n"
+    "count <core>                    # Print instruction count\n"
+    "reset                           # Reset processes\n"
     "quit                            # End the simulation\n"
     "q                                 Alias for quit\n"
     "help                            # This screen!\n"
@@ -354,4 +358,16 @@ void sim_t::interactive_until(const std::string& cmd, const std::vector<std::str
     set_procs_debug(false);
     step(1);
   }
+}
+
+void sim_t::interactive_count(const std::string& cmd, const std::vector<std::string>& args)
+{
+  processor_t *p = get_core(args[0]);
+  fprintf(stderr, "%lu\n", p->get_state()->minstret);
+}
+
+void sim_t::interactive_reset(const std::string& cmd, const std::vector<std::string>& args)
+{
+  inter_reset();
+  fprintf(stderr, "Reset done\n");
 }

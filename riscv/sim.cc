@@ -12,6 +12,7 @@
 #include <cassert>
 #include <signal.h>
 #include <unistd.h>
+#include <time.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 
@@ -81,10 +82,16 @@ void sim_t::main()
 
   while (!done())
   {
-    if (debug || ctrlc_pressed)
+    if (debug || ctrlc_pressed){
       interactive();
-    else
+    } else if (intermittent) {
+      size_t cycles = INTERMITTENT_MIN + (rand() % static_cast<int>(
+        INTERMITTENT_MAX - INTERMITTENT_MIN + 1));
+      step(cycles);
+      inter_reset();
+    } else{
       step(INTERLEAVE);
+    }
     if (remote_bitbang) {
       remote_bitbang->tick();
     }
@@ -93,9 +100,9 @@ void sim_t::main()
 
 int sim_t::run()
 {
-  host = context_t::current();
-  target.init(sim_thread_main, this);
-  return htif_t::run();
+    host = context_t::current();
+    target.init(sim_thread_main, this);
+    return htif_t::run();
 }
 
 void sim_t::step(size_t n)
@@ -123,6 +130,11 @@ void sim_t::step(size_t n)
 void sim_t::set_debug(bool value)
 {
   debug = value;
+}
+
+void sim_t::set_intermittent(bool value)
+{
+  intermittent = value;
 }
 
 void sim_t::set_log(bool value)
@@ -203,6 +215,19 @@ char* sim_t::addr_to_mem(reg_t addr) {
 void sim_t::reset()
 {
   make_dtb();
+}
+
+void sim_t::inter_reset() {
+  uint64_t zero = 0;
+  for (size_t i = 0; i < procs.size(); i++) {
+    procs[i]->reset();
+    procs[i]->get_mmu()->flush_tlb();
+  }
+  for (size_t i = 0; i < (RAM_SIZE / sizeof(uint64_t)); i += sizeof(uint64_t)) {
+    addr_t addr = RAM_START + i; 
+    debug_mmu->store_uint64(addr, zero);
+  }
+  debug_mmu->flush_tlb();
 }
 
 void sim_t::idle()

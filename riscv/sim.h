@@ -29,6 +29,7 @@ public:
   // run the simulation to completion
   int run();
   void set_debug(bool value);
+  void set_intermittent(bool value);
   void set_log(bool value);
   void set_histogram(bool value);
   void set_procs_debug(bool value);
@@ -57,11 +58,16 @@ private:
   static const size_t INTERLEAVE = 5000;
   static const size_t INSNS_PER_RTC_TICK = 100; // 10 MHz clock for 1 BIPS core
   static const size_t CPU_HZ = 1000000000; // 1GHz CPU
+  static const addr_t RAM_START = 0x80010000;
+  static const size_t RAM_SIZE = 0x8000; 
+  static const size_t INTERMITTENT_MAX = 100000;
+  static const size_t INTERMITTENT_MIN = 50000;
   size_t current_step;
   size_t current_proc;
   bool debug;
   bool log;
   bool histogram_enabled; // provide a histogram of PCs
+  bool intermittent;
   remote_bitbang_t* remote_bitbang;
 
   // memory-mapped I/O routines
@@ -87,6 +93,8 @@ private:
   void interactive_mem(const std::string& cmd, const std::vector<std::string>& args);
   void interactive_str(const std::string& cmd, const std::vector<std::string>& args);
   void interactive_until(const std::string& cmd, const std::vector<std::string>& args);
+  void interactive_count(const std::string &cmd, const std::vector<std::string>& args);
+  void interactive_reset(const std::string &cmd, const std::vector<std::string>& args);
   reg_t get_reg(const std::vector<std::string>& args);
   freg_t get_freg(const std::vector<std::string>& args);
   reg_t get_mem(const std::vector<std::string>& args);
@@ -103,6 +111,7 @@ private:
   context_t* host;
   context_t target;
   void reset();
+  void inter_reset();
   void idle();
   void read_chunk(addr_t taddr, size_t len, void* dst);
   void write_chunk(addr_t taddr, size_t len, const void* src);

@@ -26,6 +26,7 @@ static void help()
   fprintf(stderr, "  -l                    Generate a log of execution\n");
   fprintf(stderr, "  -h                    Print this help message\n");
   fprintf(stderr, "  -H                    Start halted, allowing a debugger to connect\n");
+  fprintf(stderr, "  --inter               Run intermittently\n");
   fprintf(stderr, "  --isa=<name>          RISC-V ISA string [default %s]\n", DEFAULT_ISA);
   fprintf(stderr, "  --pc=<address>        Override ELF entry point\n");
   fprintf(stderr, "  --hartids=<a,b,...>   Explicitly specify hartids, default is 0,1,...\n");
@@ -95,6 +96,7 @@ int main(int argc, char** argv)
   unsigned max_bus_master_bits = 0;
   bool require_authentication = false;
   std::vector<int> hartids;
+  bool run_intermittent = false;
 
   auto const hartids_parser = [&](const char *s) {
     std::string const str(s);
@@ -125,6 +127,7 @@ int main(int argc, char** argv)
   parser.option(0, "dc", 1, [&](const char* s){dc.reset(new dcache_sim_t(s));});
   parser.option(0, "l2", 1, [&](const char* s){l2.reset(cache_sim_t::construct(s, "L2$"));});
   parser.option(0, "isa", 1, [&](const char* s){isa = s;});
+  parser.option(0, "inter", 0, [&](const char* s){run_intermittent = true;});
   parser.option(0, "extension", 1, [&](const char* s){extension = find_extension(s);});
   parser.option(0, "dump-dts", 0, [&](const char *s){dump_dts = true;});
   parser.option(0, "extlib", 1, [&](const char *s){
@@ -172,6 +175,7 @@ int main(int argc, char** argv)
   }
 
   s.set_debug(debug);
+  s.set_intermittent(run_intermittent);
   s.set_log(log);
   s.set_histogram(histogram);
   return s.run();
