@@ -307,8 +307,14 @@ void processor_t::disasm(insn_t insn)
       fprintf(stderr, "core %3d: Executed %" PRIx64 " times\n", id, executions);
     }
 
-    fprintf(stderr, "core %3d: 0x%016" PRIx64 " (0x%08" PRIx64 ") %s\n",
+    fprintf(stderr, "\33[32mcore %3d\33[0m: 0x%016" PRIx64 " (0x%08" PRIx64 ") %s\n",
             id, state.pc, bits, disassembler->disassemble(insn).c_str());
+    for (int r = 0; r < NXPR; ++r) {
+      fprintf(stderr, "   %-4s: %-16lX ", xpr_name[r], state.XPR[r]);
+      if((r + 1) % 4 == 0) {
+        fprintf(stderr, "\n");
+      }
+    }
     last_pc = state.pc;
     last_bits = bits;
     executions = 1;

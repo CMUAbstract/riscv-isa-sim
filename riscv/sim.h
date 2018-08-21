@@ -59,9 +59,9 @@ private:
   static const size_t INSNS_PER_RTC_TICK = 100; // 10 MHz clock for 1 BIPS core
   static const size_t CPU_HZ = 1000000000; // 1GHz CPU
   static const addr_t RAM_START = 0x80010000;
-  static const size_t RAM_SIZE = 0x8000; 
-  static const size_t INTERMITTENT_MAX = 100000;
-  static const size_t INTERMITTENT_MIN = 50000;
+  static const size_t RAM_SIZE = 0x10000; 
+  static const size_t INTERMITTENT_MAX = 350000;
+  static const size_t INTERMITTENT_MIN = 250000;
   size_t current_step;
   size_t current_proc;
   bool debug;

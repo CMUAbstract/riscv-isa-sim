@@ -99,6 +99,7 @@ class debug_module_t : public abstract_device_t
 
     // Called when one of the attached harts was reset.
     void proc_reset(unsigned id);
+    void reset();
 
   private:
     static const unsigned datasize = 2;
@@ -154,7 +155,6 @@ class debug_module_t : public abstract_device_t
     const uint32_t secret = 1;
 
     processor_t *current_proc() const;
-    void reset();
     bool perform_abstract_command();
 };
 
