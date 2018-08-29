@@ -58,7 +58,7 @@ private:
   static const size_t INTERLEAVE = 5000;
   static const size_t INSNS_PER_RTC_TICK = 100; // 10 MHz clock for 1 BIPS core
   static const size_t CPU_HZ = 1000000000; // 1GHz CPU
-  static const addr_t RAM_START = 0x80010000;
+  static const addr_t RAM_START = 0x80040000;
   static const size_t RAM_SIZE = 0x10000; 
   static const size_t INTERMITTENT_MAX = 350000;
   static const size_t INTERMITTENT_MIN = 250000;
@@ -90,7 +90,8 @@ private:
   void interactive_fregs(const std::string& cmd, const std::vector<std::string>& args);
   void interactive_fregd(const std::string& cmd, const std::vector<std::string>& args);
   void interactive_pc(const std::string& cmd, const std::vector<std::string>& args);
-  void interactive_mem(const std::string& cmd, const std::vector<std::string>& args);
+  void interactive_read(const std::string& cmd, const std::vector<std::string>& args);
+  void interactive_write(const std::string& cmd, const std::vector<std::string>& args);
   void interactive_str(const std::string& cmd, const std::vector<std::string>& args);
   void interactive_until(const std::string& cmd, const std::vector<std::string>& args);
   void interactive_count(const std::string &cmd, const std::vector<std::string>& args);
@@ -99,6 +100,7 @@ private:
   freg_t get_freg(const std::vector<std::string>& args);
   reg_t get_mem(const std::vector<std::string>& args);
   reg_t get_pc(const std::vector<std::string>& args);
+  void set_mem(const std::vector<std::string>& args);
 
   friend class processor_t;
   friend class mmu_t;

@@ -88,7 +88,7 @@ void sim_t::main()
       size_t cycles = INTERMITTENT_MIN + (rand() % static_cast<int>(
         INTERMITTENT_MAX - INTERMITTENT_MIN + 1));
       step(cycles);
-      fprintf(stderr, "On the next run crash %u %lx\n", cycles, procs[0]->get_state()->pc);
+      fprintf(stderr, "Ran %u cycles, PC: %lx\n", cycles, procs[0]->get_state()->pc);
       inter_reset();
     } else{
       step(INTERLEAVE);
@@ -219,14 +219,14 @@ void sim_t::reset()
 }
 
 void sim_t::inter_reset() {
-  uint64_t zero = 0;
-  for (size_t i = 0; i < procs.size(); i++) {
-    procs[i]->reset();
-    procs[i]->get_mmu()->flush_tlb();
-  }
+  reg_t zero = 0;
   for (size_t i = 0; i < RAM_SIZE; i += sizeof(uint64_t)) {
     addr_t addr = RAM_START + i; 
     debug_mmu->store_uint64(addr, zero);
+  }
+  for (size_t i = 0; i < procs.size(); i++) {
+    procs[i]->reset();
+    procs[i]->get_mmu()->flush_tlb();
   }
   debug_mmu->flush_tlb();
 }

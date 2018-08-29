@@ -71,7 +71,8 @@ void sim_t::interactive()
   funcs["fregs"] = &sim_t::interactive_fregs;
   funcs["fregd"] = &sim_t::interactive_fregd;
   funcs["pc"] = &sim_t::interactive_pc;
-  funcs["mem"] = &sim_t::interactive_mem;
+  funcs["read"] = &sim_t::interactive_read;
+  funcs["write"] = &sim_t::interactive_write;
   funcs["str"] = &sim_t::interactive_str;
   funcs["until"] = &sim_t::interactive_until;
   funcs["while"] = &sim_t::interactive_until;
@@ -121,7 +122,8 @@ void sim_t::interactive_help(const std::string& cmd, const std::vector<std::stri
     "fregs <core> <reg>              # Display single precision <reg> in <core>\n"
     "fregd <core> <reg>              # Display double precision <reg> in <core>\n"
     "pc <core>                       # Show current PC in <core>\n"
-    "mem <hex addr>                  # Show contents of physical memory\n"
+    "read <hex addr>                 # Show contents of physical memory\n"
+    "write <hex addr> <value>        # Write contents of physical memory\n"
     "str <hex addr>                  # Show NUL-terminated C string\n"
     "until reg <core> <reg> <val>    # Stop when <reg> in <core> hits <val>\n"
     "until pc <core> <val>           # Stop when PC in <core> hits <val>\n"
@@ -299,9 +301,54 @@ reg_t sim_t::get_mem(const std::vector<std::string>& args)
   return val;
 }
 
-void sim_t::interactive_mem(const std::string& cmd, const std::vector<std::string>& args)
+void sim_t::set_mem(const std::vector<std::string>& args)
+{
+  if(args.size() != 2 && args.size() != 3)
+    throw trap_interactive();
+
+  std::string addr_str = args[0];
+  std::string val_str = args[1];
+  mmu_t* mmu = debug_mmu;
+  if(args.size() == 3)
+  {
+    processor_t *p = get_core(args[0]);
+    mmu = p->get_mmu();
+    addr_str = args[1];
+    val_str = args[2];
+  }
+
+  reg_t addr = strtol(addr_str.c_str(),NULL,16);
+  reg_t val = strtol(val_str.c_str(), NULL, 16);
+  if(addr == LONG_MAX)
+    addr = strtoul(addr_str.c_str(),NULL,16);
+
+  fprintf(stderr, "0x%016" PRIx64 "\n", addr);
+  switch(addr % 8)
+  {
+    case 0:
+      mmu->store_uint64(addr, val);
+      break;
+    case 4:
+      mmu->store_uint32(addr, val);
+      break;
+    case 2:
+    case 6:
+      mmu->store_uint16(addr, val);
+      break;
+    default:
+      mmu->store_uint8(addr, val);
+      break;
+  }
+}
+
+void sim_t::interactive_read(const std::string& cmd, const std::vector<std::string>& args)
 {
   fprintf(stderr, "0x%016" PRIx64 "\n", get_mem(args));
+}
+
+void sim_t::interactive_write(const std::string& cmd, const std::vector<std::string>& args) 
+{
+  set_mem(args);
 }
 
 void sim_t::interactive_str(const std::string& cmd, const std::vector<std::string>& args)
@@ -362,7 +409,11 @@ void sim_t::interactive_until(const std::string& cmd, const std::vector<std::str
 
 void sim_t::interactive_count(const std::string& cmd, const std::vector<std::string>& args)
 {
-  processor_t *p = get_core(args[0]);
+  std::string core = "0";
+  if(args.size() == 1) {
+    core = args[0];
+  }
+  processor_t *p = get_core(core);
   fprintf(stderr, "%lu\n", p->get_state()->minstret);
 }
 
