@@ -15,7 +15,7 @@ echo "Starting RISC-V Toolchain build process"
 
 if [ $1 == 1 ]
 then
-configure_project . --prefix=$(pwd)/bin --with-fesvr=$RISCV --with-isa=rv32ima --enable-histogram --enable-32bit
+configure_project . --prefix=$(pwd)/bin --with-fesvr=$(pwd)/../fesvr/bin --with-isa=rv32ima --enable-histogram --enable-32bit
 make_project riscv-isa-sim
 else
 cd build

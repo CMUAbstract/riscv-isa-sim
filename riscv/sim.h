@@ -7,7 +7,6 @@
 #include "devices.h"
 #include "debug_module.h"
 #include "simif.h"
-#include "simcall.h"
 #include <fesvr/htif.h>
 #include <fesvr/context.h>
 #include <vector>
@@ -76,7 +75,6 @@ private:
   bool histogram_enabled; // provide a histogram of PCs
   bool intermittent;
   remote_bitbang_t* remote_bitbang;
-  simcall_t simcall;
 
   // memory-mapped I/O routines
   char* addr_to_mem(reg_t addr);

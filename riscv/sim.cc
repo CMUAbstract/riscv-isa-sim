@@ -32,7 +32,7 @@ sim_t::sim_t(const char* isa, size_t nprocs, bool halted, reg_t start_pc,
              unsigned max_bus_master_bits, bool require_authentication)
   : htif_t(args), mems(mems), procs(std::max(nprocs, size_t(1))),
     start_pc(start_pc), current_step(0), current_proc(0), debug(false),
-    remote_bitbang(NULL), simcall(this),
+    remote_bitbang(NULL),
     debug_module(this, progsize, max_bus_master_bits, require_authentication)
 {
   signal(SIGINT, &handle_signal);
@@ -266,9 +266,9 @@ void sim_t::proc_reset(unsigned id)
 }
 
 void sim_t::mark(addr_t taddr, size_t len) {
-
+  fprintf(stderr, "Marked @ 0x%lx, %u bytes\n", taddr, len);
 }
 
 void sim_t::clear_mark(addr_t taddr, size_t len) {
-
+  fprintf(stderr, "Cleared mark @ 0x%lx, %u bytes\n", taddr, len);
 }
