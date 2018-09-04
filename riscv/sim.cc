@@ -32,7 +32,7 @@ sim_t::sim_t(const char* isa, size_t nprocs, bool halted, reg_t start_pc,
              unsigned max_bus_master_bits, bool require_authentication)
   : htif_t(args), mems(mems), procs(std::max(nprocs, size_t(1))),
     start_pc(start_pc), current_step(0), current_proc(0), debug(false),
-    remote_bitbang(NULL),
+    remote_bitbang(NULL), simcall(this),
     debug_module(this, progsize, max_bus_master_bits, require_authentication)
 {
   signal(SIGINT, &handle_signal);
@@ -103,7 +103,11 @@ int sim_t::run()
 {
     host = context_t::current();
     target.init(sim_thread_main, this);
-    return htif_t::run();
+    int exit_code = htif_t::run();
+    if(exit_debug) {
+      interactive();
+    }
+    return exit_code;
 }
 
 void sim_t::step(size_t n)
@@ -131,6 +135,11 @@ void sim_t::step(size_t n)
 void sim_t::set_debug(bool value)
 {
   debug = value;
+}
+
+void sim_t::set_exit_debug(bool value)
+{
+  exit_debug = value;
 }
 
 void sim_t::set_intermittent(bool value)
@@ -254,4 +263,12 @@ void sim_t::write_chunk(addr_t taddr, size_t len, const void* src)
 void sim_t::proc_reset(unsigned id)
 {
   debug_module.proc_reset(id);
+}
+
+void sim_t::mark(addr_t taddr, size_t len) {
+
+}
+
+void sim_t::clear_mark(addr_t taddr, size_t len) {
+
 }

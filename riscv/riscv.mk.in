@@ -29,6 +29,7 @@ riscv_hdrs = \
 	debug_rom_defines.h \
 	remote_bitbang.h \
 	jtag_dtm.h \
+	simcall.h \
 
 riscv_precompiled_hdrs = \
 	insn_template.h \
@@ -53,6 +54,7 @@ riscv_srcs = \
 	debug_module.cc \
 	remote_bitbang.cc \
 	jtag_dtm.cc \
+	simcall.cc \
 	$(riscv_gen_srcs) \
 
 riscv_test_srcs =

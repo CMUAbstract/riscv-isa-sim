@@ -7,6 +7,7 @@
 #include "devices.h"
 #include "debug_module.h"
 #include "simif.h"
+#include "simcall.h"
 #include <fesvr/htif.h>
 #include <fesvr/context.h>
 #include <vector>
@@ -29,6 +30,7 @@ public:
   // run the simulation to completion
   int run();
   void set_debug(bool value);
+  void set_exit_debug(bool value);
   void set_intermittent(bool value);
   void set_log(bool value);
   void set_histogram(bool value);
@@ -42,6 +44,10 @@ public:
 
   // Callback for processors to let the simulation know they were reset.
   void proc_reset(unsigned id);
+
+  // Sim Calls
+  void mark(addr_t taddr, size_t len);
+  void clear_mark(addr_t taddr, size_t len);
 
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
@@ -61,14 +67,16 @@ private:
   static const addr_t RAM_START = 0x80040000;
   static const size_t RAM_SIZE = 0x10000; 
   static const size_t INTERMITTENT_MAX = 350000;
-  static const size_t INTERMITTENT_MIN = 250000;
+  static const size_t INTERMITTENT_MIN = 150000;
   size_t current_step;
   size_t current_proc;
   bool debug;
+  bool exit_debug;
   bool log;
   bool histogram_enabled; // provide a histogram of PCs
   bool intermittent;
   remote_bitbang_t* remote_bitbang;
+  simcall_t simcall;
 
   // memory-mapped I/O routines
   char* addr_to_mem(reg_t addr);

@@ -111,6 +111,31 @@ void sim_t::interactive()
     }
     catch(trap_t t) {}
   }
+
+
+  if(exit_debug) {
+    std::cerr << "\n" << std::flush;
+    std::vector<std::string> disabled = {"run", "rs", "r"};
+    while(true) {
+      std::cerr << ": " << std::flush;
+      std::string s = readline(2);
+      std::stringstream ss(s);
+      std::string cmd, tmp;
+      std::vector<std::string> args;
+      ss >> cmd;
+      while (ss >> tmp)
+        args.push_back(tmp);
+
+      try {
+        if(funcs.count(cmd) && 
+          std::find(disabled.begin(), disabled.end(), cmd) == disabled.end()) {
+          (this->*funcs[cmd])(cmd, args);
+        } else {
+          fprintf(stderr, "Unknown command %s\n", cmd.c_str());
+        }
+      } catch(trap_t t) {}
+    }
+  }
   ctrlc_pressed = false;
 }
 
