@@ -147,8 +147,8 @@ void sim_t::set_track_state(bool value)
 {
   track_state = value;
   if(track_state) {
-    basic_mem_tracer_t *basic_mem_trace = new basic_mem_tracer_t();
-    miss_curve_tracer_t *miss_curve_tracer = new miss_curve_tracer_t();
+    basic_mem_tracer_t *basic_mem_trace = new basic_mem_tracer_t(elfloader());
+    miss_curve_tracer_t *miss_curve_tracer = new miss_curve_tracer_t(elfloader());
     for (size_t i = 0; i < procs.size(); i++) {
       procs[i]->register_tracer(basic_mem_trace);
       procs[i]->register_tracer(miss_curve_tracer);

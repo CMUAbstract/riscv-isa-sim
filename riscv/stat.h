@@ -10,6 +10,8 @@ public:
 	stat_t() {}
 	stat_t(std::string _name, std::string _desc) : name(_name), desc(_desc) {}
 	virtual ~stat_t() {}
+	void set_name(std::string _name) { name = _name; }
+	void set_desc(std::string _desc) { desc = _desc; }
 	std::string get_name(void) const { return name; }
 	std::string get_desc(void) const { return desc; }
 	virtual std::string dump(void) const { 
