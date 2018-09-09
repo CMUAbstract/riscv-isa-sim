@@ -41,8 +41,8 @@ function configure_project {
 
 function make_project {
   echo "Building project $PROJECT"
-  $MAKE -j8 >> build.log
+  $MAKE -j14 >> build.log
   echo "Installing project $PROJECT"
-  $MAKE -j8 install >> build.log
+  $MAKE -j14 install >> build.log
   cd - > /dev/null
 }

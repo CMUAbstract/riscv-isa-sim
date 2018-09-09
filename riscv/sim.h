@@ -30,6 +30,7 @@ public:
   int run();
   void set_debug(bool value);
   void set_exit_debug(bool value);
+  void set_track_state(bool value);
   void set_intermittent(bool value);
   void set_log(bool value);
   void set_histogram(bool value);
@@ -45,8 +46,9 @@ public:
   void proc_reset(unsigned id);
 
   // Sim Calls
-  void mark(addr_t taddr, size_t len);
-  void clear_mark(addr_t taddr, size_t len);
+  void mark_input(addr_t taddr, size_t len, size_t tag);
+  void mark_output(addr_t taddr, size_t len, size_t tag);
+  void clear_mark(addr_t taddr, size_t len, size_t tag);
 
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
@@ -63,14 +65,13 @@ private:
   static const size_t INTERLEAVE = 5000;
   static const size_t INSNS_PER_RTC_TICK = 100; // 10 MHz clock for 1 BIPS core
   static const size_t CPU_HZ = 1000000000; // 1GHz CPU
-  static const addr_t RAM_START = 0x80040000;
-  static const size_t RAM_SIZE = 0x10000; 
   static const size_t INTERMITTENT_MAX = 350000;
   static const size_t INTERMITTENT_MIN = 150000;
   size_t current_step;
   size_t current_proc;
   bool debug;
   bool exit_debug;
+  bool track_state;
   bool log;
   bool histogram_enabled; // provide a histogram of PCs
   bool intermittent;

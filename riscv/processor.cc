@@ -7,6 +7,7 @@
 #include "simif.h"
 #include "mmu.h"
 #include "disasm.h"
+#include "tracer.h"
 #include <cinttypes>
 #include <cmath>
 #include <cstdlib>
@@ -29,6 +30,7 @@ processor_t::processor_t(const char* isa, simif_t* sim, uint32_t id,
   register_base_instructions();
 
   mmu = new mmu_t(sim, this);
+  tracer = new tracer_list_t();
 
   reset();
 }
@@ -46,6 +48,10 @@ processor_t::~processor_t()
 
   delete mmu;
   delete disassembler;
+  for(auto it : *tracer) {
+    delete it; 
+  }
+  delete tracer;
 }
 
 static void bad_isa_string(const char* isa)
@@ -814,4 +820,8 @@ void processor_t::trigger_updated()
       mmu->check_triggers_store = true;
     }
   }
+}
+
+void processor_t::register_tracer(tracer_t *t) {
+  tracer->push_back(t);
 }

@@ -4,6 +4,7 @@
 #include "mmu.h"
 #include "dts.h"
 #include "remote_bitbang.h"
+#include "tracer.h"
 #include <map>
 #include <iostream>
 #include <sstream>
@@ -142,6 +143,19 @@ void sim_t::set_exit_debug(bool value)
   exit_debug = value;
 }
 
+void sim_t::set_track_state(bool value)
+{
+  track_state = value;
+  if(track_state) {
+    basic_mem_tracer_t *basic_mem_trace = new basic_mem_tracer_t();
+    miss_curve_tracer_t *miss_curve_tracer = new miss_curve_tracer_t();
+    for (size_t i = 0; i < procs.size(); i++) {
+      procs[i]->register_tracer(basic_mem_trace);
+      procs[i]->register_tracer(miss_curve_tracer);
+    }
+  }
+}
+
 void sim_t::set_intermittent(bool value)
 {
   intermittent = value;
@@ -229,13 +243,13 @@ void sim_t::reset()
 
 void sim_t::inter_reset() {
   reg_t zero = 0;
-  for (size_t i = 0; i < RAM_SIZE; i += sizeof(uint64_t)) {
-    addr_t addr = RAM_START + i; 
-    debug_mmu->store_uint64(addr, zero);
-  }
   for (size_t i = 0; i < procs.size(); i++) {
-    procs[i]->reset();
+    for (size_t j = 0; j < RAM_SIZE; j += sizeof(uint64_t)) {
+      addr_t addr = RAM_BASE + j; 
+      procs[i]->get_mmu()->store_uint64(addr, zero);
+    }
     procs[i]->get_mmu()->flush_tlb();
+    procs[i]->reset();
   }
   debug_mmu->flush_tlb();
 }
@@ -265,10 +279,14 @@ void sim_t::proc_reset(unsigned id)
   debug_module.proc_reset(id);
 }
 
-void sim_t::mark(addr_t taddr, size_t len) {
-  fprintf(stderr, "Marked @ 0x%lx, %u bytes\n", taddr, len);
+void sim_t::mark_input(addr_t taddr, size_t len, size_t tag) {
+  fprintf(stderr, "Marked Input @ 0x%lx, %u bytes\n", taddr, len);
 }
 
-void sim_t::clear_mark(addr_t taddr, size_t len) {
+void sim_t::mark_output(addr_t taddr, size_t len, size_t tag) {
+  fprintf(stderr, "Marked Output @ 0x%lx, %u bytes\n", taddr, len);
+}
+
+void sim_t::clear_mark(addr_t taddr, size_t len, size_t tag) {
   fprintf(stderr, "Cleared mark @ 0x%lx, %u bytes\n", taddr, len);
 }
