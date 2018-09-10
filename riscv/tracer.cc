@@ -93,6 +93,7 @@ void insn_curve_tracer_t::init(void) {
 		text_size = text_section.e64.sh_size;
 	}
 }
+
 insn_curve_tracer_t::~insn_curve_tracer_t() {
 	*os << histogram.dump();
 	for(auto it : histogram) delete it.second;
@@ -128,6 +129,48 @@ void insn_curve_tracer_t::trace(
 		}
 		size_t diff = insn_count - it->second;
 		tracked_locations[loc] = insn_count;
+		auto hit = histogram.find(diff);
+		if(hit == histogram.end()) {
+			counter_stat_t<size_t> *counter_stat = new counter_stat_t<size_t>();
+			counter_stat->inc();
+			histogram.insert(diff, counter_stat);
+			continue;
+		}
+		hit->second->inc();
+	}
+}
+
+void miss_curve_tracer_t::trace(
+	processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
+	auto access_count = maccess;
+	maccess += ws.output.locs.size() + ws.input.locs.size();
+	for(auto loc : ws.output.locs) {
+		if(loc >= text_base && loc <= text_base + text_size) continue;
+		auto it = tracked_locations.find(loc);
+		if(it == tracked_locations.end()) {
+			tracked_locations.insert(std::make_pair(loc, access_count));
+			continue;
+		}
+		size_t diff = access_count - it->second;
+		tracked_locations[loc] = access_count;
+		auto hit = histogram.find(diff);
+		if(hit == histogram.end()) {
+			counter_stat_t<size_t> *counter_stat = new counter_stat_t<size_t>();
+			counter_stat->inc();
+			histogram.insert(diff, counter_stat);
+			continue;
+		}
+		hit->second->inc();
+	}
+	for(auto loc : ws.input.locs) {
+		if(loc >= text_base && loc <= text_base+ text_size) continue;
+		auto it = tracked_locations.find(loc);
+		if(it == tracked_locations.end()) {
+			tracked_locations.insert(std::make_pair(loc, access_count));
+			continue;
+		}
+		size_t diff = access_count - it->second;
+		tracked_locations[loc] = access_count;
 		auto hit = histogram.find(diff);
 		if(hit == histogram.end()) {
 			counter_stat_t<size_t> *counter_stat = new counter_stat_t<size_t>();

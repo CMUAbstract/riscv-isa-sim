@@ -92,13 +92,22 @@ protected:
 	bool dealloc = false;
 };
 
-// Tracks reads and writes to locations in memory
 class elfloader_t;
-class basic_mem_tracer_t : public tracer_t, public printer_t {
+class tracer_impl_t : public tracer_t, public printer_t {
 public:
-	basic_mem_tracer_t(elfloader_t *_elf, std::string outdir) :
-		tracer_t(), printer_t(outdir, "mem.json"), elf(_elf) {}
-	basic_mem_tracer_t(elfloader_t *_elf) : tracer_t(), printer_t(), elf(_elf) {}
+	tracer_impl_t(elfloader_t *_elf) : tracer_t(), printer_t(), elf(_elf) {}
+	tracer_impl_t(elfloader_t *_elf, std::string path, std::string fn) : 
+		tracer_t(), printer_t(path, fn), elf(_elf) {}
+protected:
+	elfloader_t *elf;
+};
+
+// Tracks reads and writes to locations in memory
+class basic_mem_tracer_t : public tracer_impl_t {
+public:
+	basic_mem_tracer_t(elfloader_t *_elf) : tracer_impl_t(_elf) {}
+	basic_mem_tracer_t(elfloader_t *_elf, std::string outdir, std::string fn = "mem.json") :
+		tracer_impl_t(_elf, outdir, fn) {}
 	~basic_mem_tracer_t();
 	bool interested(
 		processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
@@ -128,17 +137,16 @@ private:
 		region_t(addr_t _base, size_t _size) : base(_base), size(_size) {}
 		region_t(const region_t &other) {base = other.base; size = other.size; } 
 	};
-	elfloader_t *elf;
 };
 
 // Generate Miss curves
-class insn_curve_tracer_t : public tracer_t, public printer_t {
+class insn_curve_tracer_t : public tracer_impl_t {
 public:
-	insn_curve_tracer_t(elfloader_t *_elf, std::string outdir) :
-		tracer_t(), printer_t(outdir, "miss.json"), elf(_elf) {
+	insn_curve_tracer_t(elfloader_t *_elf, std::string outdir, std::string fn = "insn.json") :
+		tracer_impl_t(_elf, outdir, fn) {
 		init();
 	}
-	insn_curve_tracer_t(elfloader_t *_elf) : tracer_t(), printer_t(), elf(_elf) {
+	insn_curve_tracer_t(elfloader_t *_elf) : tracer_impl_t(_elf) {
 		init();
 	}
 	~insn_curve_tracer_t();
@@ -147,14 +155,24 @@ public:
 		return true;
 	}
 	void trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws);
-private:
+protected:
 	void init(void);
 	std::map<addr_t, reg_t> tracked_locations;
 	map_stat_t<size_t, counter_stat_t<size_t> *> histogram;
-	reg_t minstret = 0;
 	addr_t text_base = 0;
 	size_t text_size = 0;
-	elfloader_t *elf;
+private:
+	reg_t minstret = 0;
+};
+
+class miss_curve_tracer_t : public insn_curve_tracer_t {
+public:
+	miss_curve_tracer_t(elfloader_t *_elf) : insn_curve_tracer_t(_elf) {}
+	miss_curve_tracer_t(elfloader_t *_elf, std::string outdir, std::string fn = "miss.json") :
+		insn_curve_tracer_t(_elf, outdir, fn) {}
+	void trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws);
+private:
+	reg_t maccess = 0;
 };
 
 #endif

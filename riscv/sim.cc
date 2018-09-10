@@ -149,16 +149,20 @@ void sim_t::set_track_state(bool value)
   if(track_state) {
     basic_mem_tracer_t *basic_mem_trace;
     insn_curve_tracer_t *insn_curve_tracer;
+    miss_curve_tracer_t *miss_curve_tracer;
     if(outdir.size() > 0) {
       basic_mem_trace = new basic_mem_tracer_t(elfloader(), outdir);
       insn_curve_tracer = new insn_curve_tracer_t(elfloader(), outdir);
+      miss_curve_tracer = new miss_curve_tracer_t(elfloader(), outdir);
     } else {
       basic_mem_trace = new basic_mem_tracer_t(elfloader());
       insn_curve_tracer = new insn_curve_tracer_t(elfloader());
+      miss_curve_tracer = new miss_curve_tracer_t(elfloader());
     }
     for (size_t i = 0; i < procs.size(); i++) {
       procs[i]->register_tracer(basic_mem_trace);
       procs[i]->register_tracer(insn_curve_tracer);
+      procs[i]->register_tracer(miss_curve_tracer);
     }
   }
 }
