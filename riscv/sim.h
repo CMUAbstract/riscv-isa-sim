@@ -31,6 +31,7 @@ public:
   void set_debug(bool value);
   void set_exit_debug(bool value);
   void set_track_state(bool value);
+  void set_outdir(const char *value);
   void set_intermittent(bool value);
   void set_log(bool value);
   void set_histogram(bool value);
@@ -75,6 +76,7 @@ private:
   bool log;
   bool histogram_enabled; // provide a histogram of PCs
   bool intermittent;
+  std::string outdir;
   remote_bitbang_t* remote_bitbang;
 
   // memory-mapped I/O routines

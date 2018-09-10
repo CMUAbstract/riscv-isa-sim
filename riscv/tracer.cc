@@ -45,7 +45,7 @@ basic_mem_tracer_t::~basic_mem_tracer_t() {
 			}
 		}
 	}
-	std::cerr << tracked_locations.dump();
+	*os << tracked_locations.dump();
 	for(auto it : tracked_locations) delete it.second;
 }
 
@@ -82,7 +82,7 @@ std::string basic_mem_tracer_t::mem_loc_stat_t::dump(void) const {
 	return os.str();
 }
 
-miss_curve_tracer_t::miss_curve_tracer_t(elfloader_t *_elf) : tracer_t(), elf(_elf) {
+void insn_curve_tracer_t::init(void) {
 	bool elf32 = elf->check_elf32();
 	auto text_section = elf->get_sections()[".text"];
 	if(elf32) {
@@ -93,13 +93,12 @@ miss_curve_tracer_t::miss_curve_tracer_t(elfloader_t *_elf) : tracer_t(), elf(_e
 		text_size = text_section.e64.sh_size;
 	}
 }
-
-miss_curve_tracer_t::~miss_curve_tracer_t() {
-	std::cerr << histogram.dump();
+insn_curve_tracer_t::~insn_curve_tracer_t() {
+	*os << histogram.dump();
 	for(auto it : histogram) delete it.second;
 }
 
-void miss_curve_tracer_t::trace(
+void insn_curve_tracer_t::trace(
 	processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
 	auto insn_count = minstret++;
 	for(auto loc : ws.output.locs) {

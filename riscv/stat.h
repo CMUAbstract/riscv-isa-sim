@@ -32,7 +32,8 @@ public:
 	T get(size_t idx) const { return list[idx]; }
 	std::string dump(void) const {
 		std::ostringstream os;
-		os << "\"" << name << "\": [" << std::endl;
+		if(name.size() > 0) os << "\"" << name << "\": ";
+		os << "[" << std::endl;
 		size_t idx = 0;
 		for(const auto it : list) {
 			os << it->dump();
@@ -56,7 +57,8 @@ public:
 	void insert(Key key, Value s) { m.insert(std::pair<Key, Value>(key, s)); }
 	std::string dump(void) const {
 		std::ostringstream os;
-		os << "\"" << name << "\": {" << std::endl;
+		if(name.size() > 0) os << "\"" << name << "\": ";
+		os << "{" << std::endl;
 		size_t idx = 0;
 		for(auto it : m) {
 			os << "\"0x" << std::hex << it.first << "\": " << it.second->dump();
@@ -81,9 +83,8 @@ public:
 	void set(T v) { val = v;}
 	std::string dump(void) const {
 		std::ostringstream os;
-		if(name.size() > 0)
-			os << "\"" << name << "\"" << ":" << val;
-		else os << val;
+		if(name.size() > 0) os << "\"" << name << "\"" << ":";
+		os << val;
 		return os.str();
 	}
 protected:
@@ -99,7 +100,8 @@ public:
 	std::vector<T> get(void) { return vals; }
 	std::string dump(void) const {
 		std::ostringstream os;
-		os << "\"" << name << "\": " << "[";
+		if(name.size() > 0) os << "\"" << name << "\": ";
+		os << "[";
 		size_t idx = 0;
 		for(auto it : vals) {
 			os << *it;

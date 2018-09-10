@@ -28,7 +28,7 @@ static void help()
   fprintf(stderr, "  -h                    Print this help message\n");
   fprintf(stderr, "  -H                    Start halted, allowing a debugger to connect\n");
   fprintf(stderr, "  --inter               Run intermittently\n");
-  fprintf(stderr, "  --exit_debug          Exit into debug mode\n");
+  fprintf(stderr, "  --exit-debug          Exit into debug mode\n");
   fprintf(stderr, "  --isa=<name>          RISC-V ISA string [default %s]\n", DEFAULT_ISA);
   fprintf(stderr, "  --pc=<address>        Override ELF entry point\n");
   fprintf(stderr, "  --hartids=<a,b,...>   Explicitly specify hartids, default is 0,1,...\n");
@@ -36,6 +36,7 @@ static void help()
   fprintf(stderr, "  --dc=<S>:<W>:<B>        W ways, and B-byte blocks (with S and\n");
   fprintf(stderr, "  --l2=<S>:<W>:<B>        B both powers of 2).\n");
   fprintf(stderr, "  --extension=<name>    Specify RoCC Extension\n");
+  fprintf(stderr, "  --outdir=<dir>        Directory for output files.\n");
   fprintf(stderr, "  --extlib=<name>       Shared library to load\n");
   fprintf(stderr, "  --rbb-port=<port>     Listen on <port> for remote bitbang connection\n");
   fprintf(stderr, "  --dump-dts            Print device tree string and exit\n");
@@ -101,6 +102,7 @@ int main(int argc, char** argv)
   bool run_intermittent = false;
   bool exit_debug = false;
   bool track_state = false;
+  const char* outdir = NULL;
 
   auto const hartids_parser = [&](const char *s) {
     std::string const str(s);
@@ -133,9 +135,10 @@ int main(int argc, char** argv)
   parser.option(0, "l2", 1, [&](const char* s){l2.reset(cache_sim_t::construct(s, "L2$"));});
   parser.option(0, "isa", 1, [&](const char* s){isa = s;});
   parser.option(0, "inter", 0, [&](const char* s){run_intermittent = true;});
-  parser.option(0, "exit_debug", 0, [&](const char* s){exit_debug = true;});
+  parser.option(0, "exit-debug", 0, [&](const char* s){exit_debug = true;});
   parser.option(0, "extension", 1, [&](const char* s){extension = find_extension(s);});
   parser.option(0, "dump-dts", 0, [&](const char *s){dump_dts = true;});
+  parser.option(0, "outdir", 1, [&](const char *s){ outdir = s; });
   parser.option(0, "extlib", 1, [&](const char *s){
     void *lib = dlopen(s, RTLD_NOW | RTLD_GLOBAL);
     if (lib == NULL) {
@@ -180,6 +183,7 @@ int main(int argc, char** argv)
     if (extension) s.get_core(i)->register_extension(extension());
   }
 
+  s.set_outdir(outdir);
   s.set_track_state(track_state);
   s.set_debug(debug);
   s.set_exit_debug(exit_debug);

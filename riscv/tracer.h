@@ -5,6 +5,8 @@
 
 #include <set>
 #include <map>
+#include <iostream>
+#include <fstream>
 
 #include <fesvr/memif.h>
 
@@ -78,11 +80,25 @@ private:
 	std::vector<tracer_t *> list;
 }; 
 
+class printer_t {
+public:
+	printer_t(std::string outdir, std::string fn) {
+		os = new std::ofstream(outdir + "/" + fn); 
+	}
+	printer_t() { os = &std::cerr; }
+	~printer_t() { if(dealloc) delete os; }
+protected:
+	std::ostream *os;
+	bool dealloc = false;
+};
+
 // Tracks reads and writes to locations in memory
 class elfloader_t;
-class basic_mem_tracer_t : public tracer_t {
+class basic_mem_tracer_t : public tracer_t, public printer_t {
 public:
-	basic_mem_tracer_t(elfloader_t *_elf) : tracer_t(), elf(_elf) {}
+	basic_mem_tracer_t(elfloader_t *_elf, std::string outdir) :
+		tracer_t(), printer_t(outdir, "mem.json"), elf(_elf) {}
+	basic_mem_tracer_t(elfloader_t *_elf) : tracer_t(), printer_t(), elf(_elf) {}
 	~basic_mem_tracer_t();
 	bool interested(
 		processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
@@ -116,16 +132,23 @@ private:
 };
 
 // Generate Miss curves
-class miss_curve_tracer_t : public tracer_t {
+class insn_curve_tracer_t : public tracer_t, public printer_t {
 public:
-	miss_curve_tracer_t(elfloader_t *_elf);
-	~miss_curve_tracer_t();
+	insn_curve_tracer_t(elfloader_t *_elf, std::string outdir) :
+		tracer_t(), printer_t(outdir, "miss.json"), elf(_elf) {
+		init();
+	}
+	insn_curve_tracer_t(elfloader_t *_elf) : tracer_t(), printer_t(), elf(_elf) {
+		init();
+	}
+	~insn_curve_tracer_t();
 	bool interested(
 		processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
 		return true;
 	}
 	void trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws);
 private:
+	void init(void);
 	std::map<addr_t, reg_t> tracked_locations;
 	map_stat_t<size_t, counter_stat_t<size_t> *> histogram;
 	reg_t minstret = 0;
