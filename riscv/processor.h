@@ -95,6 +95,7 @@ struct state_t
   reg_t pc;
   regfile_t<reg_t, NXPR, true> XPR;
   regfile_t<freg_t, NFPR, false> FPR;
+  vregfile_t<reg_t, 0x100, NVECR> VPR; 
 
   // control and status registers
   reg_t prv;    // TODO: Can this be an enum instead?
@@ -124,6 +125,9 @@ struct state_t
   reg_t tselect;
   mcontrol_t mcontrol[num_triggers];
   reg_t tdata2[num_triggers];
+  reg_t vcfg;
+  reg_t vl;
+  reg_t vxcfg;
 
   uint32_t fflags;
   uint32_t frm;

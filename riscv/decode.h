@@ -26,6 +26,7 @@ typedef uint64_t reg_t;
 
 const int NXPR = 32;
 const int NFPR = 32;
+const int NVECR = 32;
 const int NCSR = 4096;
 
 #define X_RA 1
@@ -54,8 +55,11 @@ const int NCSR = 4096;
 #define FSR_NXA  (FPEXC_NX << FSR_AEXC_SHIFT)
 #define FSR_AEXC (FSR_NVA | FSR_OFA | FSR_UFA | FSR_DZA | FSR_NXA)
 
+#define MAXVL 32
+
 #define insn_length(x) \
-  (((x) & 0x03) < 0x03 ? 2 : \
+  (((x) & 0x07) == 0x07 ? 4 : \
+   ((x) & 0x03) < 0x03 ? 2 : \
    ((x) & 0x1f) < 0x1f ? 4 : \
    ((x) & 0x3f) < 0x3f ? 6 : \
    8)
@@ -108,20 +112,28 @@ private:
 };
 
 template <class T, size_t N, bool zero_reg>
-class regfile_t
-{
+class regfile_t {
 public:
-  void write(size_t i, T value)
-  {
-    if (!zero_reg || i != 0)
-      data[i] = value;
+  void write(size_t reg, T value) {
+    if(zero_reg && reg == 0) return;
+    data[reg] = value;
   }
-  const T& operator [] (size_t i) const
-  {
+  const T& operator [] (size_t i) const {
     return data[i];
   }
-private:
+protected:
   T data[N];
+};
+
+template <class T, size_t BITWIDTH, size_t N>
+class vregfile_t: public regfile_t<T[BITWIDTH / 8], N, false> {
+public:
+  void write(size_t reg, T value, size_t pos) {
+    this->data[reg][pos] = value;
+  }
+  T read(size_t reg, size_t pos) {
+    return this->data[reg][pos];
+  }
 };
 
 // helpful macros, etc
@@ -148,6 +160,21 @@ private:
     DO_WRITE_FREG(reg, wdata); \
   })
 #endif
+
+#define VL STATE.vl
+#define VEMAXW get_field(STATE.cfg, MVEC_VEMAXW)
+#define READ_VREG(reg) STATE.VPR[pos]
+#define READP_VREG(reg, pos) STATE.VPR.read(reg, pos)
+#define WRITE_VREG(reg, value) STATE.VPR.write(reg, value)
+#define WRITEP_VREG(reg, value, pos) STATE.VPR.write(reg, value, pos)
+#define VS1 READ_VREG(insn.rs1())
+#define VS2 READ_VREG(insn.rs2())
+#define VS3 READ_VREG(insn.rs3())
+#define VS1P(pos) READP_VREG(insn.rs1(), pos)
+#define VS2P(pos) READP_VREG(insn.rs2(), pos)
+#define VS3P(pos) READP_VREG(insn.rs3(), pos)
+#define WRITE_VRD(value) WRITE_VREG(insn.rd(), value)
+#define WRITEP_VRD(value, pos) WRITEP_VREG(insn.rd(), value, pos)
 
 // RVC macros
 #define WRITE_RVC_RS1S(value) WRITE_REG(insn.rvc_rs1s(), value)

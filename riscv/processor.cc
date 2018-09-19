@@ -67,7 +67,7 @@ void processor_t::parse_isa_string(const char* str)
     lowercase += std::tolower(*r);
 
   const char* p = lowercase.c_str();
-  const char* all_subsets = "imafdqc";
+  const char* all_subsets = "imafdqcv";
 
   max_xlen = 64;
   state.misa = reg_t(2) << 62;
@@ -532,6 +532,24 @@ void processor_t::set_csr(int which, reg_t val)
     case CSR_DSCRATCH:
       state.dscratch = val;
       break;
+    case CSR_VREGMAX:
+      state.vcfg = set_field(state.vcfg, MVEC_VREGMAX, val);
+      break;
+    case CSR_VEMAXW:
+      state.vcfg = set_field(state.vcfg, MVEC_VEMAXW, val);
+      break;
+    case CSR_VTYPEEN:
+      state.vcfg = set_field(state.vcfg, MVEC_VTYPEEN, val);
+      break;
+    case CSR_VL:
+      state.vl = val;
+      break;
+    case CSR_VXRM:
+      state.vxcfg = set_field(state.vxcfg, MVEC_VXRM, val);
+      break;
+    case CSR_VXCM:
+      state.vxcfg = set_field(state.vxcfg, MVEC_VXCM, val);
+      break;
   }
 }
 
@@ -684,6 +702,18 @@ reg_t processor_t::get_csr(int which)
       return state.dpc & pc_alignment_mask();
     case CSR_DSCRATCH:
       return state.dscratch;
+    case CSR_VREGMAX:
+      return get_field(state.vcfg, MVEC_VREGMAX);
+    case CSR_VEMAXW:
+      return get_field(state.vcfg, MVEC_VEMAXW);
+    case CSR_VTYPEEN:
+      return get_field(state.vcfg, MVEC_VTYPEEN);
+    case CSR_VL:
+      return state.vl;
+    case CSR_VXRM:
+      return get_field(state.vxcfg, MVEC_VXRM);
+    case CSR_VXCM:
+      return get_field(state.vxcfg, MVEC_VXCM);
   }
   throw trap_illegal_instruction(0);
 }
