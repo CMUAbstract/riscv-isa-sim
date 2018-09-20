@@ -17,11 +17,13 @@ struct working_set_t {
 	struct {
 		std::set<size_t> regs;
 		std::set<size_t> fregs;
+		std::set<size_t> vregs;
 		std::set<addr_t> locs; 
 	} input;
 	struct {
 		std::set<size_t> regs;
 		std::set<size_t> fregs;
+		std::set<size_t> vregs;
 		std::set<addr_t> locs; 
 	} output;
 	size_t log_input_reg(size_t reg) {
@@ -32,12 +34,20 @@ struct working_set_t {
 		input.fregs.insert(reg);
 		return reg;
 	}
+	size_t log_input_vreg(size_t reg) {
+		input.vregs.insert(reg);
+		return reg;
+	}
 	size_t log_output_reg(size_t reg) {
 		output.regs.insert(reg);
 		return reg;
 	}
 	size_t log_output_freg(size_t reg) {
 		output.fregs.insert(reg);
+		return reg;
+	}
+	size_t log_output_vreg(size_t reg) {
+		output.vregs.insert(reg);
 		return reg;
 	}
 	addr_t log_input_loc(addr_t addr) {

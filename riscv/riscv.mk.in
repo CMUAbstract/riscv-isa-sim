@@ -297,6 +297,7 @@ riscv_insn_list = \
 	vconfig \
 	vlh \
 	vsh \
+	vmul \
 
 riscv_gen_srcs = \
 	$(addsuffix .cc,$(riscv_insn_list))

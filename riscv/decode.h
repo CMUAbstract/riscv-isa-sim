@@ -125,8 +125,8 @@ protected:
   T data[N];
 };
 
-template <class T, size_t BITWIDTH, size_t N>
-class vregfile_t: public regfile_t<T[BITWIDTH / 8], N, false> {
+template <class T, size_t N>
+class vregfile_t: public regfile_t<T[MAXVL], N, false> {
 public:
   void write(size_t reg, T value, size_t pos) {
     this->data[reg][pos] = value;
@@ -163,7 +163,7 @@ public:
 
 #define VL STATE.vl
 #define VEMAXW get_field(STATE.cfg, MVEC_VEMAXW)
-#define READ_VREG(reg) STATE.VPR[pos]
+#define READ_VREG(reg) STATE.VPR[reg]
 #define READP_VREG(reg, pos) STATE.VPR.read(reg, pos)
 #define WRITE_VREG(reg, value) STATE.VPR.write(reg, value)
 #define WRITEP_VREG(reg, value, pos) STATE.VPR.write(reg, value, pos)
