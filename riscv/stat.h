@@ -118,7 +118,7 @@ template <typename T>
 class counter_stat_t : public scalar_stat_t<T> {
 public:
 	using scalar_stat_t<T>::scalar_stat_t;
-	void set(T v) { this->val += v;}
+	void inc_val(T v) { this->val += v;}
 	void inc(void) { this->val++; }
 	void reset(void) { this->val = 0; }
 };

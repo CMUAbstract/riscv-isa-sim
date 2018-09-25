@@ -30,6 +30,7 @@ riscv_hdrs = \
 	remote_bitbang.h \
 	jtag_dtm.h \
 	stat.h \
+	riscv-opc.h \
 
 riscv_precompiled_hdrs = \
 	insn_template.h \
@@ -298,6 +299,7 @@ riscv_insn_list = \
 	vlh \
 	vsh \
 	vmul \
+	vredsum \
 
 riscv_gen_srcs = \
 	$(addsuffix .cc,$(riscv_insn_list))
@@ -315,7 +317,7 @@ insn_list.h: $(src_dir)/riscv/riscv.mk.in
 	mv $@.tmp $@
 
 $(riscv_gen_srcs): %.cc: insns/%.h insn_template.cc
-	sed 's/NAME/$(subst .cc,,$@)/' $(src_dir)/riscv/insn_template.cc | sed 's/OPCODE/$(call get_opcode,$(src_dir)/riscv/encoding.h,$(subst .cc,,$@))/' > $@
+	sed 's/NAME/$(subst .cc,,$@)/' $(src_dir)/riscv/insn_template.cc | sed 's/OPCODE/$(call get_opcode,$(src_dir)/riscv/riscv-opc.h,$(subst .cc,,$@))/' > $@
 
 riscv_junk = \
 	$(riscv_gen_srcs) \

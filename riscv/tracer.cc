@@ -181,3 +181,20 @@ void miss_curve_tracer_t::trace(
 		hit->second->inc();
 	}
 }
+
+perf_tracer_t::~perf_tracer_t() {
+	*os << mcycles.dump();
+}
+
+void perf_tracer_t::trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
+
+}
+
+energy_tracer_t::~energy_tracer_t() {
+	*os << menergy.dump();
+}
+
+void energy_tracer_t::trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
+	
+}
+

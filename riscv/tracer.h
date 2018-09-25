@@ -185,4 +185,34 @@ private:
 	reg_t maccess = 0;
 };
 
+class perf_tracer_t : public tracer_impl_t {
+public:
+	perf_tracer_t(elfloader_t *_elf) : tracer_impl_t(_elf) {}
+	perf_tracer_t(elfloader_t *_elf, std::string outdir, std::string fn = "perf.json") :
+		tracer_impl_t(_elf, outdir, fn) {}
+	~perf_tracer_t();
+	bool interested(
+		processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
+		return true;
+	}
+	void trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws);
+private:
+	counter_stat_t<uint64_t> mcycles;
+};
+
+class energy_tracer_t : public tracer_impl_t {
+public:
+	energy_tracer_t(elfloader_t *_elf) : tracer_impl_t(_elf) {}
+	energy_tracer_t(elfloader_t *_elf, std::string outdir, std::string fn = "energy.json") :
+		tracer_impl_t(_elf, outdir, fn) {}
+	~energy_tracer_t();
+	bool interested(
+		processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
+		return true;
+	}
+	void trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws);
+private:
+	counter_stat_t<float> menergy; 
+};
+
 #endif
