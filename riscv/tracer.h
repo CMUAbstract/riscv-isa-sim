@@ -93,6 +93,7 @@ private:
 class printer_t {
 public:
 	printer_t(std::string outdir, std::string fn) {
+		dealloc = true;
 		os = new std::ofstream(outdir + "/" + fn); 
 	}
 	printer_t() { os = &std::cerr; }
@@ -185,11 +186,30 @@ private:
 	reg_t maccess = 0;
 };
 
-class perf_tracer_t : public tracer_impl_t {
+class insn_tracer_t : public tracer_impl_t {
 public:
-	perf_tracer_t(elfloader_t *_elf) : tracer_impl_t(_elf) {}
+	insn_tracer_t(elfloader_t *_elf) : tracer_impl_t(_elf) {
+		if(!insn_registered) register_insn_types();
+		insn_registered = true;
+	}
+	insn_tracer_t(elfloader_t *_elf, std::string outdir, std::string fn) :
+		tracer_impl_t(_elf, outdir, fn) {
+		if(!insn_registered) register_insn_types();
+		insn_registered = true;
+	}
+	~insn_tracer_t() {}
+protected:
+	static std::map<insn_bits_t, uint64_t> m;
+private:
+	void register_insn_types(void);
+	static bool insn_registered;
+};
+
+class perf_tracer_t : public insn_tracer_t {
+public:
+	perf_tracer_t(elfloader_t *_elf) : insn_tracer_t(_elf), mcycles("cycles", "") {}
 	perf_tracer_t(elfloader_t *_elf, std::string outdir, std::string fn = "perf.json") :
-		tracer_impl_t(_elf, outdir, fn) {}
+		insn_tracer_t(_elf, outdir, fn), mcycles("cycles", "") {}
 	~perf_tracer_t();
 	bool interested(
 		processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
@@ -200,16 +220,20 @@ private:
 	counter_stat_t<uint64_t> mcycles;
 };
 
-class energy_tracer_t : public tracer_impl_t {
+class energy_tracer_t : public insn_tracer_t {
 public:
-	energy_tracer_t(elfloader_t *_elf) : tracer_impl_t(_elf) {}
+	energy_tracer_t(elfloader_t *_elf) : insn_tracer_t(_elf), menergy("energy", "") {
+		menergy.reset();
+	}
 	energy_tracer_t(elfloader_t *_elf, std::string outdir, std::string fn = "energy.json") :
-		tracer_impl_t(_elf, outdir, fn) {}
-	~energy_tracer_t();
+		insn_tracer_t(_elf, outdir, fn), menergy("energy", "") {
+		menergy.reset();
+	}
 	bool interested(
 		processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
 		return true;
 	}
+	~energy_tracer_t();
 	void trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws);
 private:
 	counter_stat_t<float> menergy; 

@@ -89,7 +89,7 @@ void sim_t::main()
       size_t cycles = INTERMITTENT_MIN + (rand() % static_cast<int>(
         INTERMITTENT_MAX - INTERMITTENT_MIN + 1));
       step(cycles);
-      fprintf(stderr, "Ran %u cycles, PC: %lx\n", cycles, procs[0]->get_state()->pc);
+      fprintf(stderr, "Ran %lu cycles, PC: %lx\n", cycles, procs[0]->get_state()->pc);
       inter_reset();
     } else{
       step(INTERLEAVE);
@@ -150,19 +150,27 @@ void sim_t::set_track_state(bool value)
     basic_mem_tracer_t *basic_mem_trace;
     insn_curve_tracer_t *insn_curve_tracer;
     miss_curve_tracer_t *miss_curve_tracer;
+    perf_tracer_t *perf_tracer;
+    energy_tracer_t *energy_tracer;
     if(outdir.size() > 0) {
       basic_mem_trace = new basic_mem_tracer_t(elfloader(), outdir);
       insn_curve_tracer = new insn_curve_tracer_t(elfloader(), outdir);
       miss_curve_tracer = new miss_curve_tracer_t(elfloader(), outdir);
+      perf_tracer = new perf_tracer_t(elfloader(), outdir);
+      energy_tracer = new energy_tracer_t(elfloader(), outdir);
     } else {
       basic_mem_trace = new basic_mem_tracer_t(elfloader());
       insn_curve_tracer = new insn_curve_tracer_t(elfloader());
       miss_curve_tracer = new miss_curve_tracer_t(elfloader());
+      perf_tracer = new perf_tracer_t(elfloader());
+      energy_tracer = new energy_tracer_t(elfloader());
     }
     for (size_t i = 0; i < procs.size(); i++) {
       procs[i]->register_tracer(basic_mem_trace);
       procs[i]->register_tracer(insn_curve_tracer);
       procs[i]->register_tracer(miss_curve_tracer);
+      procs[i]->register_tracer(perf_tracer);
+      procs[i]->register_tracer(energy_tracer);
     }
   }
 }
@@ -296,13 +304,13 @@ void sim_t::proc_reset(unsigned id)
 }
 
 void sim_t::mark_input(addr_t taddr, size_t len, size_t tag) {
-  fprintf(stderr, "Marked Input @ 0x%lx, %u bytes\n", taddr, len);
+  fprintf(stderr, "Marked Input @ 0x%lx, %lu bytes\n", taddr, len);
 }
 
 void sim_t::mark_output(addr_t taddr, size_t len, size_t tag) {
-  fprintf(stderr, "Marked Output @ 0x%lx, %u bytes\n", taddr, len);
+  fprintf(stderr, "Marked Output @ 0x%lx, %lu bytes\n", taddr, len);
 }
 
 void sim_t::clear_mark(addr_t taddr, size_t len, size_t tag) {
-  fprintf(stderr, "Cleared mark @ 0x%lx, %u bytes\n", taddr, len);
+  fprintf(stderr, "Cleared mark @ 0x%lx, %lu bytes\n", taddr, len);
 }

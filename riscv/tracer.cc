@@ -182,19 +182,58 @@ void miss_curve_tracer_t::trace(
 	}
 }
 
+#include "insn_detail.h"
+
+std::map<insn_bits_t, uint64_t> insn_tracer_t::m = std::map<insn_bits_t, uint64_t>();
+bool insn_tracer_t::insn_registered = false;
+
+void insn_tracer_t::register_insn_types(void) {
+	#define DEFINE_INSN_STAT(opc, type) m.insert(std::make_pair(opc, type)); 
+	#include "insn_stat.h"	
+	#undef DEFINE_INSN_STAT
+}
+
 perf_tracer_t::~perf_tracer_t() {
-	*os << mcycles.dump();
+	*os << "{" << mcycles.dump() << "}" << std::endl;
 }
 
 void perf_tracer_t::trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
-
+	reg_t vl = p->get_state()->vl;
+	switch(m[opc]) {
+		case LOAD: return mcycles.inc_val(load_cycles); 
+		case STORE: return mcycles.inc_val(store_cycles);
+		case CONTROL: return mcycles.inc_val(control_cycles);
+		case ARITH0: return mcycles.inc_val(arith0_cycles);
+		case ARITH1: return mcycles.inc_val(arith1_cycles);
+		case ARITH2: return mcycles.inc_val(arith2_cycles);
+		case ARITH3: return mcycles.inc_val(arith3_cycles);
+		case VLOAD: return mcycles.inc_val(control_cycles + vl * load_cycles);
+		case VSTORE: return mcycles.inc_val(control_cycles + vl * store_cycles);
+		case VARITH0: return mcycles.inc_val(control_cycles + vl * arith0_cycles);
+		case VARITH1: return mcycles.inc_val(control_cycles + vl * arith1_cycles);
+		default: break;
+	}
 }
 
 energy_tracer_t::~energy_tracer_t() {
-	*os << menergy.dump();
+	*os << "{" << menergy.dump() << "}" << std::endl;
 }
 
 void energy_tracer_t::trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws) {
-	
+	reg_t vl = p->get_state()->vl;
+	switch(insn_tracer_t::m[opc]) {
+		case LOAD: return menergy.inc_val(load_energy); 
+		case STORE: return menergy.inc_val(store_energy);
+		case CONTROL: return menergy.inc_val(control_energy);
+		case ARITH0: return menergy.inc_val(arith0_energy);
+		case ARITH1: return menergy.inc_val(arith1_energy);
+		case ARITH2: return menergy.inc_val(arith2_energy);
+		case ARITH3: return menergy.inc_val(arith3_energy);
+		case VLOAD: return menergy.inc_val(control_energy + vl * load_energy);
+		case VSTORE: return menergy.inc_val(control_energy + vl * store_energy);
+		case VARITH0: return menergy.inc_val(control_energy + vl * arith0_energy);
+		case VARITH1: return menergy.inc_val(control_energy + vl * arith1_energy);
+		default: break;
+	}	
 }
 
