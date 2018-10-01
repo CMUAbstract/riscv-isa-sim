@@ -297,6 +297,7 @@ riscv_insn_list = \
 	vsetvl \
 	vconfig \
 	vlh \
+	vlxh \
 	vsh \
 	vmul \
 	vredsum \

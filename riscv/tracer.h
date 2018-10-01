@@ -236,7 +236,7 @@ public:
 	~energy_tracer_t();
 	void trace(processor_t *p, insn_bits_t opc, insn_t insn, working_set_t ws);
 private:
-	counter_stat_t<float> menergy; 
+	counter_stat_t<double> menergy; 
 };
 
 #endif

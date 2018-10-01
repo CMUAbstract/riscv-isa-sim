@@ -10,6 +10,7 @@
 #include <vector>
 #include <map>
 #include "debug_rom_defines.h"
+#include "tracer.h"
 
 class tracer_t;
 class tracer_list_t;

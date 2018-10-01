@@ -207,10 +207,14 @@ void perf_tracer_t::trace(processor_t *p, insn_bits_t opc, insn_t insn, working_
 		case ARITH1: return mcycles.inc_val(arith1_cycles);
 		case ARITH2: return mcycles.inc_val(arith2_cycles);
 		case ARITH3: return mcycles.inc_val(arith3_cycles);
-		case VLOAD: return mcycles.inc_val(control_cycles + vl * load_cycles);
-		case VSTORE: return mcycles.inc_val(control_cycles + vl * store_cycles);
-		case VARITH0: return mcycles.inc_val(control_cycles + vl * arith0_cycles);
-		case VARITH1: return mcycles.inc_val(control_cycles + vl * arith1_cycles);
+		case VLOAD: 
+			return mcycles.inc_val(control_cycles + (vl / vamortization) * vload_cycles);
+		case VSTORE: 
+			return mcycles.inc_val(control_cycles + (vl / vamortization) * vstore_cycles);
+		case VARITH0: 
+			return mcycles.inc_val(control_cycles + (vl / vamortization) * varith0_cycles);
+		case VARITH1: 
+			return mcycles.inc_val(control_cycles + (vl / vamortization) * varith1_cycles);
 		default: break;
 	}
 }
@@ -229,10 +233,10 @@ void energy_tracer_t::trace(processor_t *p, insn_bits_t opc, insn_t insn, workin
 		case ARITH1: return menergy.inc_val(arith1_energy);
 		case ARITH2: return menergy.inc_val(arith2_energy);
 		case ARITH3: return menergy.inc_val(arith3_energy);
-		case VLOAD: return menergy.inc_val(control_energy + vl * load_energy);
-		case VSTORE: return menergy.inc_val(control_energy + vl * store_energy);
-		case VARITH0: return menergy.inc_val(control_energy + vl * arith0_energy);
-		case VARITH1: return menergy.inc_val(control_energy + vl * arith1_energy);
+		case VLOAD: return menergy.inc_val(control_energy + vl * vload_energy);
+		case VSTORE: return menergy.inc_val(control_energy + vl * vstore_energy);
+		case VARITH0: return menergy.inc_val(control_energy + vl * varith0_energy);
+		case VARITH1: return menergy.inc_val(control_energy + vl * varith1_energy);
 		default: break;
 	}	
 }
