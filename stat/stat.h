@@ -1,9 +1,11 @@
 #ifndef STAT_H
 #define STAT_H
 
-#include <vector>
 #include <string>
-#include <sstream> 
+#include <vector>
+#include <map>
+
+#include <io/io.h>
 
 class stat_t {
 public:
@@ -14,11 +16,6 @@ public:
 	void set_desc(std::string _desc) { desc = _desc; }
 	std::string get_name(void) const { return name; }
 	std::string get_desc(void) const { return desc; }
-	virtual std::string dump(void) const { 
-		std::ostringstream os;
-		os << "\"" << name << "\":" << "\"\"";
-		return os.str();
-	}
 protected:
 	std::string name;
 	std::string desc;
@@ -30,21 +27,12 @@ public:
 	using stat_t::stat_t;
 	void push_back(T s){ list.push_back(s); }
 	T get(size_t idx) const { return list[idx]; }
-	std::string dump(void) const {
-		std::ostringstream os;
-		if(name.size() > 0) os << "\"" << name << "\": ";
-		os << "[" << std::endl;
-		size_t idx = 0;
-		for(const auto it : list) {
-			os << it->dump();
-			if(idx++ != list.size() - 1) os << ",";
-			os << std::endl;
-		}
-		os << "]" << std::endl;
-		return os.str();
-	}
 	typename std::vector<T>::iterator begin() { return list.begin(); }
 	typename std::vector<T>::iterator end() { return list.end(); }
+	io::json to_json() const {
+		if(name.size() > 0) return io::json::object{{name, list}};
+		return io::json(list);
+	}
 protected:
 	std::vector<T> list;
 };
@@ -55,22 +43,16 @@ public:
 	using stat_t::stat_t;
 	stat_t* get(Key key) const { return m[key]; }
 	void insert(Key key, Value s) { m.insert(std::pair<Key, Value>(key, s)); }
-	std::string dump(void) const {
-		std::ostringstream os;
-		if(name.size() > 0) os << "\"" << name << "\": ";
-		os << "{" << std::endl;
-		size_t idx = 0;
-		for(auto it : m) {
-			os << "\"0x" << std::hex << it.first << "\": " << it.second->dump();
-			if(idx++ != m.size() - 1) os << ",";
-			os << std::endl;
-		}
-		os << "}" << std::endl;
-		return os.str();
-	}
 	typename std::map<Key, Value>::iterator find(Key key) { return m.find(key); }
 	typename std::map<Key, Value>::iterator begin() { return m.begin(); }
 	typename std::map<Key, Value>::iterator end() { return m.end(); }
+	io::json to_json() const {
+		std::map<std::string, Value> sm;
+		for(auto it : m) 
+			sm.insert(std::make_pair(std::to_string(it.first), it.second));
+		if(name.size() > 0) return io::json::object{{name, sm}};
+		return io::json(sm);
+	}
 private:
 	std::map<Key, Value> m;
 };
@@ -81,11 +63,9 @@ public:
 	using stat_t::stat_t;
 	T get(void) const { return val; }
 	void set(T v) { val = v;}
-	std::string dump(void) const {
-		std::ostringstream os;
-		if(name.size() > 0) os << "\"" << name << "\"" << ":";
-		os << val;
-		return os.str();
+	io::json to_json() const {
+		if(name.size() > 0) return io::json::object{{name, val}};
+		return io::json(val);
 	}
 protected:
 	T val;
@@ -98,17 +78,9 @@ public:
 	void push_back(T v) { vals.push_back(v); }
 	T get(size_t idx) const { return vals[idx]; }
 	std::vector<T> get(void) { return vals; }
-	std::string dump(void) const {
-		std::ostringstream os;
-		if(name.size() > 0) os << "\"" << name << "\": ";
-		os << "[";
-		size_t idx = 0;
-		for(auto it : vals) {
-			os << *it;
-			if(idx++ != vals.size() - 1) os << ",";
-		}
-		os << "]";
-		return os.str();
+	io::json to_json() const {
+		if(name.size() > 0) return io::json::object{{name, vals}};
+		return io::json(vals);
 	}
 protected:
 	std::vector<T> vals;
@@ -118,7 +90,7 @@ template <typename T>
 class counter_stat_t : public scalar_stat_t<T> {
 public:
 	using scalar_stat_t<T>::scalar_stat_t;
-	void inc_val(T v) { this->val += v;}
+	void inc(T v) { this->val += v;}
 	void inc(void) { this->val++; }
 	void reset(void) { this->val = 0; }
 };

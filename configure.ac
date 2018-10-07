@@ -86,7 +86,7 @@ AC_SUBST([CXXFLAGS],["-Wall -Wno-unused -g -O2 -std=c++14"])
 # The '*' suffix indicates an optional subproject. The '**' suffix
 # indicates an optional subproject which is also the name of a group.
 
-MCPPBS_SUBPROJECTS([ riscv, dummy_rocc, softfloat, spike_main ])
+MCPPBS_SUBPROJECTS([ stat, riscv, dummy_rocc, softfloat, tracer, io, common, spike_main ])
 
 #-------------------------------------------------------------------------
 # MCPPBS subproject groups
@@ -108,6 +108,10 @@ AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([riscv-spike.pc])
 AC_CONFIG_FILES([riscv-riscv.pc])
 AC_CONFIG_FILES([riscv-softfloat.pc])
+AC_CONFIG_FILES([riscv-stat.pc])
+AC_CONFIG_FILES([riscv-common.pc])
+AC_CONFIG_FILES([riscv-io.pc])
+AC_CONFIG_FILES([riscv-tracer.pc])
 AC_CONFIG_FILES([riscv-dummy_rocc.pc])
 AC_CONFIG_FILES([riscv-spike_main.pc])
 AC_OUTPUT

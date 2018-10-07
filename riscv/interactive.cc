@@ -13,11 +13,14 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <iostream>
+#include <iterator>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <math.h>
+#include <sstream>
 
 DECLARE_TRAP(-1, interactive)
 
@@ -58,85 +61,53 @@ static std::string readline(int fd)
   return s;
 }
 
-void sim_t::interactive()
-{
-  typedef void (sim_t::*interactive_func)(const std::string&, const std::vector<std::string>&);
-  std::map<std::string,interactive_func> funcs;
-
-  funcs["run"] = &sim_t::interactive_run_noisy;
-  funcs["r"] = funcs["run"];
-  funcs["rs"] = &sim_t::interactive_run_silent;
-  funcs["reg"] = &sim_t::interactive_reg;
-  funcs["freg"] = &sim_t::interactive_freg;
-  funcs["fregs"] = &sim_t::interactive_fregs;
-  funcs["fregd"] = &sim_t::interactive_fregd;
-  funcs["pc"] = &sim_t::interactive_pc;
-  funcs["read"] = &sim_t::interactive_read;
-  funcs["write"] = &sim_t::interactive_write;
-  funcs["str"] = &sim_t::interactive_str;
-  funcs["until"] = &sim_t::interactive_until;
-  funcs["while"] = &sim_t::interactive_until;
-  funcs["quit"] = &sim_t::interactive_quit;
-  funcs["q"] = funcs["quit"];
-  funcs["help"] = &sim_t::interactive_help;
-  funcs["count"] = &sim_t::interactive_count;
-  funcs["reset"] = &sim_t::interactive_reset;
-  funcs["h"] = funcs["help"];
-
-  while (!done())
-  {
-    std::cerr << ": " << std::flush;
-    std::string s = readline(2);
-
-    std::stringstream ss(s);
-    std::string cmd, tmp;
-    std::vector<std::string> args;
-
-    if (!(ss >> cmd))
-    {
-      set_procs_debug(true);
-      step(1);
-      continue;
-    }
-
-    while (ss >> tmp)
-      args.push_back(tmp);
-
-    try
-    {
-      if(funcs.count(cmd))
-        (this->*funcs[cmd])(cmd, args);
-      else
-        fprintf(stderr, "Unknown command %s\n", cmd.c_str());
-    }
-    catch(trap_t t) {}
+int sim_t::trigger(std::string s) {
+  if(s.size() == 0) {
+    set_procs_debug(true);
+    step(1);
+    return 0;
   }
-
-
-  if(exit_debug) {
-    std::cerr << "\n" << std::flush;
-    std::vector<std::string> disabled = {"run", "rs", "r"};
-    while(true) {
-      std::cerr << ": " << std::flush;
-      std::string s = readline(2);
-      std::stringstream ss(s);
-      std::string cmd, tmp;
-      std::vector<std::string> args;
-      ss >> cmd;
-      while (ss >> tmp)
-        args.push_back(tmp);
-
-      try {
-        if(funcs.count(cmd) && 
-          std::find(disabled.begin(), disabled.end(), cmd) == disabled.end()) {
-          (this->*funcs[cmd])(cmd, args);
-        } else {
-          fprintf(stderr, "Unknown command %s\n", cmd.c_str());
-        }
-      } catch(trap_t t) {}
+  std::istringstream iss(s);
+  std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
+    std::istream_iterator<std::string>{}};
+  std::string cmd = tokens[0];
+  std::vector<std::string> args(tokens.begin() + 1, tokens.end());
+  std::vector<std::string> disabled = {"run", "rs", "r"};
+  try {
+    if(exit_debug && inter_funcs.count(cmd) && 
+        std::find(disabled.begin(), disabled.end(), cmd) == disabled.end()) {
+      (this->*inter_funcs[cmd])(cmd, args);
+    } else if(!exit_debug && inter_funcs.count(cmd)) {
+      (this->*inter_funcs[cmd])(cmd, args);
+    } else {
+      fprintf(stderr, "Unknown command %s\n", cmd.c_str());
     }
-  }
+  } catch(trap_t t) {}
   ctrlc_pressed = false;
+  return 0;
+}
+
+void sim_t::setup_interactive()
+{
+  inter_funcs["run"] = &sim_t::interactive_run_noisy;
+  inter_funcs["r"] = inter_funcs["run"];
+  inter_funcs["rs"] = &sim_t::interactive_run_silent;
+  inter_funcs["reg"] = &sim_t::interactive_reg;
+  inter_funcs["freg"] = &sim_t::interactive_freg;
+  inter_funcs["fregs"] = &sim_t::interactive_fregs;
+  inter_funcs["fregd"] = &sim_t::interactive_fregd;
+  inter_funcs["pc"] = &sim_t::interactive_pc;
+  inter_funcs["read"] = &sim_t::interactive_read;
+  inter_funcs["write"] = &sim_t::interactive_write;
+  inter_funcs["str"] = &sim_t::interactive_str;
+  inter_funcs["until"] = &sim_t::interactive_until;
+  inter_funcs["while"] = &sim_t::interactive_until;
+  inter_funcs["quit"] = &sim_t::interactive_quit;
+  inter_funcs["q"] = inter_funcs["quit"];
+  inter_funcs["help"] = &sim_t::interactive_help;
+  inter_funcs["count"] = &sim_t::interactive_count;
+  inter_funcs["reset"] = &sim_t::interactive_reset;
+  inter_funcs["h"] = inter_funcs["help"];
 }
 
 void sim_t::interactive_help(const std::string& cmd, const std::vector<std::string>& args)
@@ -146,7 +117,7 @@ void sim_t::interactive_help(const std::string& cmd, const std::vector<std::stri
     "reg <core> [reg]                # Display [reg] (all if omitted) in <core>\n"
     "fregs <core> <reg>              # Display single precision <reg> in <core>\n"
     "fregd <core> <reg>              # Display double precision <reg> in <core>\n"
-    "pc <core>                       # Show current PC in <core>\n"
+    "pc [core]                       # Show current PC in [core]\n"
     "read <hex addr>                 # Show contents of physical memory\n"
     "write <hex addr> <value>        # Write contents of physical memory\n"
     "str <hex addr>                  # Show NUL-terminated C string\n"

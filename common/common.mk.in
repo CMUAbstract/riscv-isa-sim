@@ -1,0 +1,12 @@
+common_subproject_deps =
+
+common_hdrs = \
+	encoding.h \
+	riscv-opc.h \
+	decode.h \
+
+common_srcs =
+
+common_test_srcs =
+
+common_install_prog_srcs =

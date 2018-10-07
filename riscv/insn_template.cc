@@ -7,10 +7,11 @@ reg_t rv32_NAME(processor_t* p, insn_t insn, reg_t pc)
   int xlen = 32;
   reg_t npc = sext_xlen(pc + insn_length(OPCODE));
   working_set_t ws;
-  #include "tracer_macro.h"
+  #include <tracer/tracer_macro.h>
   #include "insns/NAME.h"
-  if(p->get_tracer()->interested(p, OPCODE, insn, ws)) {
-    p->get_tracer()->trace(p, OPCODE, insn, ws);
+  if(p->gettracer() != nullptr 
+    && p->get_tracer()->interested(&ws, OPCODE, insn)) {
+    p->get_tracer()->trace(&ws, OPCODE, insn);
   }
   return npc;
 }
@@ -20,10 +21,11 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
   int xlen = 64;
   reg_t npc = sext_xlen(pc + insn_length(OPCODE));
   working_set_t ws;
-  #include "tracer_macro.h"
+  #include <tracer/tracer_macro.h>
   #include "insns/NAME.h"
-  if(p->get_tracer()->interested(p, OPCODE, insn, ws)) {
-    p->get_tracer()->trace(p, OPCODE, insn, ws);
+  if(p->gettracer() != nullptr 
+    && p->get_tracer()->interested(&ws, OPCODE, insn)) {
+    p->get_tracer()->trace(&ws, OPCODE, insn);
   }
   return npc;
 }

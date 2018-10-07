@@ -4393,7 +4393,7 @@ fi
 
 CFLAGS="-Wall -Wno-unused -g -O2"
 
-CXXFLAGS="-Wall -Wno-unused -g -O2 -std=c++11"
+CXXFLAGS="-Wall -Wno-unused -g -O2 -std=c++14"
 
 
 #-------------------------------------------------------------------------
@@ -4414,6 +4414,51 @@ fi
 
 
   # Loop through the subprojects given in the macro argument
+
+
+
+    # Determine if this is a required or an optional subproject
+
+
+
+    # Determine if there is a group with the same name
+
+
+
+    # Create variations of the subproject name suitable for use as a CPP
+    # enabled define, a shell enabled variable, and a shell function
+
+
+
+
+
+
+
+
+
+
+
+    # Add subproject to our running list
+
+    subprojects="$subprojects stat"
+
+    # Process the subproject appropriately. If enabled add it to the
+    # $enabled_subprojects running shell variable, set a
+    # SUBPROJECT_ENABLED C define, and include the appropriate
+    # 'subproject.ac'.
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: configuring default subproject : stat" >&5
+$as_echo "$as_me: configuring default subproject : stat" >&6;}
+      ac_config_files="$ac_config_files stat.mk:stat/stat.mk.in"
+
+      enable_stat_sproj="yes"
+      subprojects_enabled="$subprojects_enabled stat"
+
+$as_echo "#define STAT_ENABLED /**/" >>confdefs.h
+
+
+
 
 
 
@@ -4818,6 +4863,141 @@ $as_echo "#define SOFTFLOAT_ENABLED /**/" >>confdefs.h
 
     # Add subproject to our running list
 
+    subprojects="$subprojects tracer"
+
+    # Process the subproject appropriately. If enabled add it to the
+    # $enabled_subprojects running shell variable, set a
+    # SUBPROJECT_ENABLED C define, and include the appropriate
+    # 'subproject.ac'.
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: configuring default subproject : tracer" >&5
+$as_echo "$as_me: configuring default subproject : tracer" >&6;}
+      ac_config_files="$ac_config_files tracer.mk:tracer/tracer.mk.in"
+
+      enable_tracer_sproj="yes"
+      subprojects_enabled="$subprojects_enabled tracer"
+
+$as_echo "#define TRACER_ENABLED /**/" >>confdefs.h
+
+
+
+
+
+
+    # Determine if this is a required or an optional subproject
+
+
+
+    # Determine if there is a group with the same name
+
+
+
+    # Create variations of the subproject name suitable for use as a CPP
+    # enabled define, a shell enabled variable, and a shell function
+
+
+
+
+
+
+
+
+
+
+
+    # Add subproject to our running list
+
+    subprojects="$subprojects io"
+
+    # Process the subproject appropriately. If enabled add it to the
+    # $enabled_subprojects running shell variable, set a
+    # SUBPROJECT_ENABLED C define, and include the appropriate
+    # 'subproject.ac'.
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: configuring default subproject : io" >&5
+$as_echo "$as_me: configuring default subproject : io" >&6;}
+      ac_config_files="$ac_config_files io.mk:io/io.mk.in"
+
+      enable_io_sproj="yes"
+      subprojects_enabled="$subprojects_enabled io"
+
+$as_echo "#define IO_ENABLED /**/" >>confdefs.h
+
+
+
+
+
+
+    # Determine if this is a required or an optional subproject
+
+
+
+    # Determine if there is a group with the same name
+
+
+
+    # Create variations of the subproject name suitable for use as a CPP
+    # enabled define, a shell enabled variable, and a shell function
+
+
+
+
+
+
+
+
+
+
+
+    # Add subproject to our running list
+
+    subprojects="$subprojects common"
+
+    # Process the subproject appropriately. If enabled add it to the
+    # $enabled_subprojects running shell variable, set a
+    # SUBPROJECT_ENABLED C define, and include the appropriate
+    # 'subproject.ac'.
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: configuring default subproject : common" >&5
+$as_echo "$as_me: configuring default subproject : common" >&6;}
+      ac_config_files="$ac_config_files common.mk:common/common.mk.in"
+
+      enable_common_sproj="yes"
+      subprojects_enabled="$subprojects_enabled common"
+
+$as_echo "#define COMMON_ENABLED /**/" >>confdefs.h
+
+
+
+
+
+
+    # Determine if this is a required or an optional subproject
+
+
+
+    # Determine if there is a group with the same name
+
+
+
+    # Create variations of the subproject name suitable for use as a CPP
+    # enabled define, a shell enabled variable, and a shell function
+
+
+
+
+
+
+
+
+
+
+
+    # Add subproject to our running list
+
     subprojects="$subprojects spike_main"
 
     # Process the subproject appropriately. If enabled add it to the
@@ -4871,6 +5051,14 @@ ac_config_files="$ac_config_files riscv-spike.pc"
 ac_config_files="$ac_config_files riscv-riscv.pc"
 
 ac_config_files="$ac_config_files riscv-softfloat.pc"
+
+ac_config_files="$ac_config_files riscv-stat.pc"
+
+ac_config_files="$ac_config_files riscv-common.pc"
+
+ac_config_files="$ac_config_files riscv-io.pc"
+
+ac_config_files="$ac_config_files riscv-tracer.pc"
 
 ac_config_files="$ac_config_files riscv-dummy_rocc.pc"
 
@@ -5567,15 +5755,23 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
+    "stat.mk") CONFIG_FILES="$CONFIG_FILES stat.mk:stat/stat.mk.in" ;;
     "riscv.mk") CONFIG_FILES="$CONFIG_FILES riscv.mk:riscv/riscv.mk.in" ;;
     "dummy_rocc.mk") CONFIG_FILES="$CONFIG_FILES dummy_rocc.mk:dummy_rocc/dummy_rocc.mk.in" ;;
     "softfloat.mk") CONFIG_FILES="$CONFIG_FILES softfloat.mk:softfloat/softfloat.mk.in" ;;
+    "tracer.mk") CONFIG_FILES="$CONFIG_FILES tracer.mk:tracer/tracer.mk.in" ;;
+    "io.mk") CONFIG_FILES="$CONFIG_FILES io.mk:io/io.mk.in" ;;
+    "common.mk") CONFIG_FILES="$CONFIG_FILES common.mk:common/common.mk.in" ;;
     "spike_main.mk") CONFIG_FILES="$CONFIG_FILES spike_main.mk:spike_main/spike_main.mk.in" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "riscv-spike.pc") CONFIG_FILES="$CONFIG_FILES riscv-spike.pc" ;;
     "riscv-riscv.pc") CONFIG_FILES="$CONFIG_FILES riscv-riscv.pc" ;;
     "riscv-softfloat.pc") CONFIG_FILES="$CONFIG_FILES riscv-softfloat.pc" ;;
+    "riscv-stat.pc") CONFIG_FILES="$CONFIG_FILES riscv-stat.pc" ;;
+    "riscv-common.pc") CONFIG_FILES="$CONFIG_FILES riscv-common.pc" ;;
+    "riscv-io.pc") CONFIG_FILES="$CONFIG_FILES riscv-io.pc" ;;
+    "riscv-tracer.pc") CONFIG_FILES="$CONFIG_FILES riscv-tracer.pc" ;;
     "riscv-dummy_rocc.pc") CONFIG_FILES="$CONFIG_FILES riscv-dummy_rocc.pc" ;;
     "riscv-spike_main.pc") CONFIG_FILES="$CONFIG_FILES riscv-spike_main.pc" ;;
 

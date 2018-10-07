@@ -1,0 +1,13 @@
+io_subproject_deps =
+
+io_hdrs = \
+        tinycon.h \
+        json11.h \
+
+io_srcs = \
+        tinycon.cc \
+        json11.cc \
+
+io_test_srcs =
+
+io_install_prog_srcs =

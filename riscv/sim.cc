@@ -4,7 +4,6 @@
 #include "mmu.h"
 #include "dts.h"
 #include "remote_bitbang.h"
-#include "tracer.h"
 #include <map>
 #include <iostream>
 #include <sstream>
@@ -16,6 +15,8 @@
 #include <time.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+
+#include <tracer/tracer.h>
 
 volatile bool ctrlc_pressed = false;
 static void handle_signal(int sig)
@@ -31,12 +32,13 @@ sim_t::sim_t(const char* isa, size_t nprocs, bool halted, reg_t start_pc,
              const std::vector<std::string>& args,
              std::vector<int> const hartids, unsigned progsize,
              unsigned max_bus_master_bits, bool require_authentication)
-  : htif_t(args), mems(mems), procs(std::max(nprocs, size_t(1))),
+  : htif_t(args), io::tinycon("> "), mems(mems), procs(std::max(nprocs, size_t(1))),
     start_pc(start_pc), current_step(0), current_proc(0), debug(false),
     remote_bitbang(NULL),
     debug_module(this, progsize, max_bus_master_bits, require_authentication)
 {
   signal(SIGINT, &handle_signal);
+  setup_interactive();
 
   for (auto& x : mems)
     bus.add_device(x.first, x.second);
@@ -84,7 +86,7 @@ void sim_t::main()
   while (!done())
   {
     if (debug || ctrlc_pressed){
-      interactive();
+      io::tinycon::run();
     } else if (intermittent) {
       size_t cycles = INTERMITTENT_MIN + (rand() % static_cast<int>(
         INTERMITTENT_MAX - INTERMITTENT_MIN + 1));
@@ -106,7 +108,7 @@ int sim_t::run()
     target.init(sim_thread_main, this);
     int exit_code = htif_t::run();
     if(exit_debug) {
-      interactive();
+      io::tinycon::run();
     }
     return exit_code;
 }
@@ -143,46 +145,15 @@ void sim_t::set_exit_debug(bool value)
   exit_debug = value;
 }
 
-void sim_t::set_track_state(bool value)
-{
-  track_state = value;
-  if(track_state) {
-    basic_mem_tracer_t *basic_mem_trace;
-    insn_curve_tracer_t *insn_curve_tracer;
-    miss_curve_tracer_t *miss_curve_tracer;
-    perf_tracer_t *perf_tracer;
-    energy_tracer_t *energy_tracer;
-    if(outdir.size() > 0) {
-      basic_mem_trace = new basic_mem_tracer_t(elfloader(), outdir);
-      insn_curve_tracer = new insn_curve_tracer_t(elfloader(), outdir);
-      miss_curve_tracer = new miss_curve_tracer_t(elfloader(), outdir);
-      perf_tracer = new perf_tracer_t(elfloader(), outdir);
-      energy_tracer = new energy_tracer_t(elfloader(), outdir);
-    } else {
-      basic_mem_trace = new basic_mem_tracer_t(elfloader());
-      insn_curve_tracer = new insn_curve_tracer_t(elfloader());
-      miss_curve_tracer = new miss_curve_tracer_t(elfloader());
-      perf_tracer = new perf_tracer_t(elfloader());
-      energy_tracer = new energy_tracer_t(elfloader());
-    }
-    for (size_t i = 0; i < procs.size(); i++) {
-      procs[i]->register_tracer(basic_mem_trace);
-      procs[i]->register_tracer(insn_curve_tracer);
-      procs[i]->register_tracer(miss_curve_tracer);
-      procs[i]->register_tracer(perf_tracer);
-      procs[i]->register_tracer(energy_tracer);
-    }
+void sim_t::set_trace(std::string config) {
+  for(size_t i = 0; i < procs.size(); i++) {
+    procs[i]->register_tracer(new core_tracer_t(config, elfloader()));
   }
 }
 
 void sim_t::set_intermittent(bool value)
 {
   intermittent = value;
-}
-
-void sim_t::set_outdir(const char *value) {
-  if(value != nullptr) outdir = value; 
-  else outdir = "";
 }
 
 void sim_t::set_log(bool value)

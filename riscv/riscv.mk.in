@@ -3,6 +3,8 @@ get_opcode = $(shell grep ^DECLARE_INSN.*\\\<$(2)\\\> $(1) | sed 's/DECLARE_INSN
 
 riscv_subproject_deps = \
 	softfloat \
+	tracer \
+	common \
 
 riscv_install_prog_srcs = \
 
@@ -18,9 +20,7 @@ riscv_hdrs = \
 	simif.h \
 	trap.h \
 	encoding.h \
-	cachesim.h \
 	memtracer.h \
-	tracer.h \
 	extension.h \
 	rocc.h \
 	insn_template.h \
@@ -29,7 +29,6 @@ riscv_hdrs = \
 	debug_rom_defines.h \
 	remote_bitbang.h \
 	jtag_dtm.h \
-	stat.h \
 	riscv-opc.h \
 
 riscv_precompiled_hdrs = \
@@ -42,7 +41,6 @@ riscv_srcs = \
 	sim.cc \
 	interactive.cc \
 	trap.cc \
-	cachesim.cc \
 	mmu.cc \
 	disasm.cc \
 	extension.cc \
@@ -55,7 +53,6 @@ riscv_srcs = \
 	debug_module.cc \
 	remote_bitbang.cc \
 	jtag_dtm.cc \
-	tracer.cc \
 	$(riscv_gen_srcs) \
 
 riscv_test_srcs =

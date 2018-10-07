@@ -1,0 +1,10 @@
+stat_subproject_deps = io
+
+stat_hdrs = \
+	stat.h
+
+stat_srcs = \
+
+stat_test_srcs =
+
+stat_install_prog_srcs =

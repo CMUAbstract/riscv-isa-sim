@@ -1,0 +1,17 @@
+tracer_subproject_deps = common
+
+tracer_hdrs = \
+        tracer.h \
+        basic_tracer.h \
+        curve_tracer.h \
+        insn_tracer.h \
+
+tracer_srcs = \
+		tracer.cc \
+		basic_tracer.cc \
+		curve_tracer.cc \
+        insn_tracer.cc \
+
+tracer_test_srcs =
+
+tracer_install_prog_srcs =

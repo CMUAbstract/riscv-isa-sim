@@ -5,5 +5,6 @@
 #include "softfloat.h"
 #include "internals.h"
 #include "specialize.h"
-#include "tracer.h"
+#include <tracer/tracer.h>
+#include <tracer/working_set.h>
 #include <assert.h>

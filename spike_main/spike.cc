@@ -3,7 +3,6 @@
 #include "sim.h"
 #include "mmu.h"
 #include "remote_bitbang.h"
-#include "cachesim.h"
 #include "extension.h"
 #include <dlfcn.h>
 #include <fesvr/option_parser.h>
@@ -32,9 +31,6 @@ static void help()
   fprintf(stderr, "  --isa=<name>          RISC-V ISA string [default %s]\n", DEFAULT_ISA);
   fprintf(stderr, "  --pc=<address>        Override ELF entry point\n");
   fprintf(stderr, "  --hartids=<a,b,...>   Explicitly specify hartids, default is 0,1,...\n");
-  fprintf(stderr, "  --ic=<S>:<W>:<B>      Instantiate a cache model with S sets,\n");
-  fprintf(stderr, "  --dc=<S>:<W>:<B>        W ways, and B-byte blocks (with S and\n");
-  fprintf(stderr, "  --l2=<S>:<W>:<B>        B both powers of 2).\n");
   fprintf(stderr, "  --extension=<name>    Specify RoCC Extension\n");
   fprintf(stderr, "  --outdir=<dir>        Directory for output files.\n");
   fprintf(stderr, "  --extlib=<name>       Shared library to load\n");
@@ -88,9 +84,6 @@ int main(int argc, char** argv)
   size_t nprocs = 1;
   reg_t start_pc = reg_t(-1);
   std::vector<std::pair<reg_t, mem_t*>> mems;
-  std::unique_ptr<icache_sim_t> ic;
-  std::unique_ptr<dcache_sim_t> dc;
-  std::unique_ptr<cache_sim_t> l2;
   std::function<extension_t*()> extension;
   const char* isa = DEFAULT_ISA;
   uint16_t rbb_port = 0;
@@ -102,7 +95,7 @@ int main(int argc, char** argv)
   bool run_intermittent = false;
   bool exit_debug = false;
   bool track_state = false;
-  const char* outdir = NULL;
+  const char* tconfig = NULL;
 
   auto const hartids_parser = [&](const char *s) {
     std::string const str(s);
@@ -124,21 +117,17 @@ int main(int argc, char** argv)
   parser.option('l', 0, 0, [&](const char* s){log = true;});
   parser.option('p', 0, 1, [&](const char* s){nprocs = atoi(s);});
   parser.option('m', 0, 1, [&](const char* s){mems = make_mems(s);});
-  parser.option('s', 0, 0, [&](const char* s){track_state = true;});
+  parser.option('t', 0, 0, [&](const char* s){tconfig = s;});
   // I wanted to use --halted, but for some reason that doesn't work.
   parser.option('H', 0, 0, [&](const char* s){halted = true;});
   parser.option(0, "rbb-port", 1, [&](const char* s){use_rbb = true; rbb_port = atoi(s);});
   parser.option(0, "pc", 1, [&](const char* s){start_pc = strtoull(s, 0, 0);});
   parser.option(0, "hartids", 1, hartids_parser);
-  parser.option(0, "ic", 1, [&](const char* s){ic.reset(new icache_sim_t(s));});
-  parser.option(0, "dc", 1, [&](const char* s){dc.reset(new dcache_sim_t(s));});
-  parser.option(0, "l2", 1, [&](const char* s){l2.reset(cache_sim_t::construct(s, "L2$"));});
   parser.option(0, "isa", 1, [&](const char* s){isa = s;});
   parser.option(0, "inter", 0, [&](const char* s){run_intermittent = true;});
   parser.option(0, "exit-debug", 0, [&](const char* s){exit_debug = true;});
   parser.option(0, "extension", 1, [&](const char* s){extension = find_extension(s);});
   parser.option(0, "dump-dts", 0, [&](const char *s){dump_dts = true;});
-  parser.option(0, "outdir", 1, [&](const char *s){ outdir = s; });
   parser.option(0, "extlib", 1, [&](const char *s){
     void *lib = dlopen(s, RTLD_NOW | RTLD_GLOBAL);
     if (lib == NULL) {
@@ -174,17 +163,8 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  if (ic && l2) ic->set_miss_handler(&*l2);
-  if (dc && l2) dc->set_miss_handler(&*l2);
-  for (size_t i = 0; i < nprocs; i++)
-  {
-    if (ic) s.get_core(i)->get_mmu()->register_memtracer(&*ic);
-    if (dc) s.get_core(i)->get_mmu()->register_memtracer(&*dc);
-    if (extension) s.get_core(i)->register_extension(extension());
-  }
-
   s.set_outdir(outdir);
-  s.set_track_state(track_state);
+  s.set_trace(tconfig);
   s.set_debug(debug);
   s.set_exit_debug(exit_debug);
   s.set_intermittent(run_intermittent);

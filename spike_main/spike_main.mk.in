@@ -1,6 +1,7 @@
 spike_main_subproject_deps = \
 	softfloat \
 	riscv \
+	io \
 
 spike_main_install_prog_srcs = \
 	spike.cc \

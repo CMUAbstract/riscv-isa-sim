@@ -9,7 +9,9 @@
 #include "simif.h"
 #include <fesvr/htif.h>
 #include <fesvr/context.h>
+#include <io/io.h>
 #include <vector>
+#include <map>
 #include <string>
 #include <memory>
 
@@ -17,7 +19,7 @@ class mmu_t;
 class remote_bitbang_t;
 
 // this class encapsulates the processors and memory in a RISC-V machine.
-class sim_t : public htif_t, public simif_t
+class sim_t : public htif_t, public simif_t, public io::tinycon
 {
 public:
   sim_t(const char* isa, size_t _nprocs,  bool halted, reg_t start_pc,
@@ -30,8 +32,7 @@ public:
   int run();
   void set_debug(bool value);
   void set_exit_debug(bool value);
-  void set_track_state(bool value);
-  void set_outdir(const char *value);
+  void set_trace(std::string config);
   void set_intermittent(bool value);
   void set_log(bool value);
   void set_histogram(bool value);
@@ -72,11 +73,9 @@ private:
   size_t current_proc;
   bool debug;
   bool exit_debug;
-  bool track_state;
   bool log;
   bool histogram_enabled; // provide a histogram of PCs
   bool intermittent;
-  std::string outdir;
   remote_bitbang_t* remote_bitbang;
 
   // memory-mapped I/O routines
@@ -86,7 +85,10 @@ private:
   void make_dtb();
 
   // presents a prompt for introspection into the simulation
-  void interactive();
+  typedef void (sim_t::*inter_func_t)(const std::string&, const std::vector<std::string>&);
+  std::map<std::string, inter_func_t> inter_funcs;
+  int trigger(std::string s);
+  void setup_interactive();
 
   // functions that help implement interactive()
   void interactive_help(const std::string& cmd, const std::vector<std::string>& args);

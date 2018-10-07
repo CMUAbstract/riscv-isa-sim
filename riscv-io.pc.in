@@ -3,8 +3,9 @@ exec_prefix=@prefix@
 libdir=${prefix}/@libdir@
 includedir=${prefix}/@includedir@
 
-Name: riscv-spike
-Description: RISC-V spike meta library
+Name: riscv-io
+Description: Handles IO
 Version: git
-Depends: riscv-spike_main riscv-riscv riscv-softfloat riscv-cache riscv-stat
+Libs: -Wl,-rpath,${libdir} -L${libdir} -lio
+Cflags: -I${includedir}
 URL: http://riscv.org/download.html#tab_spike
