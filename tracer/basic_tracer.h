@@ -40,6 +40,7 @@ private:
 		}
 	};
 	map_stat_t<addr_t, mem_loc_stat_t *> tracked_locations;
+private:
 	struct region_t {
 		addr_t base;
 		size_t size;

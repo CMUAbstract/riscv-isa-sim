@@ -5,12 +5,17 @@ tracer_hdrs = \
         basic_tracer.h \
         curve_tracer.h \
         insn_tracer.h \
+        time_tracer.h \
+        event.h \
+        cores/simple_core.h \
 
 tracer_srcs = \
 		tracer.cc \
 		basic_tracer.cc \
 		curve_tracer.cc \
         insn_tracer.cc \
+        time_tracer.cc \
+        cores/simple_core.cc \
 
 tracer_test_srcs =
 

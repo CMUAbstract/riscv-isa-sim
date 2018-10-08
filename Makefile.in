@@ -194,12 +194,15 @@ $(2)_deps := $$(patsubst %.o, %.d, $$($(2)_objs))
 $(2)_deps += $$(patsubst %.o, %.d, $$($(2)_c_objs))
 $(2)_deps += $$(patsubst %.h, %.h.d, $$($(2)_precompiled_hdrs))
 $$($(2)_pch) : %.h.gch : %.h
+	mkdir -p $$(dir $$@)
 	$(COMPILE) -x c++-header $$< -o $$@
 # If using clang, don't depend (and thus don't build) precompiled headers
 $$($(2)_objs) : %.o : %.cc $$($(2)_gen_hdrs) $(if $(filter-out clang,$(CC)),$$($(2)_pch))
-	$(COMPILE) -c $$<
+	mkdir -p $$(dir $$@)
+	$(COMPILE) -o $$@ -c $$<
 $$($(2)_c_objs) : %.o : %.c $$($(2)_gen_hdrs)
-	$(COMPILE_C) -c $$<
+	mkdir -p $$(dir $$@)
+	$(COMPILE_C) -o $$@ -c $$<
 
 $(2)_junk += $$($(2)_pch) $$($(2)_objs) $$($(2)_c_objs) $$($(2)_deps) \
   $$($(2)_gen_hdrs)
@@ -232,7 +235,8 @@ $(2)_test_libnames  := $$(patsubst %, lib%.so, $$($(2)_test_libs))
 $(2)_test_libarg    := $$(patsubst %, -l%, $$($(2)_test_libs))
 
 $$($(2)_test_objs) : %.o : %.cc
-	$(COMPILE) -c $$<
+	mkdir -p $$(dir $$@)
+	$(COMPILE) -o $$@ -c $$<
 
 $$($(2)_test_exes) : %-utst : %.t.o $$($(2)_test_libnames)
 	$(LINK) -o $$@ $$< $$($(2)_test_libarg) $(LIBS)
@@ -259,7 +263,8 @@ $(2)_prog_libnames  := $$(patsubst %, lib%.so, $$($(2)_prog_libs))
 $(2)_prog_libarg    := $$(patsubst %, -l%, $$($(2)_prog_libs))
 
 $$($(2)_prog_objs) : %.o : %.cc
-	$(COMPILE) -c $$<
+	mkdir -p $$(dir $$@)
+	$(COMPILE) -o $$@ -c $$<
 
 $$($(2)_prog_exes) : % : %.o $$($(2)_prog_libnames)
 	$(LINK) -o $$@ $$< $$($(2)_prog_libarg) $(LIBS)
@@ -274,7 +279,8 @@ $(2)_install_prog_deps := $$(patsubst %.o, %.d, $$($(2)_install_prog_objs))
 $(2)_install_prog_exes := $$(patsubst %.cc, %, $$($(2)_install_prog_srcs))
 
 $$($(2)_install_prog_objs) : %.o : %.cc $$($(2)_gen_hdrs)
-	$(COMPILE) -c $$<
+	mkdir -p $$(dir $$@)
+	$(COMPILE) -o $$@ -c $$<
 
 $$($(2)_install_prog_exes) : % : %.o $$($(2)_prog_libnames)
 	$(LINK) -o $$@ $$< $$($(2)_prog_libarg) $(LIBS)

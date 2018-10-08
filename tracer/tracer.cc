@@ -9,7 +9,7 @@
 #include "basic_tracer.h"
 #include "curve_tracer.h"
 #include "insn_tracer.h"
-// #include "time_tracer.h"
+#include "time_tracer.h"
 
 template<typename T> tracer_t* create_tracer(io::json config, elfloader_t *elf) { 
 	return new T(config, elf);
@@ -21,6 +21,7 @@ std::map<std::string, tracer_t*(*)(io::json, elfloader_t *)> tracer_type_map = {
 	{"miss_curve_tracer_t", &create_tracer<miss_curve_tracer_t>},
 	{"perf_tracer_t", &create_tracer<perf_tracer_t>},
 	{"energy_tracer_t", &create_tracer<energy_tracer_t>},
+	{"time_tracer_t", &create_tracer<time_tracer_t>},
 };
 
 core_tracer_t::core_tracer_t(std::string _config, elfloader_t *_elf)
