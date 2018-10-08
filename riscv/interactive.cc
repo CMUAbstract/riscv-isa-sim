@@ -1,6 +1,5 @@
 // See LICENSE for license details.
 
-#include "decode.h"
 #include "disasm.h"
 #include "sim.h"
 #include "mmu.h"
@@ -21,6 +20,8 @@
 #include <algorithm>
 #include <math.h>
 #include <sstream>
+
+#include <common/decode.h>
 
 DECLARE_TRAP(-1, interactive)
 
@@ -191,7 +192,7 @@ reg_t sim_t::get_reg(const std::vector<std::string>& args)
     r = strtoul(args[1].c_str(), &ptr, 10);
     if (*ptr) {
       #define DECLARE_CSR(name, number) if (args[1] == #name) return p->get_csr(number);
-      #include "encoding.h"              // generates if's for all csrs
+      #include <common/encoding.h>              // generates if's for all csrs
       r = NXPR;                          // else case (csr name not found)
       #undef DECLARE_CSR
     }

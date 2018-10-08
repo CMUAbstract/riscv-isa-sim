@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-#include "decode.h"
+#include <common/decode.h>
+
 #include "jtag_dtm.h"
 #include "debug_module.h"
 #include "debug_defines.h"

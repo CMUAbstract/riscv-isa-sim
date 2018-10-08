@@ -1,4 +1,4 @@
-#include "encoding.h"
+#include <common/encoding.h>
 
 #define ZERO	0
 #define T0      5

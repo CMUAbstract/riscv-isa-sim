@@ -3,7 +3,7 @@
 #ifndef _RISCV_SIMIF_H
 #define _RISCV_SIMIF_H
 
-#include "decode.h"
+#include <common/decode.h>
 
 // this is the interface to the simulator used by the processors and memory
 class simif_t

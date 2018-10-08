@@ -3,7 +3,6 @@
 #ifndef _RISCV_MMU_H
 #define _RISCV_MMU_H
 
-#include "decode.h"
 #include "trap.h"
 #include "common.h"
 #include "config.h"
@@ -12,6 +11,8 @@
 #include "memtracer.h"
 #include <stdlib.h>
 #include <vector>
+
+#include <common/decode.h>
 
 // virtual memory configuration
 #define PGSHIFT 12

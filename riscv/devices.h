@@ -1,11 +1,12 @@
 #ifndef _RISCV_DEVICES_H
 #define _RISCV_DEVICES_H
 
-#include "decode.h"
 #include <cstdlib>
 #include <string>
 #include <map>
 #include <vector>
+
+#include <common/decode.h>
 
 class processor_t;
 

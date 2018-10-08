@@ -3,8 +3,9 @@
 #ifndef _RISCV_TRAP_H
 #define _RISCV_TRAP_H
 
-#include "decode.h"
 #include <stdlib.h>
+
+#include <common/decode.h>
 
 struct state_t;
 

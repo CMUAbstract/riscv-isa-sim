@@ -10,7 +10,6 @@ riscv_install_prog_srcs = \
 
 riscv_hdrs = \
 	common.h \
-	decode.h \
 	devices.h \
 	disasm.h \
 	dts.h \
@@ -19,7 +18,6 @@ riscv_hdrs = \
 	sim.h \
 	simif.h \
 	trap.h \
-	encoding.h \
 	memtracer.h \
 	extension.h \
 	rocc.h \
@@ -315,7 +313,7 @@ insn_list.h: $(src_dir)/riscv/riscv.mk.in
 	mv $@.tmp $@
 
 $(riscv_gen_srcs): %.cc: insns/%.h insn_template.cc
-	sed 's/NAME/$(subst .cc,,$@)/' $(src_dir)/riscv/insn_template.cc | sed 's/OPCODE/$(call get_opcode,$(src_dir)/riscv/riscv-opc.h,$(subst .cc,,$@))/' > $@
+	sed 's/NAME/$(subst .cc,,$@)/' $(src_dir)/riscv/insn_template.cc | sed 's/OPCODE/$(call get_opcode,$(src_dir)/common/riscv-opc.h,$(subst .cc,,$@))/' > $@
 
 riscv_junk = \
 	$(riscv_gen_srcs) \

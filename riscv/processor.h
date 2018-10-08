@@ -2,13 +2,15 @@
 #ifndef _RISCV_PROCESSOR_H
 #define _RISCV_PROCESSOR_H
 
-#include "decode.h"
 #include "config.h"
 #include "devices.h"
 #include "trap.h"
 #include <string>
 #include <vector>
 #include <map>
+
+#include <common/decode.h>
+
 #include "debug_rom_defines.h"
 
 class tracer_t;

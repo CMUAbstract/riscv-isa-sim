@@ -3,10 +3,11 @@
 #ifndef _RISCV_DISASM_H
 #define _RISCV_DISASM_H
 
-#include "decode.h"
 #include <string>
 #include <sstream>
 #include <vector>
+
+#include <common/decode.h>
 
 extern const char* xpr_name[NXPR];
 extern const char* fpr_name[NFPR];
