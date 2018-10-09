@@ -1,4 +1,4 @@
-common_subproject_deps =
+common_subproject_deps = softfloat
 
 common_hdrs = \
 	encoding.h \

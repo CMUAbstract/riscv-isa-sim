@@ -10,6 +10,8 @@
 #include "processor.h"
 #include "memtracer.h"
 #include <stdlib.h>
+
+#include <tuple>
 #include <vector>
 
 #include <common/decode.h>
@@ -115,6 +117,9 @@ public:
 
   // template for functions that store an aligned value to memory
   #define store_func(type) \
+    void store_##type(std::tuple<reg_t, type##_t> t) {  \
+      store_##type(std::get<0>(t), std::get<1>(t)); \
+    } \
     void store_##type(reg_t addr, type##_t val) { \
       if (unlikely(addr & (sizeof(type##_t)-1))) \
         return misaligned_store(addr, val, sizeof(type##_t)); \
