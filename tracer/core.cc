@@ -30,6 +30,7 @@ core_t::~core_t() {
 void core_t::buffer_insn(timed_insn_t *insn) {
 	insns.push_back(insn);
 	auto i = new insn_fetch_event_t<core_t>(this, insns.front());
+	i->cycle = clock.get() + 1;
 	insns.erase(insns.begin());
 	events->push_back(i);
 }
