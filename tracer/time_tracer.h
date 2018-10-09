@@ -9,6 +9,7 @@
 #include "event.h"
 
 class core_t;
+class mem_t;
 class time_tracer_t: public tracer_impl_t {
 public:
 	time_tracer_t(io::json _config, elfloader_t *_elf);
@@ -23,6 +24,7 @@ private:
 	event_list_t events;
 	counter_stat_t<cycle_t> cycle;
 	core_t *core = nullptr;
+	mem_t *mem = nullptr;
 };
 
 #endif

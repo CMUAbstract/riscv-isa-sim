@@ -9,14 +9,17 @@ tracer_hdrs = \
         event.h \
         log.h \
         cores/simple_core.h \
+        cache/simple_mem.h \
 
 tracer_srcs = \
         tracer.cc \
+        core.cc \
         basic_tracer.cc \
         curve_tracer.cc \
         insn_tracer.cc \
         time_tracer.cc \
         cores/simple_core.cc \
+        cache/simple_mem.cc \
 
 tracer_test_srcs =
 

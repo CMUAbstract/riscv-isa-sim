@@ -3,6 +3,10 @@
 
 #include <iostream>
 
+#ifndef unlikely
+#define unlikely(x) __builtin_expect((x), 0)
+#endif
+
 #define assert_msg(cond, args...)												\
 	if (unlikely(!(cond))) {													\
 	fprintf(stderr, "%sFailed assertion on %d: ",								\

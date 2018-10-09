@@ -21,11 +21,18 @@ struct insn_event_t : public event_t<T> {
 
 class core_t: public component_t {
 public:
-	using component_t::component_t;
+	core_t(io::json _config, event_list_t *_events, mem_t *_mm); 
 	void process(event_t<core_t> *event) {}
 	virtual void process(insn_event_t<core_t> *event) = 0;
 	virtual void process(reg_read_event_t<core_t> *event) = 0;
 	virtual void process(reg_write_event_t<core_t> *event) = 0;
+protected:
+	mem_t *mm;
 };
+
+template<typename T> core_t* create_core(
+	io::json config, event_list_t *events, mem_t *mem) {
+	return new T(config, events, mem);
+}
 
 #endif

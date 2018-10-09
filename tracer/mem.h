@@ -70,6 +70,7 @@ struct mem_invalidate_event_t: public event_t<T> {
 };
 
 class mem_t: public component_t {
+public:
 	using component_t::component_t;
 	void process(event_t<mem_t> *event) {}
 	virtual void process(mem_read_event_t<mem_t> *event) = 0;
@@ -77,5 +78,9 @@ class mem_t: public component_t {
 	virtual void process(mem_miss_event_t<mem_t> *event) = 0;
 	virtual void process(mem_invalidate_event_t<mem_t> *event) = 0;
 };
+
+template<typename T> mem_t* create_mem(io::json config, event_list_t *events) {
+	return new T(config, events);
+}
 
 #endif
