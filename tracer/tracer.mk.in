@@ -7,12 +7,13 @@ tracer_hdrs = \
         insn_tracer.h \
         time_tracer.h \
         event.h \
+        log.h \
         cores/simple_core.h \
 
 tracer_srcs = \
-		tracer.cc \
-		basic_tracer.cc \
-		curve_tracer.cc \
+        tracer.cc \
+        basic_tracer.cc \
+        curve_tracer.cc \
         insn_tracer.cc \
         time_tracer.cc \
         cores/simple_core.cc \

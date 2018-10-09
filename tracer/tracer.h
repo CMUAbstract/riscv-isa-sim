@@ -23,8 +23,20 @@ public:
 	virtual std::string dump() = 0;
 };
 
-class tracer_list_t : public tracer_t {
+class elfloader_t;
+class tracer_impl_t : public tracer_t {
 public:
+	tracer_impl_t(io::json _config, elfloader_t *_elf) 
+		: tracer_t(), config(_config), elf(_elf) {}
+protected:
+	io::json config;
+	elfloader_t *elf;
+};
+
+class tracer_list_t : public tracer_impl_t {
+public:
+	tracer_list_t(io::json _config, elfloader_t *_elf)
+		: tracer_impl_t(_config, _elf) {}
 	bool interested(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 		for (auto it = list.begin(); it != list.end(); ++it)
 			if ((*it)->interested(ws, opc, insn))
@@ -48,36 +60,16 @@ public:
 	void push_back(tracer_t *t) { list.push_back(t); }
 	std::vector<tracer_t *>::iterator begin() { return list.begin(); }
 	std::vector<tracer_t *>::iterator end() { return list.end(); }
-private:
+protected:
 	std::vector<tracer_t *> list;
 };
 
-class elfloader_t;
-class tracer_impl_t : public tracer_t{
-public:
-	tracer_impl_t(io::json _config, elfloader_t *_elf) 
-		: tracer_t(), config(_config), elf(_elf) {}
-protected:
-	io::json config;
-	elfloader_t *elf;
-};
-
-class core_tracer_t: public tracer_impl_t {
+class core_tracer_t: public tracer_list_t {
 public:
 	core_tracer_t(std::string _config, elfloader_t *_elf);
-	~core_tracer_t();
-	bool interested(working_set_t *ws, insn_bits_t opc, insn_t insn) {
-		return tracers.interested(ws, opc, insn);
-	}
-	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
-		tracers.trace(ws, opc, insn);
-	}
-	void tabulate() { tracers.tabulate(); }
-	virtual std::string dump();
+	~core_tracer_t() {}
 private:
 	void init();
-private:
-	tracer_list_t tracers;
 };
 
 /*class printer_t {

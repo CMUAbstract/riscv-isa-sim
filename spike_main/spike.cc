@@ -95,7 +95,7 @@ int main(int argc, char** argv)
   bool run_intermittent = false;
   bool exit_debug = false;
   bool track_state = false;
-  const char* tconfig = NULL;
+  const char* tconfig = nullptr;
 
   auto const hartids_parser = [&](const char *s) {
     std::string const str(s);
@@ -117,7 +117,6 @@ int main(int argc, char** argv)
   parser.option('l', 0, 0, [&](const char* s){log = true;});
   parser.option('p', 0, 1, [&](const char* s){nprocs = atoi(s);});
   parser.option('m', 0, 1, [&](const char* s){mems = make_mems(s);});
-  parser.option('t', 0, 0, [&](const char* s){tconfig = s;});
   // I wanted to use --halted, but for some reason that doesn't work.
   parser.option('H', 0, 0, [&](const char* s){halted = true;});
   parser.option(0, "rbb-port", 1, [&](const char* s){use_rbb = true; rbb_port = atoi(s);});
@@ -125,6 +124,7 @@ int main(int argc, char** argv)
   parser.option(0, "hartids", 1, hartids_parser);
   parser.option(0, "isa", 1, [&](const char* s){isa = s;});
   parser.option(0, "inter", 0, [&](const char* s){run_intermittent = true;});
+  parser.option(0, "trace", 1, [&](const char* s){tconfig = s;});
   parser.option(0, "exit-debug", 0, [&](const char* s){exit_debug = true;});
   parser.option(0, "extension", 1, [&](const char* s){extension = find_extension(s);});
   parser.option(0, "dump-dts", 0, [&](const char *s){dump_dts = true;});
@@ -163,7 +163,6 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  s.set_outdir(outdir);
   s.set_trace(tconfig);
   s.set_debug(debug);
   s.set_exit_debug(exit_debug);

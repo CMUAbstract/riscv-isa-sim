@@ -2,7 +2,32 @@
 
 #include <fesvr/elfloader.h>
 
+#include "working_set.h"
+
 #define SIGN_EXTEND(v) (0xFFFFFFFF00000000 | v)
+
+void basic_mem_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+	for(auto loc : ws->input.locs) {
+		auto it = tracked_locations.find(loc);
+		if(it == tracked_locations.end()) {
+			mem_loc_stat_t *mem_loc_stat = new mem_loc_stat_t();
+			mem_loc_stat->reads.inc();
+			tracked_locations.insert(loc, mem_loc_stat);
+			continue;
+		}
+		it->second->reads.inc();
+	}
+	for(auto loc : ws->output.locs) {
+		auto it = tracked_locations.find(loc);
+		if(it == tracked_locations.end()) {
+			mem_loc_stat_t *mem_loc_stat = new mem_loc_stat_t();
+			mem_loc_stat->writes.inc();
+			tracked_locations.insert(loc, mem_loc_stat);
+			continue;
+		}
+		it->second->writes.inc();
+	}
+}
 
 void basic_mem_tracer_t::tabulate() {
 	std::map<std::string, region_t> symbols;
@@ -42,7 +67,8 @@ void basic_mem_tracer_t::tabulate() {
 				it.second->section = s.first;
 			}
 		}
-	}}
+	}
+}
 
 std::string basic_mem_tracer_t::dump() {
 	return io::json(tracked_locations).dump();

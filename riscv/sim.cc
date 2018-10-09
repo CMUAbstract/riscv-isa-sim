@@ -145,7 +145,9 @@ void sim_t::set_exit_debug(bool value)
   exit_debug = value;
 }
 
-void sim_t::set_trace(std::string config) {
+void sim_t::set_trace(const char *tconfig) {
+  if(tconfig == nullptr) return;
+  std::string config(tconfig);
   for(size_t i = 0; i < procs.size(); i++) {
     procs[i]->register_tracer(new core_tracer_t(config, elfloader()));
   }

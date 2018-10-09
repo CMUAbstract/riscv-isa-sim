@@ -27,7 +27,6 @@ riscv_hdrs = \
 	debug_rom_defines.h \
 	remote_bitbang.h \
 	jtag_dtm.h \
-	riscv-opc.h \
 
 riscv_precompiled_hdrs = \
 	insn_template.h \
