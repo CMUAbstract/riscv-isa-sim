@@ -1,6 +1,7 @@
 #include "core.h"
 
 #include "log.h"
+#include "working_set.h"
 
 #include "cache/simple_mem.h"
 
@@ -17,4 +18,18 @@ core_t::core_t(io::json _config, event_list_t *_events, mem_t *_mm)
 		config["mem"], events);
 	add_child(mem);	
 	mem->add_child(mm);
-} 
+}
+
+core_t::~core_t() {
+	for(auto it : insns) {
+		delete it->ws;
+		delete it;
+	}
+}
+
+void core_t::buffer_insn(timed_insn_t *insn) {
+	insns.push_back(insn);
+	auto i = new insn_fetch_event_t<core_t>(this, insns.front());
+	insns.erase(insns.begin());
+	events->push_back(i);
+}

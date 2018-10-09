@@ -37,8 +37,8 @@ time_tracer_t::~time_tracer_t() {
 }
 
 void time_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
-	auto insn_event = new insn_event_t<core_t>(core, ws, opc, insn);
-	events.push_back(insn_event);
+	auto timed_insn = new timed_insn_t(ws, opc, insn);
+	core->buffer_insn(timed_insn);
 	while(!events.ready() && !events.empty()) {
 		event_base_t *e = events.pop_back();
 		e->handle();

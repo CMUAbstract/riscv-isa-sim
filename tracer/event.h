@@ -65,7 +65,6 @@ public:
 		for(auto it : children) delete it;
 		for(auto it : parents) delete it;
 	}
-	virtual void process(event_t<component_t> *event) {}
 	void add_child(component_t *child) { children.push_back(child); }
 	void add_parent(component_t *parent) { parents.push_back(parent); }
 	io::json get_config() { return config; }
