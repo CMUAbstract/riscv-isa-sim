@@ -8,7 +8,12 @@ tracer_hdrs = \
         time_tracer.h \
         event.h \
         log.h \
+        smartptr.h \
+        components.h \
+        insn_event.h \
+        mem_event.h \
         cores/simple_core.h \
+        cores/si3stage_core.h \
         cache/simple_mem.h \
 
 tracer_srcs = \
@@ -18,7 +23,10 @@ tracer_srcs = \
         curve_tracer.cc \
         insn_tracer.cc \
         time_tracer.cc \
+        insn_event.cc \
+        mem_event.cc \
         cores/simple_core.cc \
+        cores/si3stage_core.cc \
         cache/simple_mem.cc \
 
 tracer_test_srcs =
