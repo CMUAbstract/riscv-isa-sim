@@ -3,7 +3,7 @@
 #include "log.h"
 #include "working_set.h"
 #include "components.h"
-#include "insn_event.h"
+#include "core_event.h"
 
 core_t::core_t(io::json _config, event_list_t *_events, mem_t *_mm)
 	: component_t(_config, _events), mm(_mm) {

@@ -177,28 +177,28 @@ protected:
 };
 
 class JsonDouble final : public Value<Json::NUMBER, double> {
-    double number_value() const override { return m_value; }
+    double double_value() const override { return m_value; }
     int int_value() const override { return static_cast<int>(m_value); }
-    bool equals(const JsonValue * other) const override { return m_value == other->number_value(); }
-    bool less(const JsonValue * other)   const override { return m_value <  other->number_value(); }
+    bool equals(const JsonValue * other) const override { return m_value == other->double_value(); }
+    bool less(const JsonValue * other)   const override { return m_value <  other->double_value(); }
 public:
     explicit JsonDouble(double value) : Value(value) {}
 };
 
 class JsonInt final : public Value<Json::NUMBER, int64_t> {
-    double number_value() const override { return m_value; }
+    double double_value() const override { return m_value; }
     int int_value() const override { return m_value; }
-    bool equals(const JsonValue * other) const override { return m_value == other->number_value(); }
-    bool less(const JsonValue * other)   const override { return m_value <  other->number_value(); }
+    bool equals(const JsonValue * other) const override { return m_value == other->double_value(); }
+    bool less(const JsonValue * other)   const override { return m_value <  other->double_value(); }
 public:
     explicit JsonInt(int64_t value) : Value(value) {}
 };
 
 class JsonUInt final : public Value<Json::NUMBER, uint64_t> {
-    double number_value() const override { return m_value; }
+    double double_value() const override { return m_value; }
     int int_value() const override { return m_value; }
-    bool equals(const JsonValue * other) const override { return m_value == other->number_value(); }
-    bool less(const JsonValue * other)   const override { return m_value <  other->number_value(); }
+    bool equals(const JsonValue * other) const override { return m_value == other->double_value(); }
+    bool less(const JsonValue * other)   const override { return m_value <  other->double_value(); }
 public:
     explicit JsonUInt(uint64_t value) : Value(value) {}
 };
@@ -291,7 +291,7 @@ Json::Json(Json::object &&values)      : m_ptr(make_shared<JsonObject>(move(valu
  */
 
 Json::Type Json::type()                           const { return m_ptr->type();         }
-double Json::number_value()                       const { return m_ptr->number_value(); }
+double Json::double_value()                       const { return m_ptr->double_value(); }
 int Json::int_value()                             const { return m_ptr->int_value();    }
 bool Json::bool_value()                           const { return m_ptr->bool_value();   }
 const string & Json::string_value()               const { return m_ptr->string_value(); }
@@ -300,7 +300,7 @@ const map<string, Json> & Json::object_items()    const { return m_ptr->object_i
 const Json & Json::operator[] (size_t i)          const { return (*m_ptr)[i];           }
 const Json & Json::operator[] (const string &key) const { return (*m_ptr)[key];         }
 
-double                    JsonValue::number_value()              const { return 0; }
+double                    JsonValue::double_value()              const { return 0; }
 int                       JsonValue::int_value()                 const { return 0; }
 bool                      JsonValue::bool_value()                const { return false; }
 const string &            JsonValue::string_value()              const { return statics().empty_string; }

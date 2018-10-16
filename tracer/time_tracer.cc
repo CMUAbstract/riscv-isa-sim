@@ -7,7 +7,7 @@
 #include "smartptr.h"
 #include "working_set.h"
 #include "components.h"
-#include "insn_event.h"
+#include "core_event.h"
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
 	: tracer_impl_t(_config, _elf) {

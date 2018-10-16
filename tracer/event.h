@@ -9,6 +9,10 @@
 typedef uint64_t cycle_t;
 
 struct event_base_t {
+	event_base_t() {}
+	event_base_t(cycle_t _cycle) : cycle(_cycle) {}
+	event_base_t(cycle_t _cycle, cycle_t _latency) 
+		: cycle(_cycle), latency(_latency) {}
 	virtual void handle() = 0;
 	virtual ~event_base_t() {}
 	cycle_t cycle = 0;
@@ -20,7 +24,11 @@ struct event_base_t {
 template <typename T>
 struct event_t: public event_base_t {
 	event_t() {}
-	event_t(T *_handler) : handler(_handler) {}
+	event_t(T *_handler): handler(_handler) {}
+	event_t(T *_handler, cycle_t _cycle)
+		: event_base_t(_cycle), handler(_handler) {}
+	event_t(T *_handler, cycle_t _cycle, cycle_t _latency)
+		: event_base_t(_cycle, _latency), handler(_handler) {}
 	~event_t() {}
 	T* handler = nullptr;
 	virtual void handle() = 0;
@@ -55,6 +63,7 @@ private:
 	bool ready_flag = false;
 };
 
+class stall_event_t;
 class component_t {
 public:
 	component_t(io::json _config, event_list_t *_events) 
@@ -65,6 +74,7 @@ public:
 		for(auto it : children) delete it;
 		for(auto it : parents) delete it;
 	}
+	virtual void process(stall_event_t *event) = 0;
 	void add_child(component_t *child) { children.push_back(child); }
 	void add_parent(component_t *parent) { parents.push_back(parent); }
 	io::json get_config() { return config; }
@@ -75,6 +85,11 @@ protected:
 	std::vector<component_t *> children;
 	std::vector<component_t *> parents;
 	counter_stat_t<cycle_t> clock;
+};
+
+struct stall_event_t: public event_t<component_t>{
+	using event_t<component_t>::event_t;
+	HANDLER;
 };
 
 #endif

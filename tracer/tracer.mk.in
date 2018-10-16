@@ -10,11 +10,13 @@ tracer_hdrs = \
         log.h \
         smartptr.h \
         components.h \
-        insn_event.h \
+        core_event.h \
         mem_event.h \
         cores/simple_core.h \
         cores/si3stage_core.h \
         cache/simple_mem.h \
+        cache/cache.h \
+        cache/repl_policy.h \
 
 tracer_srcs = \
         tracer.cc \
@@ -23,11 +25,13 @@ tracer_srcs = \
         curve_tracer.cc \
         insn_tracer.cc \
         time_tracer.cc \
-        insn_event.cc \
+        core_event.cc \
         mem_event.cc \
         cores/simple_core.cc \
         cores/si3stage_core.cc \
         cache/simple_mem.cc \
+        cache/cache.cc \
+        cache/repl_policy.cc \
 
 tracer_test_srcs =
 

@@ -5,7 +5,7 @@
 #include "log.h"
 #include "mem.h"
 #include "working_set.h"
-#include "insn_event.h"
+#include "core_event.h"
 #include "mem_event.h"
 
 void simple_core_t::process(insn_fetch_event_t *event) {

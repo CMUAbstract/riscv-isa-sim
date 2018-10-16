@@ -75,6 +75,15 @@ enum JsonParse {
     STANDARD, COMMENTS
 };
 
+#define JSON_CHECK(type, config, var, ...) \
+    JSON_CHECK_(type, var, config, ##__VA_ARGS__, 1, 0)
+#define JSON_CHECK_(type, config, var, def, n, ...) \
+    JSON_CHECK_##n(type, var, config, def)
+#define JSON_CHECK_0(type, config, var, ...) \
+    if(config != nullptr) var = config.type##_value();
+#define JSON_CHECK_1(type, config, var, def) \
+    if(config == nullptr) var = def; else var = config.type##_value();
+
 class JsonValue;
 
 class Json final {
@@ -146,9 +155,9 @@ public:
     bool is_object() const { return type() == OBJECT; }
 
     // Return the enclosed value if this is a number, 0 otherwise. Note that json11 does not
-    // distinguish between integer and non-integer numbers - number_value() and int_value()
+    // distinguish between integer and non-integer numbers - double_value() and int_value()
     // can both be applied to a NUMBER-typed object.
-    double number_value() const;
+    double double_value() const;
     int int_value() const;
 
     // Return the enclosed value if this is a boolean, false otherwise.
@@ -232,7 +241,7 @@ protected:
     virtual bool equals(const JsonValue * other) const = 0;
     virtual bool less(const JsonValue * other) const = 0;
     virtual void dump(std::string &out) const = 0;
-    virtual double number_value() const;
+    virtual double double_value() const;
     virtual int int_value() const;
     virtual bool bool_value() const;
     virtual const std::string &string_value() const;

@@ -12,6 +12,7 @@ struct working_set_t {
 public:
 	working_set_t() {}
 	working_set_t(working_set_t *ws) {
+		pc = ws->pc;
 		input.regs = ws->input.regs;
 		input.fregs = ws->input.fregs;
 		input.vregs = ws->input.vregs;
@@ -31,6 +32,7 @@ public:
 		output.csrs = ws->output.csrs;
 	}
 public:
+	reg_t pc;
 	struct {
 		std::set<size_t> regs;
 		std::set<size_t> fregs;
