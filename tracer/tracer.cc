@@ -35,11 +35,10 @@ core_tracer_t::core_tracer_t(std::string _config, elfloader_t *_elf)
     	in.close();
     	std::string err;
 		config = io::json::parse(contents.str(), err);
-		if(config == nullptr) throw err;
+		assert_msg(config != nullptr, "Config is null (%s)", err.c_str());
 		init();
 		return;
 	}
-	throw(errno);
 }
 
 void core_tracer_t::init() {

@@ -9,7 +9,7 @@
 
 #define assert_msg(cond, args...)												\
 	if (unlikely(!(cond))) {													\
-	fprintf(stderr, "%sFailed assertion on %d: ",								\
+	fprintf(stderr, "%s => Failed assertion on %d: ",							\
 	__FILE__, __LINE__);														\
 	fprintf(stderr, args);														\
 	fprintf(stderr, "\n");														\

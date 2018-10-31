@@ -1,8 +1,5 @@
 #include "time_tracer.h"
 
-#include <map>
-#include <memory>
-
 #include "log.h"
 #include "smartptr.h"
 #include "working_set.h"
@@ -11,20 +8,45 @@
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
 	: tracer_impl_t(_config, _elf) {
-	assert_msg(mem_type_map.find(config["mem"]["model"].string_value()) 
-		!= mem_type_map.end(), 
-		"%s not found", config["mem"]["model"].string_value().c_str());
-	mem = mem_type_map.at(config["mem"]["model"].string_value())(
-		config["mem"], &events);	
-	assert_msg(core_type_map.find(config["core"]["model"].string_value()) 
-		!= core_type_map.end(), 
-		"%s not found", config["core"]["model"].string_value().c_str());
-	core = core_type_map.at(config["core"]["model"].string_value())(
-		config["core"], &events, mem);
+	assert_msg(config.is_array(), "Invalid config file");
+	for(auto it : config.array_items()) {
+		assert_msg(it.is_object(), "Invalid component config");
+		assert_msg(it["type"].is_string(), "No type for component");
+		if(it["type"].string_value().compare("core") == 0) {
+			assert_msg(it["model"].is_string(), "No core model");
+			assert_msg(it["name"].is_string(), "No name");
+			assert_msg(core_type_map.find(it["model"].string_value()) 
+				!= core_type_map.end(), "Invalid core model");
+			core = core_type_map.at(it["model"].string_value())(
+				it["name"].string_value(), it, &events);
+			components.insert({it["name"].string_value(), core});
+		} else if(it["type"].string_value().compare("mem") == 0) {
+			assert_msg(it["model"].is_string(), "No mem model");
+			assert_msg(it["name"].is_string(), "No name");
+			assert_msg(mem_type_map.find(it["model"].string_value()) 
+				!= mem_type_map.end(), "Invalid mem model");
+			auto mem = mem_type_map.at(it["model"].string_value())(
+				it["name"].string_value(), it, &events);
+			components.insert({it["name"].string_value(), mem});
+		}
+	}
+	for(auto it : config.array_items()) {
+		if(it["children"].is_array()) {
+			auto parent_str = it["name"].string_value();
+			for(auto child : it["children"].array_items()) {
+				auto child_str = child.string_value();
+				components[parent_str]->add_child(
+					child_str, components[child_str]);
+				components[child_str]->add_parent(
+					parent_str, components[parent_str]);
+			}	
+		}
+	}
+	for(auto it : components) it.second->init();
 }
 
 time_tracer_t::~time_tracer_t() {
-	delete core;
+	for(auto it : components) delete it.second;
 }
 
 void time_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
@@ -34,7 +56,8 @@ void time_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 	while(!events.ready() && !events.empty()) {
 		event_base_t *e = events.pop_back();
 		e->handle();
-		delete e;
+		if(e->ready_gc) events.mark_event(e);
+		if(events.gc_size() > 20) events.gc();
 	}
 }
 

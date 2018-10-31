@@ -7,11 +7,13 @@
 class simple_core_t: public core_t {
 public:
 	using core_t::core_t;
-	void process(stall_event_t *event) {}
 	void process(insn_fetch_event_t *event);
 	void process(insn_decode_event_t *event) {}
+	void process(insn_retire_event_t *event) {}
 	void process(reg_read_event_t *event) {}
 	void process(reg_write_event_t *event) {}
+	void process(mem_ready_event_t *event) {}
+	void process(mem_stall_event_t *event) {}
 };
 
 #endif
