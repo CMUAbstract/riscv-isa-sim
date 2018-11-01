@@ -25,7 +25,7 @@ void si3stage_core_t::buffer_insn(timed_insn_t *insn) {
 
 void si3stage_core_t::next_insn() {
 	if(insns.size() >= 3) {
-		events->set_ready(true);
+		events->set_ready(false);
 		auto i = new insn_fetch_event_t(this, insns.front());
 		clock.inc();
 		i->cycle = clock.get();
@@ -33,7 +33,7 @@ void si3stage_core_t::next_insn() {
 		insns.erase(insns.begin());
 		events->push_back(i);
 	} else {
-		events->set_ready(false);
+		events->set_ready(true);
 	}
 }
 
@@ -44,7 +44,7 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 	action_set_t action_set;
 	action_set.locs.push_back(event->data.ws->pc);
 	auto pending_event = new pending_event_t(this, action_set, clock.get() + 1);
-	pending_event->next_event = new insn_fetch_event_t(this, &event->data);
+	pending_event->next_event = new insn_decode_event_t(this, &event->data);
 	pending_events.push_back(pending_event);
 	events->push_back(pending_event);
 }
@@ -117,4 +117,5 @@ void si3stage_core_t::process(mem_ready_event_t *event) {
 
 void si3stage_core_t::process(mem_stall_event_t *event) {
 	TIME_VIOLATION_CHECK
+	std::cout << "HERE" << std::endl;
 }

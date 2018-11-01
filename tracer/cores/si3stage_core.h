@@ -2,6 +2,7 @@
 #define SINGLE_ISSUE_3_STAGE_H
 
 #include <vector>
+#include <sstream>
 
 #include "core.h"
 #include "mem.h"
@@ -14,6 +15,11 @@ private:
 	};
 	struct pending_event_t: public event_t<si3stage_core_t, action_set_t> {
 		using event_t<si3stage_core_t, action_set_t>::event_t;	
+		std::string to_string() {
+			std::ostringstream os;
+			os << "pending_event (" << next_event->to_string() << ")"; 
+			return os.str();
+		}
 		HANDLER;
 		event_base_t *next_event;
 	};

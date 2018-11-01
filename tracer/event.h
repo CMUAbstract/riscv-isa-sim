@@ -19,6 +19,7 @@ struct event_base_t {
 	event_base_t(cycle_t _cycle, cycle_t _latency) 
 		: cycle(_cycle), latency(_latency), guid(gen_guid()) {}
 	virtual void handle() = 0;
+	virtual std::string to_string() { return "generic_event"; }
 	virtual ~event_base_t() {}
 	cycle_t cycle = 0;
 	cycle_t latency = 0;
@@ -26,7 +27,18 @@ struct event_base_t {
 	bool ready_gc = true;
 };
 
-#define HANDLER void handle(){ this->handler->process(this); }
+#if 1
+#define HANDLER 																\
+	void handle() { 															\
+		std::cout << this->handler->get_name();									\
+		std::cout << " => ";													\
+		std::cout << this->to_string();											\
+		std::cout << std::endl;													\
+		this->handler->process(this);											\
+	}
+#else
+#define HANDLER void handle() { this->handler->process(this); }
+#endif
 
 template <typename T, typename K>
 struct event_t: public event_base_t {
@@ -60,7 +72,7 @@ struct event_t: public event_base_t {
 
 struct event_comparator_t {
 	bool operator()(const event_base_t *a,const event_base_t* b) const{
-		return a->cycle <= b->cycle;
+		return a->cycle >= b->cycle;
 	}
 };
 
@@ -97,13 +109,11 @@ private:
 	assert_msg(event->cycle >= clock.get(), "Timing violation");				\
 	clock.set(event->cycle);
 
+#define GC_EVENT(e) MARK_EVENT(e)
 #define MARK_EVENT(e) events->mark_event(e)
-#define GC_EVENT(e) events->mark_event(e)
 
 template <typename T>
-class stall_event_t;
-template <typename T>
-class ready_event_t;
+class signal_event_t;
 class component_t {
 public:
 	component_t(std::string _name, io::json _config, event_list_t *_events) 
@@ -113,12 +123,8 @@ public:
 	virtual void init() {}
 	virtual ~component_t() {}
 	template <typename T>
-	void process(stall_event_t<T> *event) {
-		assert_msg(1 == 0, "Generic stall event being handled");
-	}
-	template <typename T>
-	void process(ready_event_t<T> *event) {
-		assert_msg(1 == 0, "Generic ready event being handled");
+	void process(signal_event_t<T> *event) {
+		assert_msg(1 == 0, "Generic signal event being handled");
 	}
 	void add_child(std::string name, component_t *child) {
 		children.insert({name, child});
@@ -126,6 +132,7 @@ public:
 	void add_parent(std::string name, component_t *parent) {
 		parents.insert({name, parent});
 	}
+	std::string get_name() { return name; }
 	io::json get_config() { return config; }
 	event_list_t *get_events() { return events; }
 protected:
@@ -139,12 +146,7 @@ protected:
 };
 
 template <typename T>
-struct stall_event_t: public event_t<component_t, T> {
-	using event_t<component_t, T>::event_t;
-};
-
-template <typename T>
-struct ready_event_t: public event_t<component_t, T> {
+struct signal_event_t: public event_t<component_t, T> {
 	using event_t<component_t, T>::event_t;
 };
 

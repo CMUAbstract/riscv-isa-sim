@@ -4,6 +4,7 @@
 #include "smartptr.h"
 #include "working_set.h"
 #include "components.h"
+#include "mem_event.h"
 #include "core_event.h"
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
@@ -59,6 +60,7 @@ void time_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 		if(e->ready_gc) events.mark_event(e);
 		if(events.gc_size() > 20) events.gc();
 	}
+	events.gc();
 }
 
 std::string time_tracer_t::dump() {

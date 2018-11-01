@@ -20,11 +20,15 @@ void cache_t::init() {
 	offset_mask = line_size - 1; 
 	set_mask = (sets - 1) << line_size;
 	tag_mask = ~(offset_mask | set_mask);
+	data.resize(lines);
 }
 
 void cache_t::process(mem_read_event_t *event) {
 	TIME_VIOLATION_CHECK
 	if(!access(event)) { // Read Miss
+#if 1
+	std::cout << "	read_miss" << std::endl;
+#endif
 		for(auto child : children) {
 			auto mem = dynamic_cast<mem_t *>(child.second);
 			if(mem == nullptr) continue;
@@ -35,8 +39,9 @@ void cache_t::process(mem_read_event_t *event) {
 		for(auto parent : parents) {
 			events->push_back(
 				new mem_stall_event_t(
-					parent.second, clock.get() + read_latency, event));
+					parent.second, event->data, clock.get() + read_latency, event));
 		}
+		return;
 	}
 	for(auto parent : parents) { // Insert in higher-level caches
 		auto mem = dynamic_cast<mem_t *>(parent.second);
@@ -55,6 +60,9 @@ void cache_t::process(mem_read_event_t *event) {
 void cache_t::process(mem_write_event_t *event) {
 	TIME_VIOLATION_CHECK
 	if(!access(event)) { // Write Miss
+#if 1
+	std::cout << "	write_miss" << std::endl;
+#endif
 		for(auto child : children) {
 			auto mem = dynamic_cast<mem_t *>(child.second);
 			if(mem == nullptr) continue;
@@ -65,8 +73,9 @@ void cache_t::process(mem_write_event_t *event) {
 		for(auto parent : parents) { // Blocking
 			events->push_back(
 				new mem_stall_event_t(
-					parent.second, clock.get() + write_latency, event));
+					parent.second, event->data, clock.get() + write_latency, event));
 		}
+		return;
 	}
 	for(auto parent : parents) { // Insert in higher-level caches
 		auto mem = dynamic_cast<mem_t *>(parent.second);
@@ -103,6 +112,10 @@ bool cache_t::access(mem_event_t *event) {
 	uint32_t set = event->data & set_mask;
 	uint32_t tag = event->data & tag_mask;
 	uint32_t set_size = lines / sets;
+#if 1
+	std::cout << "	access (set: 0x" << std::hex << set;
+	std::cout << " tag: 0x" << tag << ")" << std::endl;
+#endif
 	for(uint32_t id = set * set_size; id < (set + 1) * set_size; id++) {
 		if((data[id] & tag_mask) == tag) {
 			repl_policy->update(id, event);	
