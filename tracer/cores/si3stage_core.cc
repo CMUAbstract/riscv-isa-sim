@@ -7,6 +7,7 @@
 #include "working_set.h"
 #include "core_event.h"
 #include "mem_event.h"
+#include "signal_event.h"
 
 si3stage_core_t::si3stage_core_t(std::string _name, io::json _config, 
 	event_list_t *_events) : core_t(_name, _config, _events) {}
@@ -105,7 +106,7 @@ void si3stage_core_t::process(reg_write_event_t *event) {
 	TIME_VIOLATION_CHECK
 }
 
-void si3stage_core_t::process(mem_ready_event_t *event) {
+void si3stage_core_t::process(ready_event_t *event) {
 	TIME_VIOLATION_CHECK
 	for(auto e : pending_events) {
 		auto loc = std::find(e->data.locs.begin(), e->data.locs.end(), event->data);
@@ -115,7 +116,7 @@ void si3stage_core_t::process(mem_ready_event_t *event) {
 	}
 }
 
-void si3stage_core_t::process(mem_stall_event_t *event) {
+void si3stage_core_t::process(stall_event_t *event) {
 	TIME_VIOLATION_CHECK
 	std::cout << "HERE" << std::endl;
 }

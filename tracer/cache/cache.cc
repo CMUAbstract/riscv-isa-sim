@@ -3,6 +3,7 @@
 #include "log.h"
 #include "event.h"
 #include "mem_event.h"
+#include "signal_event.h"
 #include "repl_policy.h"
 
 cache_t::cache_t(std::string _name, io::json _config, event_list_t *_events)
@@ -38,7 +39,7 @@ void cache_t::process(mem_read_event_t *event) {
 		}
 		for(auto parent : parents) {
 			events->push_back(
-				new mem_stall_event_t(
+				new stall_event_t(
 					parent.second, event->data, clock.get() + read_latency, event));
 		}
 		return;
@@ -52,7 +53,7 @@ void cache_t::process(mem_read_event_t *event) {
 	}
 	for(auto parent : parents) { // Blocking
 		events->push_back(
-			new mem_ready_event_t(
+			new ready_event_t(
 				parent.second, event->data, clock.get() + read_latency, event));
 	}
 }
@@ -72,7 +73,7 @@ void cache_t::process(mem_write_event_t *event) {
 		}
 		for(auto parent : parents) { // Blocking
 			events->push_back(
-				new mem_stall_event_t(
+				new stall_event_t(
 					parent.second, event->data, clock.get() + write_latency, event));
 		}
 		return;
@@ -86,7 +87,7 @@ void cache_t::process(mem_write_event_t *event) {
 	}
 	for(auto parent : parents) { // Blocking
 		events->push_back(
-			new mem_ready_event_t(
+			new ready_event_t(
 				parent.second, event->data, clock.get() + write_latency, event));
 	}
 }
@@ -103,7 +104,7 @@ void cache_t::process(mem_insert_event_t *event) {
 	data[id] = event->data * tag_mask; // record new element in cache
 	for(auto parent : parents) { // Blocking
 		events->push_back(
-			new mem_ready_event_t(
+			new ready_event_t(
 				parent.second, event->data, clock.get() + invalid_latency, event));
 	}
 }
@@ -125,19 +126,19 @@ bool cache_t::access(mem_event_t *event) {
 	return false;
 }
 
-void cache_t::process(mem_ready_event_t *event) {
+void cache_t::process(ready_event_t *event) {
 	TIME_VIOLATION_CHECK
 	for(auto parent : parents) {
 		events->push_back(
-			new mem_ready_event_t(parent.second, event->data, clock.get() + 1, event));
+			new ready_event_t(parent.second, event->data, clock.get() + 1, event));
 	}
 }
 
-void cache_t::process(mem_stall_event_t *event) {
+void cache_t::process(stall_event_t *event) {
 	TIME_VIOLATION_CHECK
 	for(auto parent : parents) { // Blocking
 		events->push_back(
-			new mem_stall_event_t(parent.second, event->data, clock.get() + 1, event));
+			new stall_event_t(parent.second, event->data, clock.get() + 1, event));
 	}
 }
 

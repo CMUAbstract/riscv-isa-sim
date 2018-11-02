@@ -2,6 +2,7 @@
 
 #include "working_set.h"
 #include "core_event.h"
+#include "mem_event.h"
 
 core_t::core_t(std::string _name, io::json _config, event_list_t *_events)
 	: component_t(_name, _config, _events) {}

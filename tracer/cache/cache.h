@@ -5,8 +5,8 @@
 
 #include <vector>
 
-class mem_event_t;
 class repl_policy_t;
+class mem_event_t;
 class cache_t: public mem_t {
 public:
 	cache_t(std::string _name, io::json _config, event_list_t *_events);
@@ -20,8 +20,8 @@ public:
 	void process(mem_read_event_t *event);
 	void process(mem_write_event_t *event);
 	void process(mem_insert_event_t *event);
-	void process(mem_ready_event_t *event);
-	void process(mem_stall_event_t *event);
+	void process(ready_event_t *event);
+	void process(stall_event_t *event);
 protected:
 	bool access(mem_event_t *event);
 	void init();

@@ -63,24 +63,4 @@ struct mem_insert_event_t: public mem_event_t {
 	HANDLER;
 };
 
-struct mem_ready_event_t: public signal_event_t<addr_t> {
-	using signal_event_t<addr_t>::signal_event_t;
-	std::string to_string() {
-		std::ostringstream os;
-		os << "mem_ready_event (0x" << std::hex << data << ")"; 
-		return os.str();
-	}
-	HANDLER;
-};
-
-struct mem_stall_event_t: public signal_event_t<addr_t> {
-	using signal_event_t<addr_t>::signal_event_t;
-	std::string to_string() {
-		std::ostringstream os;
-		os << "mem_stall_event (0x" << std::hex << data << ")"; 
-		return os.str();
-	}
-	HANDLER;
-};
-
 #endif
