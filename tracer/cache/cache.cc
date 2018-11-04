@@ -38,9 +38,11 @@ void cache_t::process(mem_read_event_t *event) {
 					mem, event->data, clock.get() + read_latency, event));
 		}
 		for(auto parent : parents) {
+			auto p = dynamic_cast<signal_handler_t *>(parent.second);
+			if(p != nullptr) continue;
 			events->push_back(
 				new stall_event_t(
-					parent.second, event->data, clock.get() + read_latency, event));
+					p, event->data, clock.get() + read_latency, event));
 		}
 		return;
 	}
@@ -52,9 +54,11 @@ void cache_t::process(mem_read_event_t *event) {
 				mem, event->data, clock.get() + read_latency, event));
 	}
 	for(auto parent : parents) { // Blocking
+		auto p = dynamic_cast<signal_handler_t *>(parent.second);
+		if(p != nullptr) continue;
 		events->push_back(
 			new ready_event_t(
-				parent.second, event->data, clock.get() + read_latency, event));
+				p, event->data, clock.get() + read_latency, event));
 	}
 }
 
@@ -72,9 +76,11 @@ void cache_t::process(mem_write_event_t *event) {
 					mem, event->data, clock.get() + write_latency, event));
 		}
 		for(auto parent : parents) { // Blocking
+			auto p = dynamic_cast<signal_handler_t *>(parent.second);
+			if(p != nullptr) continue;
 			events->push_back(
 				new stall_event_t(
-					parent.second, event->data, clock.get() + write_latency, event));
+					p, event->data, clock.get() + write_latency, event));
 		}
 		return;
 	}
@@ -86,9 +92,11 @@ void cache_t::process(mem_write_event_t *event) {
 				mem, event->data, clock.get() + write_latency, event));
 	}
 	for(auto parent : parents) { // Blocking
+		auto p = dynamic_cast<signal_handler_t *>(parent.second);
+		if(p != nullptr) continue;
 		events->push_back(
 			new ready_event_t(
-				parent.second, event->data, clock.get() + write_latency, event));
+				p, event->data, clock.get() + write_latency, event));
 	}
 }
 
@@ -103,9 +111,11 @@ void cache_t::process(mem_insert_event_t *event) {
 	id = repl_policy->rank(event, &cands); // find which to replace
 	data[id] = event->data * tag_mask; // record new element in cache
 	for(auto parent : parents) { // Blocking
+		auto p = dynamic_cast<signal_handler_t *>(parent.second);
+		if(p != nullptr) continue;
 		events->push_back(
 			new ready_event_t(
-				parent.second, event->data, clock.get() + invalid_latency, event));
+				p, event->data, clock.get() + invalid_latency, event));
 	}
 }
 
@@ -129,16 +139,20 @@ bool cache_t::access(mem_event_t *event) {
 void cache_t::process(ready_event_t *event) {
 	TIME_VIOLATION_CHECK
 	for(auto parent : parents) {
+		auto p = dynamic_cast<signal_handler_t *>(parent.second);
+		if(p != nullptr) continue;
 		events->push_back(
-			new ready_event_t(parent.second, event->data, clock.get() + 1, event));
+			new ready_event_t(p, event->data, clock.get() + 1, event));
 	}
 }
 
 void cache_t::process(stall_event_t *event) {
 	TIME_VIOLATION_CHECK
 	for(auto parent : parents) { // Blocking
+		auto p = dynamic_cast<signal_handler_t *>(parent.second);
+		if(p != nullptr) continue;
 		events->push_back(
-			new stall_event_t(parent.second, event->data, clock.get() + 1, event));
+			new stall_event_t(p, event->data, clock.get() + 1, event));
 	}
 }
 

@@ -4,10 +4,11 @@
 #include <sstream>
 
 #include "event.h"
+#include "signal.h"
 
 template <typename T>
-struct signal_event_t: public event_t<component_t, T> {
-	using event_t<component_t, T>::event_t;
+struct signal_event_t: public event_t<signal_handler_t, T> {
+	using event_t<signal_handler_t, T>::event_t;
 };
 
 struct ready_event_t: public signal_event_t<addr_t> {

@@ -4,15 +4,14 @@
 #include <fesvr/memif.h>
 
 #include "component.h"
+#include "signal.h"
 
 struct mem_read_event_t;
 struct mem_write_event_t;
 struct mem_insert_event_t;
 struct mem_ready_event_t;
 struct mem_stall_event_t;
-struct ready_event_t;
-struct stall_event_t;
-class mem_t: public component_t {
+class mem_t: public component_t, public signal_handler_t, virtual event_handler_t {
 public:
 	using component_t::component_t;
 	virtual void process(mem_read_event_t *event) = 0;

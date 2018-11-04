@@ -5,7 +5,6 @@
 #include <map>
 
 #include <stat/stat.h>
-#include "signal.h"
 
 #define TIME_VIOLATION_CHECK 													\
 	assert_msg(event->cycle >= clock.get(), "Timing violation");				\
@@ -17,7 +16,7 @@
 typedef uint64_t cycle_t;
 
 class event_list_t;
-class component_t: public signal_handler_t {
+class component_t {
 public:
 	component_t(std::string _name, io::json _config, event_list_t *_events) 
 		: name(_name), config(_config), events(_events), clock("clock", "") {
