@@ -4,10 +4,12 @@
 #include <vector>
 #include <sstream>
 
+#include <fesvr/memif.h>
+
 #include "event.h"
 #include "core.h"
-#include "mem.h"
 
+class ram_t;
 class si3stage_core_t: public core_t {
 private:
 	struct action_set_t {
@@ -37,7 +39,7 @@ public:
 	void process(stall_event_t *event);
 	void process(pending_event_t *event);
 private:
-	mem_t *icache;
+	ram_t *icache;
 	std::vector<pending_event_t *> pending_events;
 private:
 	void next_insn();

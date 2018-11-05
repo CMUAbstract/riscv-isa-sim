@@ -30,10 +30,12 @@ struct event_base_t {
 		auto handler = dynamic_cast<component_t *>(this->handler);				\
 		if(handler != nullptr) {												\
 			std::cout << handler->get_name();									\
-			std::cout << " => ";												\
-			std::cout << this->to_string();										\
-			std::cout << std::endl;												\
+		} else {																\
+			std::cout << "generic";												\
 		}																		\
+		std::cout << " => ";													\
+		std::cout << this->to_string();											\
+		std::cout << std::endl;													\
 		this->handler->process(this);											\
 	}
 #else
@@ -103,7 +105,5 @@ private:
 	std::vector<event_base_t *> marked_events;
 	bool ready_flag = false;
 };
-
-class event_handler_t {};
 
 #endif

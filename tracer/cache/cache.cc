@@ -7,7 +7,7 @@
 #include "repl_policy.h"
 
 cache_t::cache_t(std::string _name, io::json _config, event_list_t *_events)
-	: mem_t(_name, _config, _events) {
+	: ram_t(_name, _config, _events) {
 	JSON_CHECK(int, config["lines"], lines, 64);
 	JSON_CHECK(int, config["line_size"], line_size);
 	JSON_CHECK(int, config["sets"], sets, 8);
@@ -31,7 +31,7 @@ void cache_t::process(mem_read_event_t *event) {
 	std::cout << "	read_miss" << std::endl;
 #endif
 		for(auto child : children) {
-			auto mem = dynamic_cast<mem_t *>(child.second);
+			auto mem = dynamic_cast<ram_t *>(child.second);
 			if(mem == nullptr) continue;
 			events->push_back(
 				new mem_read_event_t(
@@ -39,7 +39,7 @@ void cache_t::process(mem_read_event_t *event) {
 		}
 		for(auto parent : parents) {
 			auto p = dynamic_cast<signal_handler_t *>(parent.second);
-			if(p != nullptr) continue;
+			if(p == nullptr) continue;
 			events->push_back(
 				new stall_event_t(
 					p, event->data, clock.get() + read_latency, event));
@@ -47,7 +47,7 @@ void cache_t::process(mem_read_event_t *event) {
 		return;
 	}
 	for(auto parent : parents) { // Insert in higher-level caches
-		auto mem = dynamic_cast<mem_t *>(parent.second);
+		auto mem = dynamic_cast<ram_t *>(parent.second);
 		if(mem == nullptr) continue;
 		events->push_back(
 			new mem_insert_event_t(
@@ -55,7 +55,7 @@ void cache_t::process(mem_read_event_t *event) {
 	}
 	for(auto parent : parents) { // Blocking
 		auto p = dynamic_cast<signal_handler_t *>(parent.second);
-		if(p != nullptr) continue;
+		if(p == nullptr) continue;
 		events->push_back(
 			new ready_event_t(
 				p, event->data, clock.get() + read_latency, event));
@@ -69,7 +69,7 @@ void cache_t::process(mem_write_event_t *event) {
 	std::cout << "	write_miss" << std::endl;
 #endif
 		for(auto child : children) {
-			auto mem = dynamic_cast<mem_t *>(child.second);
+			auto mem = dynamic_cast<ram_t *>(child.second);
 			if(mem == nullptr) continue;
 			events->push_back(
 				new mem_write_event_t(
@@ -77,7 +77,7 @@ void cache_t::process(mem_write_event_t *event) {
 		}
 		for(auto parent : parents) { // Blocking
 			auto p = dynamic_cast<signal_handler_t *>(parent.second);
-			if(p != nullptr) continue;
+			if(p == nullptr) continue;
 			events->push_back(
 				new stall_event_t(
 					p, event->data, clock.get() + write_latency, event));
@@ -85,7 +85,7 @@ void cache_t::process(mem_write_event_t *event) {
 		return;
 	}
 	for(auto parent : parents) { // Insert in higher-level caches
-		auto mem = dynamic_cast<mem_t *>(parent.second);
+		auto mem = dynamic_cast<ram_t *>(parent.second);
 		if(mem == nullptr) continue;
 		events->push_back(
 			new mem_insert_event_t(
@@ -93,7 +93,7 @@ void cache_t::process(mem_write_event_t *event) {
 	}
 	for(auto parent : parents) { // Blocking
 		auto p = dynamic_cast<signal_handler_t *>(parent.second);
-		if(p != nullptr) continue;
+		if(p == nullptr) continue;
 		events->push_back(
 			new ready_event_t(
 				p, event->data, clock.get() + write_latency, event));
@@ -112,7 +112,7 @@ void cache_t::process(mem_insert_event_t *event) {
 	data[id] = event->data * tag_mask; // record new element in cache
 	for(auto parent : parents) { // Blocking
 		auto p = dynamic_cast<signal_handler_t *>(parent.second);
-		if(p != nullptr) continue;
+		if(p == nullptr) continue;
 		events->push_back(
 			new ready_event_t(
 				p, event->data, clock.get() + invalid_latency, event));
@@ -140,7 +140,7 @@ void cache_t::process(ready_event_t *event) {
 	TIME_VIOLATION_CHECK
 	for(auto parent : parents) {
 		auto p = dynamic_cast<signal_handler_t *>(parent.second);
-		if(p != nullptr) continue;
+		if(p == nullptr) continue;
 		events->push_back(
 			new ready_event_t(p, event->data, clock.get() + 1, event));
 	}

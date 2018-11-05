@@ -6,6 +6,10 @@
 #include "components.h"
 #include "mem_event.h"
 #include "core_event.h"
+#include "signal_event.h"
+
+#define EVENT_LIMIT_ENABLE 1
+#define EVENT_LIMIT 10
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
 	: tracer_impl_t(_config, _elf) {
@@ -24,9 +28,9 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 		} else if(it["type"].string_value().compare("mem") == 0) {
 			assert_msg(it["model"].is_string(), "No mem model");
 			assert_msg(it["name"].is_string(), "No name");
-			assert_msg(mem_type_map.find(it["model"].string_value()) 
-				!= mem_type_map.end(), "Invalid mem model");
-			auto mem = mem_type_map.at(it["model"].string_value())(
+			assert_msg(ram_type_map.find(it["model"].string_value()) 
+				!= ram_type_map.end(), "Invalid mem model");
+			ram_t *mem = ram_type_map.at(it["model"].string_value())(
 				it["name"].string_value(), it, &events);
 			components.insert({it["name"].string_value(), mem});
 		}
@@ -54,7 +58,9 @@ void time_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 	auto shared_ws = shared_ptr_t<working_set_t>(new working_set_t(ws));
 	auto timed_insn = new timed_insn_t(shared_ws, opc, insn);
 	core->buffer_insn(timed_insn);
-	while(!events.ready() && !events.empty()) {
+	uint32_t event_limit = EVENT_LIMIT;
+	while(!events.ready() && !events.empty() && 
+		(event_limit-- || !EVENT_LIMIT_ENABLE)) {
 		event_base_t *e = events.pop_back();
 		e->handle();
 		if(e->ready_gc) events.mark_event(e);

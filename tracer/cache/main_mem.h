@@ -1,11 +1,12 @@
 #ifndef MAIN_MEM_H
 #define MAIN_MEM_H
 
-#include "mem.h"
+#include "ram.h"
 
-class main_mem_t: public mem_t {
+class main_ram_t: public ram_t {
 public:
-	main_mem_t(std::string _name, io::json _config, event_list_t *_events);	
+	main_ram_t(std::string _name, io::json _config, event_list_t *_events);	
+	virtual ~main_ram_t() {}
 	void process(mem_read_event_t *event);
 	void process(mem_write_event_t *event);
 	void process(mem_insert_event_t *event) {}

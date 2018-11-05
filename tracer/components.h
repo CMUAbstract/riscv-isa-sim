@@ -5,22 +5,27 @@
 // #include "cores/simple_core.h"
 #include "cores/si3stage_core.h"
 
-#include "mem.h"
-// #include "cache/simple_mem.h"
+#include "ram.h"
+// #include "cache/simple_ram.h"
 #include "cache/cache.h"
 #include "cache/main_mem.h"
+
+template<typename T, typename K> 
+T* create_component(std::string name, io::json config, event_list_t *events) {
+	return new K(name, config, events);
+}
 
 const std::map<std::string, core_t*(*)(std::string name, io::json, event_list_t *)> 
 core_type_map = {
 	// {"simple_core", &create_core<simple_core_t>},
-	{"si3stage_core", &create_core<si3stage_core_t>}
+	{"si3stage_core", &create_component<core_t, si3stage_core_t>}
 };
 
-const std::map<std::string, mem_t*(*)(std::string name, io::json, event_list_t *)> 
-mem_type_map = {
-	// {"simple_mem", &create_mem<simple_mem_t>},
-	{"cache", &create_mem<cache_t>},
-	{"main", &create_mem<main_mem_t>}
+const std::map<std::string, ram_t*(*)(std::string name, io::json, event_list_t *)> 
+ram_type_map = {
+	// {"simple_mem", &create_mem<simple_ram_t>},
+	{"cache", &create_component<ram_t, cache_t>},
+	{"main", &create_component<ram_t, main_ram_t>}
 };
 
 #endif

@@ -1,21 +1,22 @@
 #ifndef CACHE_H
 #define CACHE_H
 
-#include "mem.h"
+#include "ram.h"
 
 #include <vector>
 
 class repl_policy_t;
 class mem_event_t;
-class cache_t: public mem_t {
+class cache_t: public ram_t {
 public:
 	cache_t(std::string _name, io::json _config, event_list_t *_events);
 	cache_t(std::string _name, uint32_t _lines, uint32_t _sets, event_list_t *_events)
-		: mem_t(_name, nullptr, _events), lines(_lines), sets(_sets) { init(); }
+		: ram_t(_name, nullptr, _events), lines(_lines), sets(_sets) { init(); }
 	cache_t(std::string _name, uint32_t _lines, uint32_t _sets, 
 		repl_policy_t *_repl_policy, event_list_t *_events)
-		: mem_t(_name, nullptr, _events), lines(_lines), sets(_sets), 
+		: ram_t(_name, nullptr, _events), lines(_lines), sets(_sets), 
 		repl_policy(_repl_policy) { init(); }
+	virtual ~cache_t() {}
 	void set(repl_policy_t *_repl_policy) { repl_policy = _repl_policy; }
 	void process(mem_read_event_t *event);
 	void process(mem_write_event_t *event);

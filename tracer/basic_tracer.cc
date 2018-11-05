@@ -6,7 +6,7 @@
 
 #define SIGN_EXTEND(v) (0xFFFFFFFF00000000 | v)
 
-void basic_mem_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+void basic_ram_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 	for(auto loc : ws->input.locs) {
 		auto it = tracked_locations.find(loc);
 		if(it == tracked_locations.end()) {
@@ -29,7 +29,7 @@ void basic_mem_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) 
 	}
 }
 
-void basic_mem_tracer_t::tabulate() {
+void basic_ram_tracer_t::tabulate() {
 	std::map<std::string, region_t> symbols;
 	std::map<std::string, region_t> sections;
 	for(auto sym : elf->get_symbols()) {
@@ -70,10 +70,10 @@ void basic_mem_tracer_t::tabulate() {
 	}
 }
 
-std::string basic_mem_tracer_t::dump() {
+std::string basic_ram_tracer_t::dump() {
 	return io::json(tracked_locations).dump();
 }
 
-basic_mem_tracer_t::~basic_mem_tracer_t() {
+basic_ram_tracer_t::~basic_ram_tracer_t() {
 	for(auto it : tracked_locations) delete it.second;
 }

@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "log.h"
-#include "mem.h"
+#include "ram.h"
 #include "working_set.h"
 #include "core_event.h"
 #include "mem_event.h"
@@ -16,7 +16,7 @@ void si3stage_core_t::init() {
 	std::string icache_id;
 	JSON_CHECK(string, config["icache"], icache_id);
 	assert_msg(children.find(icache_id) != children.end(), "icache not found");
-	icache = static_cast<mem_t *>(children[icache_id]);
+	icache = static_cast<ram_t *>(children[icache_id]);
 }
 
 void si3stage_core_t::buffer_insn(timed_insn_t *insn) {
@@ -65,7 +65,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 	action_set_t action_set;
 	for(auto it : event->data.ws->input.locs) {
 		for(auto child : children) {
-			auto mem = dynamic_cast<mem_t *>(child.second);
+			auto mem = dynamic_cast<ram_t *>(child.second);
 			if(mem == nullptr) continue;
 			action_set.locs.push_back(it);
 			events->push_back(new mem_read_event_t(mem, it, clock.get(), event));
@@ -73,7 +73,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 	}
 	for(auto it : event->data.ws->output.locs) {
 		for(auto child : children) {
-			auto mem = dynamic_cast<mem_t *>(child.second);
+			auto mem = dynamic_cast<ram_t *>(child.second);
 			if(mem == nullptr) continue;
 			action_set.locs.push_back(it);
 			events->push_back(new mem_write_event_t(mem, it, clock.get(), event));
@@ -89,9 +89,14 @@ void si3stage_core_t::process(si3stage_core_t::pending_event_t *event) {
 	TIME_VIOLATION_CHECK
 	if(!event->data.empty()) {
 		// Recheck during next cycle
+#if 1
+		std::cout << "	re-queuing pending event (" << event->next_event->to_string();
+		std::cout << ")" << std::endl;
+#endif
 		event->cycle = clock.get() + 1;
 		event->ready_gc = false;
 		events->push_back(event);
+		return;
 	}
 	event->next_event->cycle = clock.get() + 1;
 	event->ready_gc = true;
@@ -118,5 +123,4 @@ void si3stage_core_t::process(ready_event_t *event) {
 
 void si3stage_core_t::process(stall_event_t *event) {
 	TIME_VIOLATION_CHECK
-	std::cout << "HERE" << std::endl;
 }

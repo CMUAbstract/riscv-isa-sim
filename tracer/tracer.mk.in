@@ -8,6 +8,8 @@ tracer_hdrs = \
         time_tracer.h \
         event.h \
         component.h \
+        core.h \
+        ram.h \
         signal.h \
         log.h \
         misc.h \

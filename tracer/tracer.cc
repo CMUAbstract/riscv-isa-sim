@@ -18,7 +18,7 @@ template<typename T> tracer_t* create_tracer(io::json config, elfloader_t *elf) 
 }
 
 std::map<std::string, tracer_t*(*)(io::json, elfloader_t *)> tracer_type_map = {
-	{"basic_mem_tracer", &create_tracer<basic_mem_tracer_t>},
+	{"basic_ram_tracer", &create_tracer<basic_ram_tracer_t>},
 	{"insn_curve_tracer", &create_tracer<insn_curve_tracer_t>},
 	{"miss_curve_tracer", &create_tracer<miss_curve_tracer_t>},
 	{"perf_tracer", &create_tracer<perf_tracer_t>},

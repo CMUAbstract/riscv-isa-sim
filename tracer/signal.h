@@ -2,14 +2,14 @@
 #define SIGNAL_H
 
 #include "log.h"
-#include "event.h"
 
 template <typename T>
 struct signal_event_t;
 struct ready_event_t;
 struct stall_event_t;
-class signal_handler_t: virtual event_handler_t {
+class signal_handler_t {
 public:
+	virtual ~signal_handler_t() {}
 	virtual void process(stall_event_t *event) = 0;
 	virtual void process(ready_event_t *event) = 0;
 	template <typename T>

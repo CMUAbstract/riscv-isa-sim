@@ -5,7 +5,7 @@
 
 #include "event.h"
 #include "core.h"
-#include "mem.h"
+#include "ram.h"
 
 struct reg_read_event_t: public event_t<core_t, reg_t> {
 	using event_t<core_t, reg_t>::event_t;
@@ -27,8 +27,8 @@ struct reg_write_event_t: public event_t<core_t, reg_t> {
 	HANDLER;
 };
 
-struct mem_event_t: public event_t<mem_t, addr_t> {
-	using event_t<mem_t, addr_t>::event_t;
+struct mem_event_t: public event_t<ram_t, addr_t> {
+	using event_t<ram_t, addr_t>::event_t;
 	std::string to_string() {
 		std::ostringstream os;
 		os << " (0x" << std::hex << data << ")"; 

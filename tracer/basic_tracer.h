@@ -6,11 +6,11 @@
 #include <stat/stat.h>
 
 // Tracks reads and writes to locations in memory
-class basic_mem_tracer_t : public tracer_impl_t {
+class basic_ram_tracer_t : public tracer_impl_t {
 public:
-	basic_mem_tracer_t(io::json _config, elfloader_t *_elf)
+	basic_ram_tracer_t(io::json _config, elfloader_t *_elf)
 		: tracer_impl_t(_config, _elf) {}
-	~basic_mem_tracer_t();
+	~basic_ram_tracer_t();
 	bool interested(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 		return true;
 	}
