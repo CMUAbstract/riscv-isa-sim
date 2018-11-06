@@ -24,6 +24,7 @@ public:
 		clock.reset();		
 	}
 	virtual void init() {}
+	virtual void reset() {}
 	virtual ~component_t() {}
 	void add_child(std::string name, component_t *child) {
 		children.insert({name, child});

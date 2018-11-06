@@ -4,7 +4,7 @@
 #include <fesvr/memif.h>
 
 #include "component.h"
-#include "signal.h"
+#include "signal_handler.h"
 
 struct mem_read_event_t;
 struct mem_write_event_t;

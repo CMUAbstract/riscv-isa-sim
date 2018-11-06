@@ -10,7 +10,7 @@ tracer_hdrs = \
         component.h \
         core.h \
         ram.h \
-        signal.h \
+        signal_handler.h \
         log.h \
         misc.h \
         smartptr.h \

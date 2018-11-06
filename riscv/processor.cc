@@ -849,6 +849,6 @@ void processor_t::trigger_updated()
   }
 }
 
-void processor_t::register_tracer(tracer_t *t) {
+void processor_t::register_tracer(core_tracer_t *t) {
   tracer = t;
 }

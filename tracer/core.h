@@ -6,7 +6,7 @@
 #include <common/decode.h>
 
 #include "component.h"
-#include "signal.h"
+#include "signal_handler.h"
 
 struct timed_insn_t;
 struct insn_fetch_event_t;

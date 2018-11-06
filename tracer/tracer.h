@@ -12,14 +12,32 @@
 #include <common/decode.h>
 #include <io/io.h>
 
-class working_set_t;
+#include "working_set.h"
+#include "smartptr.h"
+
 class tracer_t {
+public:
+	typedef std::vector<shared_ptr_t<working_set_t>> vec_ws_t;
+	class diff_list_t {
+	public:
+		diff_list_t() {}
+		diff_list_t(const diff_list_t &d, size_t offset) 
+			: diffs(d.begin() + offset, d.end()) {}
+		void push_back(shared_ptr_t<working_set_t> ws) { diffs.push_back(ws); }
+		vec_ws_t::iterator begin() { return diffs.begin(); }
+		vec_ws_t::const_iterator begin() const { return diffs.begin(); }
+		vec_ws_t::iterator end() { return diffs.end(); }
+		vec_ws_t::const_iterator end() const { return diffs.end(); }
+	private:
+		std::vector<shared_ptr_t<working_set_t>> diffs;
+	};
 public:
 	tracer_t() {}
 	virtual ~tracer_t() {}
 	virtual bool interested(working_set_t *ws, insn_bits_t opc, insn_t insn) = 0;
 	virtual void trace(working_set_t *ws, insn_bits_t opc, insn_t insn) = 0;
 	virtual void tabulate() = 0;
+	virtual void reset(shared_ptr_t<diff_list_t> diffs) {}
 	virtual std::string dump() = 0;
 };
 
@@ -43,13 +61,17 @@ public:
 				return true;
 		return false;
 	}
-	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn){
+	virtual void trace(working_set_t *ws, insn_bits_t opc, insn_t insn){
 		for (auto it = list.begin(); it != list.end(); ++it)
 			(*it)->trace(ws, opc, insn);
 	}
 	void tabulate() {
 		for (auto it = list.begin(); it != list.end(); ++it)
 			(*it)->tabulate();
+	}
+	void reset(shared_ptr_t<diff_list_t> diffs) {
+		for (auto it = list.begin(); it != list.end(); ++it)
+			(*it)->reset(diffs);
 	}
 	std::string dump() {
 		std::string str;
@@ -68,21 +90,16 @@ class core_tracer_t: public tracer_list_t {
 public:
 	core_tracer_t(std::string _config, elfloader_t *_elf);
 	~core_tracer_t() {}
+	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn){
+		diffs.push_back(shared_ptr_t<working_set_t>(new working_set_t(ws)));
+		tracer_list_t::trace(ws, opc, insn);
+	}
+	shared_ptr_t<diff_list_t> get_diff(reg_t minstret) {
+		return shared_ptr_t<diff_list_t>(new diff_list_t(diffs, minstret));
+	}
 private:
 	void init();
+	diff_list_t diffs;
 };
-
-/*class printer_t {
-public:
-	printer_t(std::string outdir, std::string fn) {
-		dealloc = true;
-		os = new std::ofstream(outdir + "/" + fn); 
-	}
-	printer_t() { os = &std::cerr; }
-	~printer_t() { if(dealloc) delete os; }
-protected:
-	std::ostream *os;
-	bool dealloc = false;
-}; */
 
 #endif

@@ -34,34 +34,6 @@ processor_t *sim_t::get_core(const std::string& i)
   return get_core(p);
 }
 
-static std::string readline(int fd)
-{
-  struct termios tios;
-  bool noncanonical = tcgetattr(fd, &tios) == 0 && (tios.c_lflag & ICANON) == 0;
-
-  std::string s;
-  for (char ch; read(fd, &ch, 1) == 1; )
-  {
-    if (ch == '\x7f')
-    {
-      if (s.empty())
-        continue;
-      s.erase(s.end()-1);
-
-      if (noncanonical && write(fd, "\b \b", 3) != 3)
-        ; // shut up gcc
-    }
-    else if (noncanonical && write(fd, &ch, 1) != 1)
-      ; // shut up gcc
-
-    if (ch == '\n')
-      break;
-    if (ch != '\x7f')
-      s += ch;
-  }
-  return s;
-}
-
 int sim_t::trigger(std::string s) {
   if(s.size() == 0) {
     set_procs_debug(true);

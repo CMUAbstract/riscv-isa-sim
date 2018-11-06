@@ -4,7 +4,7 @@
 #include <sstream>
 
 #include "event.h"
-#include "signal.h"
+#include "signal_handler.h"
 
 template <typename T>
 struct signal_event_t: public event_t<signal_handler_t, T> {

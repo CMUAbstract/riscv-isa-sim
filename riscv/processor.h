@@ -14,7 +14,7 @@
 
 #include "debug_rom_defines.h"
 
-class tracer_t;
+class core_tracer_t;
 class processor_t;
 class mmu_t;
 typedef reg_t (*insn_func_t)(processor_t*, insn_t, reg_t);
@@ -303,8 +303,8 @@ public:
 
   void trigger_updated();
 
-  void register_tracer(tracer_t *t);
-  tracer_t* get_tracer(void) { return tracer; }
+  void register_tracer(core_tracer_t *t);
+  core_tracer_t* get_tracer(void) { return tracer; }
 
 private:
   simif_t* sim;
@@ -322,7 +322,7 @@ private:
 
   std::vector<insn_desc_t> instructions;
   std::map<reg_t,uint64_t> pc_histogram;
-  tracer_t *tracer;
+  core_tracer_t *tracer;
 
   static const size_t OPCODE_CACHE_SIZE = 8191;
   insn_desc_t opcode_cache[OPCODE_CACHE_SIZE];
