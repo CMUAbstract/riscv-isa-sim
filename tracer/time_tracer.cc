@@ -8,7 +8,7 @@
 #include "core_event.h"
 #include "signal_event.h"
 
-#define EVENT_LIMIT_ENABLE 1
+#define EVENT_LIMIT_ENABLE 0
 #define EVENT_LIMIT 10
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
@@ -63,10 +63,8 @@ void time_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 		(event_limit-- || !EVENT_LIMIT_ENABLE)) {
 		event_base_t *e = events.pop_back();
 		e->handle();
-		if(e->ready_gc) events.mark_event(e);
-		if(events.gc_size() > 20) events.gc();
+		if(e->ready_gc) delete e;
 	}
-	events.gc();
 }
 
 std::string time_tracer_t::dump() {

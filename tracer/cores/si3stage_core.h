@@ -1,7 +1,7 @@
 #ifndef SINGLE_ISSUE_3_STAGE_H
 #define SINGLE_ISSUE_3_STAGE_H
 
-#include <vector>
+#include <set>
 #include <sstream>
 
 #include <fesvr/memif.h>
@@ -20,7 +20,7 @@ private:
 		using event_t<si3stage_core_t, action_set_t>::event_t;	
 		std::string to_string() {
 			std::ostringstream os;
-			os << "pending_event (" << next_event->to_string() << ")"; 
+			os << "pending_event (" << cycle << ", " << next_event->to_string() << ")"; 
 			return os.str();
 		}
 		HANDLER;
@@ -40,7 +40,7 @@ public:
 	void process(pending_event_t *event);
 private:
 	ram_t *icache;
-	std::vector<pending_event_t *> pending_events;
+	std::set<pending_event_t *> pending_events;
 private:
 	void next_insn();
 };

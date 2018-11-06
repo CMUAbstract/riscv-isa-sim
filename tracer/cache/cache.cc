@@ -120,7 +120,7 @@ void cache_t::process(mem_insert_event_t *event) {
 }
 
 bool cache_t::access(mem_event_t *event) {
-	uint32_t set = event->data & set_mask;
+	uint32_t set = (event->data & set_mask) >> line_size;
 	uint32_t tag = event->data & tag_mask;
 	uint32_t set_size = lines / sets;
 #if 1

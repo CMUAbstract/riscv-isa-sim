@@ -28,7 +28,6 @@ void si3stage_core_t::next_insn() {
 	if(insns.size() >= 3) {
 		events->set_ready(false);
 		auto i = new insn_fetch_event_t(this, insns.front());
-		clock.inc();
 		i->cycle = clock.get();
 		delete *insns.begin();
 		insns.erase(insns.begin());
@@ -46,18 +45,18 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 	action_set.locs.push_back(event->data.ws->pc);
 	auto pending_event = new pending_event_t(this, action_set, clock.get() + 1);
 	pending_event->next_event = new insn_decode_event_t(this, &event->data);
-	pending_events.push_back(pending_event);
+	pending_events.insert(pending_event);
 	events->push_back(pending_event);
 }
 
 void si3stage_core_t::process(insn_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
-	next_insn();
 }
 
 // Does not yet include CSRs
 void si3stage_core_t::process(insn_decode_event_t *event) {
 	TIME_VIOLATION_CHECK
+	next_insn();
 	for(auto it : event->data.ws->input.regs)
 		events->push_back(new reg_read_event_t(this, it, clock.get()));
 	for(auto it : event->data.ws->output.regs)
@@ -81,7 +80,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 	}
 	auto pending_event = new pending_event_t(this, action_set, clock.get() + 1);
 	pending_event->next_event = new insn_retire_event_t(this, &event->data);
-	pending_events.push_back(pending_event);
+	pending_events.insert(pending_event);
 	events->push_back(pending_event);
 }
 
@@ -89,15 +88,12 @@ void si3stage_core_t::process(si3stage_core_t::pending_event_t *event) {
 	TIME_VIOLATION_CHECK
 	if(!event->data.empty()) {
 		// Recheck during next cycle
-#if 1
-		std::cout << "	re-queuing pending event (" << event->next_event->to_string();
-		std::cout << ")" << std::endl;
-#endif
 		event->cycle = clock.get() + 1;
 		event->ready_gc = false;
 		events->push_back(event);
 		return;
 	}
+	pending_events.erase(event);
 	event->next_event->cycle = clock.get() + 1;
 	event->ready_gc = true;
 	events->push_back(event->next_event);

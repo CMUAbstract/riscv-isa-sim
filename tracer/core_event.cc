@@ -16,6 +16,6 @@ timed_insn_t::timed_insn_t(timed_insn_t *_insn)
 
 std::string insn_event_t::to_string() {
 	std::ostringstream os;
-	os << " (0x" << std::hex << data.ws->pc << ")"; 
+	os << " (" << cycle << ", 0x" << std::hex << data.ws->pc << ")"; 
 	return os.str();
 }

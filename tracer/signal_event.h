@@ -15,7 +15,7 @@ struct ready_event_t: public signal_event_t<addr_t> {
 	using signal_event_t<addr_t>::signal_event_t;
 	std::string to_string() {
 		std::ostringstream os;
-		os << "mem_ready_event (0x" << std::hex << this->data << ")"; 
+		os << "mem_ready_event (" << cycle << ", 0x" << std::hex << this->data << ")"; 
 		return os.str();
 	}
 	HANDLER;
@@ -25,7 +25,7 @@ struct stall_event_t: public signal_event_t<addr_t> {
 	using signal_event_t<addr_t>::signal_event_t;
 	std::string to_string() {
 		std::ostringstream os;
-		os << "mem_stall_event (0x" << std::hex << this->data << ")"; 
+		os << "mem_stall_event (" << cycle << ", 0x" << std::hex << this->data << ")"; 
 		return os.str();
 	}
 	HANDLER;

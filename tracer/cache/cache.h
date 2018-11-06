@@ -30,7 +30,7 @@ protected:
 	uint32_t write_latency = 1;
 	uint32_t invalid_latency = 1;
 	uint32_t lines;
-	uint32_t line_size = 8; 
+	uint32_t line_size = 4; 
 	uint32_t sets;
 	uint32_t offset_mask;
 	uint32_t set_mask;

@@ -7,7 +7,8 @@
 #include <stat/stat.h>
 
 #define TIME_VIOLATION_CHECK 													\
-	assert_msg(event->cycle >= clock.get(), "Timing violation");				\
+	assert_msg(event->cycle >= clock.get(), 									\
+		"Timing violation e%lu < c%lu", event->cycle, clock.get());				\
 	clock.set(event->cycle);
 
 #define GC_EVENT(e) MARK_EVENT(e)
@@ -32,6 +33,7 @@ public:
 	}
 	std::string get_name() { return name; }
 	io::json get_config() { return config; }
+	cycle_t get_clock() { return clock.get(); }
 protected:
 	std::string name;
 	io::json config;

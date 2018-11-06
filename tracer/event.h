@@ -5,6 +5,7 @@
 #include <vector>
 #include <set>
 #include <algorithm>
+#include <iostream>
 
 #include "misc.h"
 
@@ -30,10 +31,11 @@ struct event_base_t {
 		auto handler = dynamic_cast<component_t *>(this->handler);				\
 		if(handler != nullptr) {												\
 			std::cout << handler->get_name();									\
+			std::cout << " (" << handler->get_clock() << ")=> ";				\
 		} else {																\
 			std::cout << "generic";												\
+			std::cout << " => ";												\
 		}																		\
-		std::cout << " => ";													\
 		std::cout << this->to_string();											\
 		std::cout << std::endl;													\
 		this->handler->process(this);											\
@@ -78,6 +80,9 @@ struct event_comparator_t {
 };
 
 struct event_list_t {
+	~event_list_t() {
+		for(auto e: events) delete e;
+	}
 	void push_back(event_base_t *e) {
 		events.push_back(e);
 		std::push_heap(events.begin(), events.end(), event_comparator_t()); 
@@ -94,15 +99,8 @@ struct event_list_t {
 	bool ready() { return ready_flag; }
 	void set_ready() { ready_flag = true; }
 	void set_ready(bool val) { ready_flag = val; }
-	void mark_event(event_base_t *event) { marked_events.push_back(event); }
-	size_t gc_size(void) { return marked_events.size(); }
-	void gc(void) { 
-		for(auto it : marked_events) delete it; 
-		marked_events.clear();
-	}
 private:
 	std::vector<event_base_t *> events;
-	std::vector<event_base_t *> marked_events;
 	bool ready_flag = false;
 };
 

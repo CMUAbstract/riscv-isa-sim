@@ -11,7 +11,7 @@ struct reg_read_event_t: public event_t<core_t, reg_t> {
 	using event_t<core_t, reg_t>::event_t;
 	std::string to_string() {
 		std::ostringstream os;
-		os << "reg_read_event (" << data << ")"; 
+		os << "reg_read_event (" << cycle << "," << data << ")"; 
 		return os.str();
 	}
 	HANDLER;
@@ -21,7 +21,7 @@ struct reg_write_event_t: public event_t<core_t, reg_t> {
 	using event_t<core_t, reg_t>::event_t;
 	std::string to_string() {
 		std::ostringstream os;
-		os << "reg_write_event (" << data << ")"; 
+		os << "reg_write_event (" << cycle << "," << data << ")"; 
 		return os.str();
 	}
 	HANDLER;
@@ -31,7 +31,7 @@ struct mem_event_t: public event_t<ram_t, addr_t> {
 	using event_t<ram_t, addr_t>::event_t;
 	std::string to_string() {
 		std::ostringstream os;
-		os << " (0x" << std::hex << data << ")"; 
+		os << " (" << cycle << ", 0x" << std::hex << data << ")"; 
 		return os.str();
 	}
 };
