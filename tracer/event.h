@@ -25,7 +25,7 @@ struct event_base_t {
 	bool ready_gc = true;
 };
 
-#if 1
+#if 0
 #define HANDLER 																\
 	void handle() { 															\
 		auto handler = dynamic_cast<component_t *>(this->handler);				\

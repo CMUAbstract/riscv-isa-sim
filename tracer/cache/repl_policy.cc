@@ -22,5 +22,5 @@ uint32_t lru_repl_policy_t::rank(mem_event_t *req, std::vector<repl_cand_t> *can
 }
 
 void lru_repl_policy_t::replaced(uint32_t id) {
-	timestamps[id] = 0;
+	timestamps[id] = timestamp;
 }

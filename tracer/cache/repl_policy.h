@@ -1,8 +1,8 @@
 #ifndef REPL_POLICY_H
 #define REPL_POLICY_H
 
-#include <tuple>
 #include <vector>
+#include <map>
 
 struct repl_cand_t {
 	repl_cand_t() : id(0) {}
@@ -34,6 +34,16 @@ public:
 protected:
 	std::vector<uint32_t> timestamps;
 	uint32_t timestamp;
+};
+
+template <typename T>
+repl_policy_t *create_repl_policy(uint32_t _lines) {
+	return new T(_lines);
+}
+
+const std::map<std::string, repl_policy_t*(*)(uint32_t _lines)> 
+repl_policy_type_map = {
+	{"lru", &create_repl_policy<lru_repl_policy_t>}
 };
 
 #endif
