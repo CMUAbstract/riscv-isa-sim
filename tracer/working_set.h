@@ -93,21 +93,21 @@ public:
 		return addr;
 	}
 	template <typename T>
-	std::tuple<addr_t, T> log_output_loc(addr_t addr, T value) {
+	addr_t log_output_loc(addr_t addr, T value) {
 		output.locs.insert(addr);
 		uint8_t *bytes = (uint8_t *)&value;
 		for(size_t i = 0; i < sizeof(T); i++)
 			diff.locs.push_back(std::make_tuple(addr + i, bytes[i]));
-		return std::make_tuple(addr, value);
+		return addr;
 	}
 	size_t log_input_csr(size_t reg) {
 		input.csrs.insert(reg);
 		return reg;
 	}
-	std::tuple<size_t, reg_t> log_output_csr(size_t reg, reg_t value) {
+	size_t log_output_csr(size_t reg, reg_t value) {
 		input.csrs.insert(reg);
 		diff.csrs.push_back(std::make_tuple(reg, value));
-		return std::make_tuple(reg, value);
+		return reg;
 	}
 };
 

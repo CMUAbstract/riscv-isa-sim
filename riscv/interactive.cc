@@ -65,6 +65,8 @@ void sim_t::setup_interactive()
   inter_funcs["run"] = &sim_t::interactive_run_noisy;
   inter_funcs["r"] = inter_funcs["run"];
   inter_funcs["rs"] = &sim_t::interactive_run_silent;
+  inter_funcs["step"] = &sim_t::interactive_step;
+  inter_funcs["reverse"] = &sim_t::interactive_reverse;
   inter_funcs["reg"] = &sim_t::interactive_reg;
   inter_funcs["freg"] = &sim_t::interactive_freg;
   inter_funcs["fregs"] = &sim_t::interactive_fregs;
@@ -103,6 +105,8 @@ void sim_t::interactive_help(const std::string& cmd, const std::vector<std::stri
     "run [count]                     # Resume noisy execution (until CTRL+C, or [count] insns)\n"
     "r [count]                         Alias for run\n"
     "rs [count]                      # Resume silent execution (until CTRL+C, or [count] insns)\n"
+    "step [count]                    # Resume noisy execution (until [count] insns)\n"
+    "reverse [count]                 # Reverse noisy execution (until [count] insns)\n"
     "count <core>                    # Print instruction count\n"
     "reset                           # Reset processes\n"
     "quit                            # End the simulation\n"
@@ -130,6 +134,24 @@ void sim_t::interactive_run(const std::string& cmd, const std::vector<std::strin
   set_procs_debug(noisy);
   for (size_t i = 0; i < steps && !ctrlc_pressed && !done(); i++)
     step(1);
+}
+
+void sim_t::interactive_step(const std::string& cmd, const std::vector<std::string>& args) {
+  std::vector<std::string> processed_args(args);
+  if(!processed_args.size()) {
+    processed_args.push_back("1");
+  }
+  interactive_run(cmd, processed_args, true);
+}
+
+void sim_t::interactive_reverse(const std::string& cmd, const std::vector<std::string>& args) {
+  if(args.size() == 1) {
+    reverse(atoll(args[0].c_str())); 
+  } else if(args.size() == 2) {
+    reverse(atoll(args[0].c_str()), atoll(args[1].c_str()));
+  } else {
+    reverse(1);
+  }
 }
 
 void sim_t::interactive_quit(const std::string& cmd, const std::vector<std::string>& args)

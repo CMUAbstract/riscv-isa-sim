@@ -4,6 +4,7 @@
 #include "mmu.h"
 #include <cassert>
 
+#include "tracer/tracer.h"
 
 static void commit_log_stash_privilege(processor_t* p)
 {
@@ -247,5 +248,29 @@ void processor_t::step(size_t n)
 
     state.minstret += instret;
     n -= instret;
+  }
+}
+
+void processor_t::reverse_step(size_t n) {
+  shared_ptr_t<core_tracer_t::diff_list_t> diff = tracer->get_diff(n);
+  for(auto it = diff->rbegin(); it < diff->rend(); ++it) {
+    for(auto reg : (*it)->diff.regs) {
+      state.XPR.write(std::get<0>(reg), std::get<1>(reg)); 
+    }
+    for(auto freg : (*it)->diff.fregs) {
+      state.FPR.write(std::get<0>(freg), std::get<1>(freg)); 
+    }
+    for(auto vreg : (*it)->diff.vregs) {
+      state.VPR.write(std::get<0>(vreg), std::get<1>(vreg), std::get<2>(vreg)); 
+    }
+    for(auto csr : (*it)->diff.csrs) {
+      set_csr(std::get<0>(csr), std::get<1>(csr)); 
+    }
+    for(auto loc : (*it)->diff.locs) {
+      mmu->store_uint8(std::get<0>(loc), std::get<1>(loc)); 
+    }
+    state.pc = (*it)->pc;
+    last_pc = 0;
+    executions = 1;
   }
 }

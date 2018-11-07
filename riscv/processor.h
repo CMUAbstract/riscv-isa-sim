@@ -177,6 +177,7 @@ public:
   void set_histogram(bool value);
   void reset();
   void step(size_t n); // run for n cycles
+  void reverse_step(size_t n); 
   void set_csr(std::tuple<int, reg_t> t) { set_csr(std::get<0>(t), std::get<1>(t)); }
   void set_csr(int which, reg_t val);
   reg_t get_csr(int which);

@@ -240,8 +240,8 @@ void sim_t::reset()
 
 void sim_t::inter_reset() {
   reg_t zero = 0;
-  for (size_t i = 0; i < procs.size(); i++) {
-    for (size_t j = 0; j < RAM_SIZE; j += sizeof(uint64_t)) {
+  for(size_t i = 0; i < procs.size(); i++) {
+    for(size_t j = 0; j < RAM_SIZE; j += sizeof(uint64_t)) {
       addr_t addr = RAM_BASE + j; 
       procs[i]->get_mmu()->store_uint64(addr, zero);
     }
@@ -249,6 +249,20 @@ void sim_t::inter_reset() {
     procs[i]->reset();
   }
   debug_mmu->flush_tlb();
+}
+
+void sim_t::reverse(size_t n) {
+  for(size_t i = 0; i < procs.size(); i++) {
+    procs[i]->reverse_step(n);
+    fprintf(stderr, "Core %lu: PC @ 0x%016" PRIx64 "\n", 
+      i, procs[i]->get_state()->pc);
+  }
+}
+
+void sim_t::reverse(size_t n, size_t p) {
+  procs[p]->reverse_step(n);
+  fprintf(stderr, "Core %lu: PC @ 0x%016" PRIx64 "\n", 
+    p, procs[p]->get_state()->pc);
 }
 
 void sim_t::idle()
