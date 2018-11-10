@@ -11,7 +11,7 @@
 class insn_curve_tracer_t : public tracer_impl_t {
 public:
 	insn_curve_tracer_t(io::json _config, elfloader_t *_elf)
-		: tracer_impl_t(_config, _elf) {
+		: tracer_impl_t("insn_curve_tracer", _config, _elf) {
 		init();
 	}
 	~insn_curve_tracer_t();
@@ -20,7 +20,7 @@ public:
 	}
 	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn);
 	void tabulate() {}
-	std::string dump();
+	io::json to_json() const { return io::json(histogram); }
 protected:
 	void init(void);
 	std::map<addr_t, reg_t> tracked_locations;
@@ -34,7 +34,9 @@ private:
 class miss_curve_tracer_t : public insn_curve_tracer_t {
 public:
 	miss_curve_tracer_t(io::json _config, elfloader_t *_elf) 
-		: insn_curve_tracer_t(_config, _elf) {}
+		: insn_curve_tracer_t(_config, _elf) {
+		name = "miss_curve_tracer"; 
+	}
 	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn);
 private:
 	reg_t maccess = 0;

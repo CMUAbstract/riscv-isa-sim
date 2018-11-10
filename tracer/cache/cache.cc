@@ -13,7 +13,9 @@
 #define ACCESS_LIMIT_ENABLE 0
 
 cache_t::cache_t(std::string _name, io::json _config, event_list_t *_events)
-	: ram_t(_name, _config, _events), accesses("accesses", "") {
+	: ram_t(_name, _config, _events), accesses("accesses"), inserts("inserts"),
+	read_misses("read_misses"), write_misses("write_misses"),
+	read_hits("read_hits"), write_hits("write_hits") {
 	JSON_CHECK(int, config["lines"], lines, 64);
 	JSON_CHECK(int, config["line_size"], line_size);
 	JSON_CHECK(int, config["sets"], sets, 8);
@@ -34,7 +36,13 @@ cache_t::cache_t(std::string _name, io::json _config, event_list_t *_events)
 	set_mask = (sets - 1) << set_offset;
 	tag_mask = ~(offset_mask | set_mask);
 	data.resize(lines);
+	// Stats
 	accesses.reset();
+	inserts.reset();
+	read_misses.reset();
+	write_misses.reset();
+	read_hits.reset();
+	write_hits.reset();
 #if 0
 	std::cout << name << std::endl;
 	std::cout << "offset_mask: " << std::bitset<32>(offset_mask) << std::endl;
@@ -46,9 +54,14 @@ cache_t::cache_t(std::string _name, io::json _config, event_list_t *_events)
 #endif
 }
 
+io::json cache_t::to_json() const {
+	return component_t::to_json();
+}
+
 void cache_t::process(mem_read_event_t *event) {
 	TIME_VIOLATION_CHECK
 	if(!access(event)) { // Read Miss
+		read_misses.inc();
 #if 0
 	std::cout << "	read_miss" << std::endl;
 #endif
@@ -68,6 +81,7 @@ void cache_t::process(mem_read_event_t *event) {
 		}
 		return;
 	}
+	read_hits.inc();
 	for(auto parent : parents) { // Insert in higher-level caches
 		auto mem = dynamic_cast<ram_t *>(parent.second);
 		if(mem == nullptr) continue;
@@ -87,6 +101,7 @@ void cache_t::process(mem_read_event_t *event) {
 void cache_t::process(mem_write_event_t *event) {
 	TIME_VIOLATION_CHECK
 	if(!access(event)) { // Write Miss
+		write_misses.inc();
 #if 0
 	std::cout << "	write_miss" << std::endl;
 #endif
@@ -106,6 +121,7 @@ void cache_t::process(mem_write_event_t *event) {
 		}
 		return;
 	}
+	write_hits.inc();
 	for(auto parent : parents) { // Insert in higher-level caches
 		auto mem = dynamic_cast<ram_t *>(parent.second);
 		if(mem == nullptr) continue;
@@ -124,6 +140,7 @@ void cache_t::process(mem_write_event_t *event) {
 
 void cache_t::process(mem_insert_event_t *event) {
 	TIME_VIOLATION_CHECK
+	inserts.inc();
 	uint32_t set = get_set(event->data);
 	uint32_t tag = get_tag(event->data);
 	std::vector<repl_cand_t> cands; // Create a set of candidates

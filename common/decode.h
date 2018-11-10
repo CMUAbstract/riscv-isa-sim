@@ -21,6 +21,7 @@
 #include <string.h>
 #include <strings.h>
 
+typedef uint64_t cycle_t;
 typedef int64_t sreg_t;
 typedef uint64_t reg_t;
 

@@ -17,6 +17,9 @@
 #include <algorithm>
 
 #include <tracer/tracer.h>
+#include <tracer/except.h>
+
+#include "sim.h"
 
 #undef STATE
 #define STATE state
@@ -159,6 +162,22 @@ void processor_t::reset()
 
   if (sim)
     sim->proc_reset(id);
+
+  if(tracer != nullptr) tracer->reset();
+}
+
+void processor_t::handle() {
+  try {
+    throw;
+  } catch(intermittent_except_t& except) {
+    std::cout << state.minstret << " <=> " << except.minstret << std::endl;
+    assert(state.minstret >= except.minstret);
+    tracer->reset(except.minstret);
+    reverse_step(state.minstret - except.minstret);
+    sim->inter_reset();
+  } catch(...) {
+    throw;
+  }
 }
 
 // Count number of contiguous 0 bits starting from the LSB.

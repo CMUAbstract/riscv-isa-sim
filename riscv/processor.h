@@ -175,6 +175,7 @@ public:
 
   void set_debug(bool value);
   void set_histogram(bool value);
+  void handle();
   void reset();
   void step(size_t n); // run for n cycles
   void reverse_step(size_t n); 

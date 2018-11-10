@@ -12,10 +12,6 @@ void insn_tracer_t::register_insn_types(void) {
 	#undef DEFINE_INSN_STAT
 }
 
-std::string perf_tracer_t::dump() {
-	return io::json(mcycles).dump();
-}
-
 void perf_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 	// reg_t vl = p->get_state()->vl;
 	switch(m[opc]) {
@@ -54,8 +50,4 @@ void energy_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 		// case VARITH1: return menergy.inc(control_energy + vl * varith1_energy);
 		default: break;
 	}
-}
-
-std::string energy_tracer_t::dump() {
-	return io::json(menergy).dump();
 }

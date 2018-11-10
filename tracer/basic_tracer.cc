@@ -70,10 +70,7 @@ void basic_ram_tracer_t::tabulate() {
 	}
 }
 
-std::string basic_ram_tracer_t::dump() {
-	return io::json(tracked_locations).dump();
-}
-
 basic_ram_tracer_t::~basic_ram_tracer_t() {
+	dump();
 	for(auto it : tracked_locations) delete it.second;
 }

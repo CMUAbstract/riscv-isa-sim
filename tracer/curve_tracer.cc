@@ -58,11 +58,8 @@ void insn_curve_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn)
 	}
 }
 
-std::string insn_curve_tracer_t::dump() {
-	return io::json(histogram).dump();
-}
-
 insn_curve_tracer_t::~insn_curve_tracer_t() {
+	dump();
 	for(auto it : histogram) delete it.second;
 }
 

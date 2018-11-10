@@ -13,6 +13,8 @@ class cache_t: public ram_t {
 public:
 	cache_t(std::string _name, io::json _config, event_list_t *_events);
 	virtual ~cache_t() {}
+	virtual void reset() {}
+	virtual io::json to_json() const;	
 	void set(repl_policy_t *_repl_policy) { repl_policy = _repl_policy; }
 	void process(mem_read_event_t *event);
 	void process(mem_write_event_t *event);
@@ -34,9 +36,15 @@ protected:
 	uint32_t set_offset = 0;
 	uint32_t set_size;
 	uint32_t tag_mask;
-	counter_stat_t<uint32_t> accesses;	
 	repl_policy_t *repl_policy = nullptr;
 	std::vector<uint32_t> data; 
+	// Stats
+	counter_stat_t<uint64_t> accesses;	
+	counter_stat_t<uint64_t> inserts;
+	counter_stat_t<uint64_t> read_misses;	
+	counter_stat_t<uint64_t> write_misses;	
+	counter_stat_t<uint64_t> read_hits;	
+	counter_stat_t<uint64_t> write_hits;	
 };
 
 #endif

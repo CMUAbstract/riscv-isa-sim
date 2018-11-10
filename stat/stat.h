@@ -7,9 +7,10 @@
 
 #include <io/io.h>
 
-class stat_t {
+class stat_t: public io::serializable {
 public:
 	stat_t() {}
+	stat_t(std::string _name) : name(_name) {}
 	stat_t(std::string _name, std::string _desc) : name(_name), desc(_desc) {}
 	virtual ~stat_t() {}
 	void set_name(std::string _name) { name = _name; }

@@ -19,6 +19,10 @@ void si3stage_core_t::init() {
 	icache = static_cast<ram_t *>(children[icache_id]);
 }
 
+io::json si3stage_core_t::to_json() const {
+	return component_t::to_json();
+}
+
 void si3stage_core_t::buffer_insn(timed_insn_t *insn) {
 	insns.push_back(insn);
 	next_insn();
@@ -51,6 +55,7 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 
 void si3stage_core_t::process(insn_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
+	retired_insns.inc();
 }
 
 // Does not yet include CSRs

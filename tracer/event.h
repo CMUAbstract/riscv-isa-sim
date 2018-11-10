@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <iostream>
 
+#include <common/decode.h>
+
 #include "misc.h"
 
 typedef uint64_t cycle_t;
@@ -92,6 +94,10 @@ struct event_list_t {
 		std::pop_heap(events.begin(), events.end(), event_comparator_t());
 		events.pop_back();
 		return tmp;
+	}
+	void clear(void) {
+		for(auto e: events) delete e;
+		events.clear();
 	}
 	bool empty() {
 		return events.size() == 0;

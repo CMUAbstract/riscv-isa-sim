@@ -46,6 +46,7 @@ public:
 
   // Callback for processors to let the simulation know they were reset.
   void proc_reset(unsigned id);
+  void inter_reset();
 
   // Sim Calls
   void mark_input(addr_t taddr, size_t len, size_t tag);
@@ -126,7 +127,6 @@ private:
   context_t* host;
   context_t target;
   void reset();
-  void inter_reset();
   void reverse(size_t n);
   void reverse(size_t n, size_t p); // p is processor
   void idle();

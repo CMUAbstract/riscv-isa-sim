@@ -6,6 +6,8 @@ tracer_hdrs = \
         curve_tracer.h \
         insn_tracer.h \
         time_tracer.h \
+        intermittent.h \
+        except.h \
         event.h \
         component.h \
         core.h \
@@ -26,13 +28,16 @@ tracer_hdrs = \
 tracer_srcs = \
         tracer.cc \
         core.cc \
+        ram.cc \
         misc.cc \
+        component.cc \
         basic_tracer.cc \
         curve_tracer.cc \
         insn_tracer.cc \
         time_tracer.cc \
         core_event.cc \
         mem_event.cc \
+        intermittent.cc \
         cores/si3stage_core.cc \
         cache/main_mem.cc \
         cache/cache.cc \

@@ -172,7 +172,7 @@ protected:
         return m_value < static_cast<const Value<tag, T> *>(other)->m_value;
     }
 
-    const T m_value;
+    T m_value;
     void dump(string &out) const override { json11::dump(m_value, out); }
 };
 
@@ -227,6 +227,7 @@ public:
 class JsonObject final : public Value<Json::OBJECT, Json::object> {
     const Json::object &object_items() const override { return m_value; }
     const Json & operator[](const string &key) const override;
+    Json & operator[](const string &key) override;
 public:
     explicit JsonObject(const Json::object &value) : Value(value) {}
     explicit JsonObject(Json::object &&value)      : Value(move(value)) {}
@@ -255,9 +256,9 @@ static const Statics & statics() {
     return s;
 }
 
-static const Json & static_null() {
+static Json & static_null() {
     // This has to be separate, not in Statics, because Json() accesses statics().null.
-    static const Json json_null;
+    static Json json_null;
     return json_null;
 }
 
@@ -269,7 +270,7 @@ Json::Json() noexcept                  : m_ptr(statics().null) {}
 Json::Json(std::nullptr_t) noexcept    : m_ptr(statics().null) {}
 Json::Json(float value)                : m_ptr(make_shared<JsonDouble>(value)) {}
 Json::Json(double value)               : m_ptr(make_shared<JsonDouble>(value)) {}
-Json::Json(int64_t value)               : m_ptr(make_shared<JsonInt>(value)) {}
+Json::Json(int64_t value)              : m_ptr(make_shared<JsonInt>(value)) {}
 Json::Json(int32_t value)              : m_ptr(make_shared<JsonInt>(value)) {}
 Json::Json(int16_t value)              : m_ptr(make_shared<JsonInt>(value)) {}
 Json::Json(int8_t value)               : m_ptr(make_shared<JsonInt>(value)) {}
@@ -299,6 +300,7 @@ const vector<Json> & Json::array_items()          const { return m_ptr->array_it
 const map<string, Json> & Json::object_items()    const { return m_ptr->object_items(); }
 const Json & Json::operator[] (size_t i)          const { return (*m_ptr)[i];           }
 const Json & Json::operator[] (const string &key) const { return (*m_ptr)[key];         }
+Json & Json::operator[] (const string &key)             { return (*m_ptr)[key];         }
 
 double                    JsonValue::double_value()              const { return 0; }
 int                       JsonValue::int_value()                 const { return 0; }
@@ -308,10 +310,19 @@ const vector<Json> &      JsonValue::array_items()               const { return 
 const map<string, Json> & JsonValue::object_items()              const { return statics().empty_map; }
 const Json &              JsonValue::operator[] (size_t)         const { return static_null(); }
 const Json &              JsonValue::operator[] (const string &) const { return static_null(); }
+Json &                    JsonValue::operator[] (const string &)       { return static_null(); }
 
 const Json & JsonObject::operator[] (const string &key) const {
     auto iter = m_value.find(key);
     return (iter == m_value.end()) ? static_null() : iter->second;
+}
+Json & JsonObject::operator[] (const string &key) {
+    auto iter = m_value.find(key);
+    if(iter == m_value.end()) {
+        m_value[key] = Json();
+        return m_value[key];
+    }
+    return iter->second;
 }
 const Json & JsonArray::operator[] (size_t i) const {
     if (i >= m_value.size()) return static_null();
