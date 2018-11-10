@@ -55,11 +55,14 @@ cache_t::cache_t(std::string _name, io::json _config, event_list_t *_events)
 }
 
 io::json cache_t::to_json() const {
-	return component_t::to_json();
+	return io::json::merge_objects(
+		ram_t::to_json(), accesses, inserts, read_misses, 
+		write_misses, read_hits, write_hits);
 }
 
 void cache_t::process(mem_read_event_t *event) {
 	TIME_VIOLATION_CHECK
+	reads.inc();
 	if(!access(event)) { // Read Miss
 		read_misses.inc();
 #if 0
@@ -100,6 +103,7 @@ void cache_t::process(mem_read_event_t *event) {
 
 void cache_t::process(mem_write_event_t *event) {
 	TIME_VIOLATION_CHECK
+	writes.inc();
 	if(!access(event)) { // Write Miss
 		write_misses.inc();
 #if 0

@@ -20,7 +20,7 @@ void si3stage_core_t::init() {
 }
 
 io::json si3stage_core_t::to_json() const {
-	return component_t::to_json();
+	return core_t::to_json();
 }
 
 void si3stage_core_t::buffer_insn(timed_insn_t *insn) {

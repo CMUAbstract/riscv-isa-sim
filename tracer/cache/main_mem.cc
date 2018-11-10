@@ -11,6 +11,7 @@ main_ram_t::main_ram_t(std::string _name, io::json _config, event_list_t *_event
 
 void main_ram_t::process(mem_read_event_t *event){
 	TIME_VIOLATION_CHECK
+	reads.inc();
 	for(auto parent : parents) {
 		auto m = dynamic_cast<ram_t *>(parent.second);
 		if(m != nullptr) {
@@ -28,6 +29,7 @@ void main_ram_t::process(mem_read_event_t *event){
 
 void main_ram_t::process(mem_write_event_t *event){
 	TIME_VIOLATION_CHECK
+	writes.inc();
 	for(auto parent : parents) {
 		auto m = dynamic_cast<ram_t *>(parent.second);
 		if(m != nullptr) {

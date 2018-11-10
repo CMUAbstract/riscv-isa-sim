@@ -32,7 +32,7 @@ protected:
 	std::vector<timed_insn_t *> insns;
 	// stats
 	counter_stat_t<size_t> retired_insns;
-	counter_stat_t<size_t> total_insns;
+	counter_stat_t<size_t> running_insns;
 };
 
 #endif

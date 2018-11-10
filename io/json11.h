@@ -212,6 +212,14 @@ public:
         return parse_multi(in, parser_stop_pos, err, strategy);
     }
 
+    template <typename Arg1 >
+    static inline Json merge_objects(Arg1 a) { return a; }
+
+    template <typename Arg1, typename... Args>
+    static inline Json merge_objects(Arg1 a, Args...args) {
+        return merge(a, merge_objects(args...));
+    }
+
     bool operator== (const Json &rhs) const;
     bool operator<  (const Json &rhs) const;
     bool operator!= (const Json &rhs) const { return !(*this == rhs); }
@@ -229,6 +237,7 @@ public:
 
 private:
     std::shared_ptr<JsonValue> m_ptr;
+    static Json merge(const Json &a, const Json &b);
 };
 
 // Internal class hierarchy - JsonValue objects are not exposed to users of this API.

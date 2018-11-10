@@ -67,10 +67,8 @@ void time_tracer_t::reset(size_t minstret) {
 }
 
 io::json time_tracer_t::to_json() const {
-	std::vector<component_t *> comps;
-	for(auto it : components) comps.push_back(it.second);
 	auto trace = tracer_impl_t::to_json();
-	trace[name] = io::json(comps);
+	trace[name] = io::json(components);
 	return trace;
 }
 

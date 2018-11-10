@@ -799,6 +799,14 @@ vector<Json> Json::parse_multi(const string &in,
     return json_vec;
 }
 
+Json Json::merge(const Json &a, const Json &b) {
+    if(!(a.is_object() && b.is_object())) return static_null();
+    Json m = object();
+    for(auto it : a.object_items()) m[it.first] = it.second;
+    for(auto it : b.object_items()) m[it.first] = it.second;
+    return m;
+}
+
 /* * * * * * * * * * * * * * * * * * * *
  * Shape-checking
  */
