@@ -77,7 +77,7 @@ AC_HEADER_STDC
 #-------------------------------------------------------------------------
 
 AC_SUBST([CFLAGS],  ["-Wall -Wno-unused -g -O2"])
-AC_SUBST([CXXFLAGS],["-Wall -Wno-unused -g -O2 -std=c++14"])
+AC_SUBST([CXXFLAGS],["-Wall -Wno-unused -g -O2 -std=c++17"])
 
 #-------------------------------------------------------------------------
 # MCPPBS subproject list
@@ -86,7 +86,7 @@ AC_SUBST([CXXFLAGS],["-Wall -Wno-unused -g -O2 -std=c++14"])
 # The '*' suffix indicates an optional subproject. The '**' suffix
 # indicates an optional subproject which is also the name of a group.
 
-MCPPBS_SUBPROJECTS([ io, common, tracer, stat, riscv, dummy_rocc, softfloat, spike_main ])
+MCPPBS_SUBPROJECTS([ io, common, hcontainer, tracer, stat, riscv, dummy_rocc, softfloat, spike_main ])
 
 #-------------------------------------------------------------------------
 # MCPPBS subproject groups
@@ -110,6 +110,7 @@ AC_CONFIG_FILES([riscv-riscv.pc])
 AC_CONFIG_FILES([riscv-softfloat.pc])
 AC_CONFIG_FILES([riscv-stat.pc])
 AC_CONFIG_FILES([riscv-common.pc])
+AC_CONFIG_FILES([riscv-hcontainer.pc])
 AC_CONFIG_FILES([riscv-io.pc])
 AC_CONFIG_FILES([riscv-tracer.pc])
 AC_CONFIG_FILES([riscv-dummy_rocc.pc])

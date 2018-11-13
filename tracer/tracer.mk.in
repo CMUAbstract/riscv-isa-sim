@@ -13,13 +13,14 @@ tracer_hdrs = \
         core.h \
         ram.h \
         signal_handler.h \
+        pending_handler.h \
         log.h \
-        misc.h \
         smartptr.h \
         components.h \
         core_event.h \
         mem_event.h \
         signal_event.h \
+        pending_event.h \
         cores/si3stage_core.h \
         cache/main_mem.h \
         cache/cache.h \
@@ -29,7 +30,6 @@ tracer_srcs = \
         tracer.cc \
         core.cc \
         ram.cc \
-        misc.cc \
         component.cc \
         basic_tracer.cc \
         curve_tracer.cc \

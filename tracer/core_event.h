@@ -21,16 +21,9 @@ struct timed_insn_t {
 	insn_t insn;
 };
 
-struct insn_event_t: public event_t<core_t, timed_insn_t> {
-	insn_event_t(core_t *_handler, shared_ptr_t<working_set_t> _ws, 
-		insn_bits_t _opc, insn_t _insn)
-		: event_t<core_t, timed_insn_t>(_handler) {
-			data = timed_insn_t(_ws, _opc, _insn);
-	}
-	insn_event_t(core_t *_handler, timed_insn_t *_insn) 
-		: event_t<core_t, timed_insn_t>(_handler) {
-			data = timed_insn_t(_insn);
-	}
+struct insn_event_t: public event_t<core_handler_t, timed_insn_t> {
+	insn_event_t(core_handler_t *_handler, timed_insn_t *_insn) 
+		: event_t<core_handler_t, timed_insn_t>(_handler, _insn) {}
 	std::string to_string();
 };
 

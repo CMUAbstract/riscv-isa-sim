@@ -3,37 +3,35 @@
 
 #include <string>
 #include <sstream>
-#include <map>
 
 #include <common/decode.h>
 #include <stat/stat.h>
 #include <io/io.h>
+#include <hcontainer/hvec.h>
+#include <hcontainer/hmap.h>
 
 #define TIME_VIOLATION_CHECK 													\
 	assert_msg(event->cycle >= clock.get(), 									\
 		"Timing violation e%lu < c%lu", event->cycle, clock.get());				\
 	clock.set(event->cycle);
 
-#define GC_EVENT(e) MARK_EVENT(e)
-#define MARK_EVENT(e) events->mark_event(e)
-
 class event_list_t;
-class component_t: public io::serializable {
+class component_base_t: public io::serializable {
 public:
-	component_t(std::string _name, io::json _config, event_list_t *_events) 
+	component_base_t(std::string _name, io::json _config, event_list_t *_events) 
 		: name(_name), config(_config), events(_events), clock("clock", "") {
 		clock.reset();		
 	}
-	virtual ~component_t() {}
+	virtual ~component_base_t() {}
 	virtual void init() {}
 	virtual void reset() {}
 	virtual io::json to_json() const;
-	void add_child(std::string name, component_t *child) {
-		children.insert({name, child});
-	}
-	void add_parent(std::string name, component_t *parent) {
-		parents.insert({name, parent});
-	}
+
+	virtual void enqueue(hvec *vec) = 0;
+	virtual void insert(std::string key, hmap<std::string> *map) = 0;
+	virtual void add_child(std::string name, component_base_t *child) = 0;
+	virtual void add_parent(std::string name, component_base_t *parent) = 0;
+
 	std::string get_name() { return name; }
 	io::json get_config() { return config; }
 	cycle_t get_clock() { return clock.get(); }
@@ -41,10 +39,27 @@ protected:
 	std::string name;
 	io::json config;
 	event_list_t *events;
-	event_list_t *gc_events;
-	std::map<std::string, component_t *> children;
-	std::map<std::string, component_t *> parents;
+	hmap<std::string> children;
+	hmap<std::string> parents;
 	counter_stat_t<cycle_t> clock;
+};
+
+template <class...EVENT_HANDLERS>
+class component_t: public component_base_t, public EVENT_HANDLERS... {
+public:
+	using component_base_t::component_base_t;
+	virtual void enqueue(hvec *vec) {
+		(..., vec->push_back<EVENT_HANDLERS *>(this));
+	}
+	virtual void insert(std::string key, hmap<std::string> *map) {
+		(..., map->insert<EVENT_HANDLERS *>(key, this));
+	}
+	virtual void add_child(std::string name, component_base_t *child) {
+		child->insert(name, &children);
+	}
+	virtual void add_parent(std::string name, component_base_t *parent) {
+		parent->insert(name, &parents);
+	}
 };
 
 #endif

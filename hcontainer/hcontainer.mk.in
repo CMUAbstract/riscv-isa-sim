@@ -1,0 +1,11 @@
+common_subproject_deps = 
+
+common_hdrs = \
+		hvec.h \
+		hmap.h \
+
+common_srcs =
+
+common_test_srcs =
+
+common_install_prog_srcs =

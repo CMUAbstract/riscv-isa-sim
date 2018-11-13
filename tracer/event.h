@@ -9,22 +9,16 @@
 
 #include <common/decode.h>
 
-#include "misc.h"
-
 typedef uint64_t cycle_t;
 
 struct event_base_t {
-	event_base_t() {}
-	event_base_t(cycle_t _cycle): cycle(_cycle), guid(gen_guid()) {}
-	event_base_t(cycle_t _cycle, cycle_t _latency) 
-		: cycle(_cycle), latency(_latency), guid(gen_guid()) {}
+	event_base_t(cycle_t _cycle): cycle(_cycle) {}
 	virtual void handle() = 0;
-	virtual std::string to_string() { return "generic_event"; }
+	virtual std::string to_string() = 0;
 	virtual ~event_base_t() {}
 	cycle_t cycle = 0;
-	cycle_t latency = 0;
-	size_t guid = 0;
 	bool ready_gc = true;
+	bool pending = false;
 };
 
 #if 0
@@ -48,36 +42,21 @@ struct event_base_t {
 
 template <typename T, typename K>
 struct event_t: public event_base_t {
-	event_t(T *_handler): handler(_handler) {}
-	event_t(T *_handler, event_base_t *event): handler(_handler) {
-		deps.insert(event->guid);
-	}
-	event_t(T *_handler, K _data): handler(_handler), data(_data) {}
-	event_t(T *_handler, K _data, event_base_t *event)
-		: handler(_handler), data(_data) {
-		deps.insert(event->guid);
-	}
+	event_t(T *_handler, K _data)
+		: event_base_t(0), handler(_handler), data(_data) {}
 	event_t(T *_handler, K _data, cycle_t _cycle)
 		: event_base_t(_cycle), handler(_handler), data(_data) {}
 	event_t(T *_handler, K _data, cycle_t _cycle, event_base_t *event)
-		: event_base_t(_cycle), handler(_handler), data(_data) {
-		deps.insert(event->guid);
-	}
-	event_t(T *_handler, K _data, cycle_t _cycle, cycle_t _latency)
-		: event_base_t(_cycle, _latency), handler(_handler), data(_data) {}
-	event_t(T *_handler, K _data, cycle_t _cycle, cycle_t _latency, event_base_t *event)
-		: event_base_t(_cycle, _latency), handler(_handler), data(_data) {
-		deps.insert(event->guid);	
-	}
-	~event_t() {}
+		: event_base_t(_cycle), handler(_handler), data(_data) {}
+	virtual ~event_t() {}
 	T* handler = nullptr;
 	K data;
-	std::set<size_t> deps;
 };
 
 struct event_comparator_t {
 	bool operator()(const event_base_t *a,const event_base_t* b) const{
-		return a->cycle >= b->cycle;
+		if(a->cycle == b->cycle) return a->pending >= b->pending;
+		return a->cycle > b->cycle;
 	}
 };
 

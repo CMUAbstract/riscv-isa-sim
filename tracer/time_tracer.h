@@ -8,7 +8,7 @@
 #include "intermittent.h"
 #include "event.h"
 
-class component_t;
+class component_base_t;
 class core_t;
 class time_tracer_t: public tracer_impl_t, public intermittent_t {
 public:
@@ -24,7 +24,7 @@ public:
 private:
 	event_list_t events;
 	core_t *core = nullptr;
-	std::map<std::string, component_t *> components;
+	std::map<std::string, component_base_t *> components;
 };
 
 #endif

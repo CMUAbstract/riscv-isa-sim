@@ -4393,7 +4393,7 @@ fi
 
 CFLAGS="-Wall -Wno-unused -g -O2"
 
-CXXFLAGS="-Wall -Wno-unused -g -O2 -std=c++14"
+CXXFLAGS="-Wall -Wno-unused -g -O2 -std=c++17"
 
 
 #-------------------------------------------------------------------------
