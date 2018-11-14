@@ -18,6 +18,7 @@ public:
 	void buffer_insn(timed_insn_t *insn);
 	void process(insn_fetch_event_t *event);
 	void process(insn_decode_event_t *event);
+	void process(insn_exec_event_t *event);
 	void process(insn_retire_event_t *event);
 	void process(reg_read_event_t *event);
 	void process(reg_write_event_t *event);	

@@ -17,7 +17,7 @@ public:
 	virtual void process(mem_insert_event_t *event) = 0;
 };
 
-class ram_t: public component_t<ram_handler_t, signal_handler_t> {
+class ram_t: public component_t<ram_t, ram_handler_t, signal_handler_t> {
 public:
 	ram_t(std::string _name, io::json _config, event_list_t *_events);
 	virtual ~ram_t() {}

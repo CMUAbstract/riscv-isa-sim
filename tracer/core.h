@@ -13,6 +13,7 @@
 struct timed_insn_t;
 struct insn_fetch_event_t;
 struct insn_decode_event_t;
+struct insn_exec_event_t;
 struct insn_retire_event_t;
 struct reg_read_event_t;
 struct reg_write_event_t;
@@ -21,12 +22,13 @@ class core_handler_t {
 public:
 	virtual void process(insn_fetch_event_t *event) = 0;
 	virtual void process(insn_decode_event_t *event) = 0;
+	virtual void process(insn_exec_event_t *event) = 0;
 	virtual void process(insn_retire_event_t *event) = 0;
 	virtual void process(reg_read_event_t *event) = 0;
 	virtual void process(reg_write_event_t *event) = 0;
 };
 
-class core_t: public component_t<signal_handler_t, core_handler_t, pending_handler_t> {
+class core_t: public component_t<core_t, signal_handler_t, core_handler_t, pending_handler_t> {
 public:
 	core_t(std::string _name, io::json _config, event_list_t *_events);
 	~core_t();
@@ -36,6 +38,8 @@ public:
 	virtual size_t minstret() const { return retired_insns.get(); }
 protected:
 	std::vector<timed_insn_t *> insns;
+	bool decode_busy = false;
+	bool exec_busy = false;
 	// stats
 	counter_stat_t<size_t> retired_insns;
 	counter_stat_t<size_t> running_insns;

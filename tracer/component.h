@@ -44,14 +44,16 @@ protected:
 	counter_stat_t<cycle_t> clock;
 };
 
-template <class...EVENT_HANDLERS>
+template <class CHILD, class...EVENT_HANDLERS>
 class component_t: public component_base_t, public EVENT_HANDLERS... {
 public:
 	using component_base_t::component_base_t;
 	virtual void enqueue(hvec *vec) {
+		vec->push_back<CHILD *>(static_cast<CHILD *>(this));
 		(..., vec->push_back<EVENT_HANDLERS *>(this));
 	}
 	virtual void insert(std::string key, hmap<std::string> *map) {
+		map->insert<CHILD *>(key, static_cast<CHILD *>(this));
 		(..., map->insert<EVENT_HANDLERS *>(key, this));
 	}
 	virtual void add_child(std::string name, component_base_t *child) {

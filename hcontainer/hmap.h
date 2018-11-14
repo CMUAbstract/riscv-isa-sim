@@ -66,6 +66,9 @@ public:
 	template<class T>
     T& operator[](const K& idx) { return items<T>[this][idx]; }
 
+    template<class T>
+    typename std::map<K, T>::iterator find(const K _k) { return items<T>[this].find(_k); }
+
 	template<class T>
 	std::map<K, T>& raw() { return items<T>[this]; }
 

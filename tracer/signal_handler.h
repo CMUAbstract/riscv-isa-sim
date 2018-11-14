@@ -3,8 +3,6 @@
 
 #include "log.h"
 
-template <typename T>
-struct signal_event_t;
 struct ready_event_t;
 struct stall_event_t;
 class signal_handler_t {

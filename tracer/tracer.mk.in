@@ -30,6 +30,7 @@ tracer_srcs = \
         tracer.cc \
         core.cc \
         ram.cc \
+        pending_handler.cc \
         component.cc \
         basic_tracer.cc \
         curve_tracer.cc \

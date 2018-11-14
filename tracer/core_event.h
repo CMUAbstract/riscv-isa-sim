@@ -45,6 +45,15 @@ struct insn_decode_event_t: public insn_event_t {
 	HANDLER;
 };
 
+struct insn_exec_event_t: public insn_event_t {
+	using insn_event_t::insn_event_t;
+	std::string to_string() {
+		std::string o = "insn_exec_event";
+		return o + insn_event_t::to_string();
+	}
+	HANDLER;
+};
+
 struct insn_retire_event_t: public insn_event_t {
 	using insn_event_t::insn_event_t;
 	std::string to_string() {
