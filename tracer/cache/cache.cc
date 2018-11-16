@@ -73,11 +73,13 @@ void cache_t::process(mem_read_event_t *event) {
 				new mem_read_event_t(
 					child.second, event->data, clock.get() + read_latency, event));
 		}
+#if 0
 		for(auto parent : parents.raw<signal_handler_t *>()) {
 			events->push_back(
 				new stall_event_t(
 					parent.second, event->data, clock.get() + read_latency, event));
 		}
+#endif
 		return;
 	}
 	read_hits.inc();
@@ -106,11 +108,13 @@ void cache_t::process(mem_write_event_t *event) {
 				new mem_write_event_t(
 					child.second, event->data, clock.get() + write_latency, event));
 		}
+#if 0
 		for(auto parent : parents.raw<signal_handler_t *>()) { // Blocking
 			events->push_back(
 				new stall_event_t(
 					parent.second, event->data, clock.get() + write_latency, event));
 		}
+#endif
 		return;
 	}
 	write_hits.inc();
@@ -180,17 +184,15 @@ uint32_t cache_t::get_tag(addr_t addr) {
 
 void cache_t::process(ready_event_t *event) {
 	TIME_VIOLATION_CHECK
-	for(auto parent : parents.raw<signal_handler_t *>()) {
-		events->push_back(
-			new ready_event_t(parent.second, event->data, clock.get() + 1, event));
-	}
 }
 
 void cache_t::process(stall_event_t *event) {
 	TIME_VIOLATION_CHECK
+#if 0
 	for(auto parent : parents.raw<signal_handler_t *>()) { // Blocking
 		events->push_back(
 			new stall_event_t(parent.second, event->data, clock.get() + 1, event));
 	}
+#endif
 }
 

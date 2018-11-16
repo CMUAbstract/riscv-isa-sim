@@ -76,6 +76,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		auto pending_event = new pending_event_t(this, 
 			event, clock.get() + 1);
 		pending_event->add_dependence([&](){ return status["decode"]; });
+		register_pending(pending_event);
 		events->push_back(pending_event);
 		return;
 	}
@@ -101,6 +102,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 		auto pending_event = new pending_event_t(this, 
 			event, clock.get() + 1);
 		pending_event->add_dependence([&](){ return status["exec"]; });
+		register_pending(pending_event);
 		events->push_back(pending_event);
 		return;
 	}

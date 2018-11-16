@@ -9,8 +9,8 @@
 #include "core_event.h"
 #include "signal_event.h"
 
-#define EVENT_LIMIT_ENABLE 1
-#define EVENT_LIMIT 10
+#define TICK_LIMIT_ENABLE 0
+#define TICK_LIMIT 100
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
 	: tracer_impl_t("time_tracer", _config, _elf) {
@@ -76,17 +76,16 @@ void time_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 	auto shared_ws = shared_ptr_t<working_set_t>(new working_set_t(ws));
 	auto timed_insn = new timed_insn_t(shared_ws, opc, insn);
 	core->buffer_insn(timed_insn);
-	uint32_t event_limit = EVENT_LIMIT;
 	bool ran = false;
 	while(!events.ready() && !events.empty() && 
-		(core->get_clock() != event_limit || !EVENT_LIMIT_ENABLE)) {
+		(core->get_clock() != TICK_LIMIT || !TICK_LIMIT_ENABLE)) {
 		ran = true;
 		event_base_t *e = events.pop_back();
 		e->handle();
 		if(e->ready_gc) delete e;
 	}
-#if EVENT_LIMIT_ENABLE
-	if(ran && event_limit == core->get_clock()) exit(0);
+#if TICK_LIMIT_ENABLE
+	if(TICK_LIMIT == core->get_clock()) exit(0);
 #endif
 	if(intermittent && should_fail(core->get_clock())) {
 #if 1

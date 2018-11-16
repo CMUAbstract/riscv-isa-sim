@@ -22,8 +22,8 @@ struct event_base_t {
 	bool pending = false;
 };
 
-#if 1
-#if 0
+#define HANDLER_INFO 0
+#if HANDLER_INFO == 2
 #define HANDLER 																\
 	void handle() { 															\
 		auto handler = dynamic_cast<component_base_t *>(this->handler);			\
@@ -39,7 +39,7 @@ struct event_base_t {
 		std::cout << std::endl;													\
 		this->handler->process(this);											\
 	}
-#else
+#elif HANDLER_INFO == 1
 #define HANDLER 																\
 	void handle() { 															\
 		auto handler = dynamic_cast<component_base_t *>(this->handler);			\
@@ -53,7 +53,6 @@ struct event_base_t {
 		std::cout << std::endl;													\
 		this->handler->process(this);											\
 	}
-#endif
 #else
 #define HANDLER void handle() { this->handler->process(this); }
 #endif
