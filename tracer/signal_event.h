@@ -18,6 +18,7 @@ struct ready_event_t: public signal_event_t<addr_t> {
 		os << "mem_ready_event (" << cycle << ", 0x" << std::hex << this->data << ")"; 
 		return os.str();
 	}
+	std::string get_name() { return "mem_ready_event"; }
 	HANDLER;
 };
 
@@ -28,6 +29,7 @@ struct stall_event_t: public signal_event_t<addr_t> {
 		os << "mem_stall_event (" << cycle << ", 0x" << std::hex << this->data << ")"; 
 		return os.str();
 	}
+	std::string get_name() { return "mem_stall_event"; }
 	HANDLER;
 };
 

@@ -15,6 +15,7 @@ struct event_base_t {
 	event_base_t(cycle_t _cycle): cycle(_cycle) {}
 	virtual void handle() = 0;
 	virtual std::string to_string() = 0;
+	virtual std::string get_name() = 0;
 	virtual ~event_base_t() {}
 	cycle_t cycle = 0;
 	bool ready_gc = true;
@@ -22,6 +23,7 @@ struct event_base_t {
 };
 
 #if 1
+#if 0
 #define HANDLER 																\
 	void handle() { 															\
 		auto handler = dynamic_cast<component_base_t *>(this->handler);			\
@@ -33,9 +35,25 @@ struct event_base_t {
 			std::cout << " => ";												\
 		}																		\
 		std::cout << this->to_string();											\
+		std::cout << " @ " << cycle;											\
 		std::cout << std::endl;													\
 		this->handler->process(this);											\
 	}
+#else
+#define HANDLER 																\
+	void handle() { 															\
+		auto handler = dynamic_cast<component_base_t *>(this->handler);			\
+		if(handler != nullptr) {												\
+			std::cout << handler->get_name() << ", ";							\
+		} else {																\
+			std::cout << "generic, ";											\
+		}																		\
+		std::cout << this->get_name();											\
+		std::cout << ", " << cycle;												\
+		std::cout << std::endl;													\
+		this->handler->process(this);											\
+	}
+#endif
 #else
 #define HANDLER void handle() { this->handler->process(this); }
 #endif
@@ -55,7 +73,7 @@ struct event_t: public event_base_t {
 
 struct event_comparator_t {
 	bool operator()(const event_base_t *a,const event_base_t* b) const{
-		if(a->cycle == b->cycle) return a->pending >= b->pending;
+		if(a->cycle == b->cycle) return a->pending <= b->pending;
 		return a->cycle > b->cycle;
 	}
 };

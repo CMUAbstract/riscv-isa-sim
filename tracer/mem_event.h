@@ -14,6 +14,7 @@ struct reg_read_event_t: public event_t<core_handler_t, reg_t> {
 		os << "reg_read_event (" << cycle << "," << data << ")"; 
 		return os.str();
 	}
+	std::string get_name() { return "reg_read_event"; }
 	HANDLER;
 };
 
@@ -24,6 +25,7 @@ struct reg_write_event_t: public event_t<core_handler_t, reg_t> {
 		os << "reg_write_event (" << cycle << "," << data << ")"; 
 		return os.str();
 	}
+	std::string get_name() { return "reg_write_event"; }
 	HANDLER;
 };
 
@@ -42,6 +44,7 @@ struct mem_read_event_t: public mem_event_t {
 		std::string o = "mem_read_event";
 		return o + mem_event_t::to_string();
 	}
+	std::string get_name() { return "mem_read_event"; }
 	HANDLER;
 };
 
@@ -51,6 +54,7 @@ struct mem_write_event_t: public mem_event_t {
 		std::string o = "mem_write_event";
 		return o + mem_event_t::to_string();
 	}
+	std::string get_name() { return "mem_write_event"; }
 	HANDLER;
 };
 
@@ -60,6 +64,7 @@ struct mem_insert_event_t: public mem_event_t {
 		std::string o = "mem_insert_event";
 		return o + mem_event_t::to_string();
 	}
+	std::string get_name() { return "mem_insert_event"; }
 	HANDLER;
 };
 

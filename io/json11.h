@@ -76,9 +76,9 @@ enum JsonParse {
 };
 
 #define JSON_CHECK(type, config, var, ...) \
-    JSON_CHECK_(type, var, config, ##__VA_ARGS__, 1, 0)
+    JSON_CHECK_(type, config, var, ##__VA_ARGS__, 1, 0)
 #define JSON_CHECK_(type, config, var, def, n, ...) \
-    JSON_CHECK_##n(type, var, config, def)
+    JSON_CHECK_##n(type, config, var, def)
 #define JSON_CHECK_0(type, config, var, ...) \
     if(config != nullptr) var = config.type##_value();
 #define JSON_CHECK_1(type, config, var, def) \

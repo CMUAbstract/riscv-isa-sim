@@ -22,7 +22,9 @@ public:
 	ram_t(std::string _name, io::json _config, event_list_t *_events);
 	virtual ~ram_t() {}
 	virtual io::json to_json() const;
+	bool get_status(std::string key) { return status[key]; }
 protected:
+	std::map<std::string, bool> status;
 	counter_stat_t<uint64_t> reads;
 	counter_stat_t<uint64_t> writes;
 };

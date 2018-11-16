@@ -9,6 +9,8 @@ core_t::core_t(std::string _name, io::json _config, event_list_t *_events)
 	running_insns("running_insns", "") {
 	retired_insns.reset();
 	running_insns.reset();	
+	status["decode"] = false;
+	status["exec"] = false;
 }
 
 core_t::~core_t() {

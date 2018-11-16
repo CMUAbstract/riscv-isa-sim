@@ -33,6 +33,7 @@ struct insn_fetch_event_t: public insn_event_t {
 		std::string o = "insn_fetch_event";
 		return o + insn_event_t::to_string();
 	}
+	std::string get_name() { return "insn_fetch_event"; }
 	HANDLER;
 };
 
@@ -42,6 +43,7 @@ struct insn_decode_event_t: public insn_event_t {
 		std::string o = "insn_decode_event";
 		return o + insn_event_t::to_string();
 	}
+	std::string get_name() { return "insn_decode_event"; }
 	HANDLER;
 };
 
@@ -51,6 +53,7 @@ struct insn_exec_event_t: public insn_event_t {
 		std::string o = "insn_exec_event";
 		return o + insn_event_t::to_string();
 	}
+	std::string get_name() { return "insn_exec_event"; }
 	HANDLER;
 };
 
@@ -60,6 +63,7 @@ struct insn_retire_event_t: public insn_event_t {
 		std::string o = "insn_retire_event";
 		return o + insn_event_t::to_string();
 	}
+	std::string get_name() { return "insn_retire_event"; }
 	HANDLER;
 };
 

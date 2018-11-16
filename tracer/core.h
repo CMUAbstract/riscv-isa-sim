@@ -36,10 +36,10 @@ public:
 	virtual io::json to_json() const;
 	virtual void buffer_insn(timed_insn_t *insn);
 	virtual size_t minstret() const { return retired_insns.get(); }
+	bool get_status(std::string key) { return status[key]; }
 protected:
 	std::vector<timed_insn_t *> insns;
-	bool decode_busy = false;
-	bool exec_busy = false;
+	std::map<std::string, bool> status;
 	// stats
 	counter_stat_t<size_t> retired_insns;
 	counter_stat_t<size_t> running_insns;

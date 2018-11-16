@@ -48,12 +48,10 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 	{
 		auto pending_event = new pending_event_t(
 			this, new insn_decode_event_t(this, &event->data), clock.get() + 1);
-		pending_event->add_dependence<ready_event_t *>([&](ready_event_t *e) {
-			return e->data == event->data.ws->pc;
+		auto pc = event->data.ws->pc;
+		pending_event->add_dependence<ready_event_t *>([pc](ready_event_t *e) {
+			return e->data == pc;
 		});
-		// Does not work on startup (when stage is empty)
-		bool *decode_state = &decode_busy;
-		pending_event->add_dependence([&]() { return !*decode_state; });
 		register_pending(pending_event);
 		events->push_back(pending_event);
 	}
@@ -66,32 +64,31 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 		register_pending(pending_event);
 		events->push_back(pending_event);
 	}
+	events->push_back(
+			new mem_read_event_t(icache, event->data.ws->pc, clock.get(), event));
 }
 
 // Does not yet include CSRs
 void si3stage_core_t::process(insn_decode_event_t *event) {
 	TIME_VIOLATION_CHECK
-	CHECK_PENDING(event)
-	decode_busy = true;
+	if(status["decode"]) { // Pending event promotion
+		event->ready_gc = false;
+		auto pending_event = new pending_event_t(this, 
+			event, clock.get() + 1);
+		pending_event->add_dependence([&](){ return status["decode"]; });
+		events->push_back(pending_event);
+		return;
+	}
+	check_pending(event);
+	status["decode"] = true;
 	auto pending_event = new pending_event_t(this, 
 		new insn_exec_event_t(this, &event->data), clock.get() + 1);
-	// Does not work on startup (when stage is empty)
-	bool *exec_state = &exec_busy;
-	pending_event->add_dependence([&]() { return !*exec_state; });
+	pending_event->add_fini([&](){ status["decode"] = false; });
 	for(auto it : event->data.ws->input.regs) {
 		events->push_back(new reg_read_event_t(this, it, clock.get()));
-		pending_event->add_dependence<reg_read_event_t *>([&](reg_read_event_t *e){
+		pending_event->add_dependence<reg_read_event_t *>([it](reg_read_event_t *e){
 			return e->data == it;
 		});
-	}
-	for(auto it : event->data.ws->input.locs) {
-		for(auto child : children.raw<ram_handler_t *>()) {
-			events->push_back(
-					new mem_read_event_t(child.second, it, clock.get(), event));
-			pending_event->add_dependence<ready_event_t *>([&](ready_event_t *e) {
-				return e->data == it;
-			});
-		}
 	}
 	register_pending(pending_event);
 	events->push_back(pending_event);
@@ -99,21 +96,38 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 
 void si3stage_core_t::process(insn_exec_event_t *event) {
 	TIME_VIOLATION_CHECK
-	decode_busy = false;
-	exec_busy = true;
+	if(status["exec"]) { // Pending event promotion
+		event->ready_gc = false;
+		auto pending_event = new pending_event_t(this, 
+			event, clock.get() + 1);
+		pending_event->add_dependence([&](){ return status["exec"]; });
+		events->push_back(pending_event);
+		return;
+	}
+	status["exec"] = true;
 	auto pending_event = new pending_event_t(this, 
 		new insn_retire_event_t(this, &event->data), clock.get() + 1);
+	pending_event->add_fini([&](){ status["exec"] = false; });
 	for(auto it : event->data.ws->input.regs) {
 		events->push_back(new reg_write_event_t(this, it, clock.get()));
-		pending_event->add_dependence<reg_write_event_t *>([&](reg_write_event_t *e){
+		pending_event->add_dependence<reg_write_event_t *>([it](reg_write_event_t *e){
 			return e->data == it;
 		});
+	}
+	for(auto it : event->data.ws->input.locs) {
+		for(auto child : children.raw<ram_handler_t *>()) {
+			events->push_back(
+					new mem_read_event_t(child.second, it, clock.get(), event));
+			pending_event->add_dependence<ready_event_t *>([it](ready_event_t *e) {
+				return e->data == it;
+			});
+		}
 	}
 	for(auto it : event->data.ws->output.locs) {
 		for(auto child : children.raw<ram_handler_t *>()) {
 			events->push_back(
 					new mem_write_event_t(child.second, it, clock.get(), event));
-			pending_event->add_dependence<ready_event_t *>([&](ready_event_t *e) {
+			pending_event->add_dependence<ready_event_t *>([it](ready_event_t *e) {
 				return e->data == it;
 			});
 		}
@@ -125,12 +139,11 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 void si3stage_core_t::process(insn_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	retired_insns.inc();
-	exec_busy = false;
 }
 
 void si3stage_core_t::process(pending_event_t *event) {
 	TIME_VIOLATION_CHECK
-	CHECK_VOID_PENDING
+	check_pending();
 	if(!event->resolved()) {
 		// Recheck during next cycle
 		event->cycle = clock.get() + 1;
@@ -138,8 +151,11 @@ void si3stage_core_t::process(pending_event_t *event) {
 		events->push_back(event);
 		return;
 	}
+	event->finish();
 	event->ready_gc = true;
+	remove_pending(event);
 	if(event->data != nullptr) {
+		event->data->ready_gc = true;
 		event->data->cycle = clock.get();
 		events->push_back(event->data);
 	}
@@ -147,17 +163,17 @@ void si3stage_core_t::process(pending_event_t *event) {
 
 void si3stage_core_t::process(reg_read_event_t *event) {
 	TIME_VIOLATION_CHECK
-	CHECK_PENDING(event)
+	check_pending(event);
 }
 
 void si3stage_core_t::process(reg_write_event_t *event) {
 	TIME_VIOLATION_CHECK
-	CHECK_PENDING(event)
+	check_pending(event);
 }
 
 void si3stage_core_t::process(ready_event_t *event) {
 	TIME_VIOLATION_CHECK
-	CHECK_PENDING(event)
+	check_pending(event);
 }
 
 void si3stage_core_t::process(stall_event_t *event) {
