@@ -6,6 +6,7 @@
 
 #include "component.h"
 #include "signal_handler.h"
+#include "pending_handler.h"
 
 struct mem_read_event_t;
 struct mem_write_event_t;
@@ -17,14 +18,14 @@ public:
 	virtual void process(mem_insert_event_t *event) = 0;
 };
 
-class ram_t: public component_t<ram_t, ram_handler_t, signal_handler_t> {
+class ram_t: public component_t<ram_t, ram_handler_t, signal_handler_t, pending_handler_t> {
 public:
 	ram_t(std::string _name, io::json _config, event_list_t *_events);
 	virtual ~ram_t() {}
 	virtual io::json to_json() const;
 	bool get_status(std::string key) { return status[key]; }
 protected:
-	std::map<std::string, bool> status;
+	std::map<std::string, uint16_t> status;
 	counter_stat_t<uint64_t> reads;
 	counter_stat_t<uint64_t> writes;
 };

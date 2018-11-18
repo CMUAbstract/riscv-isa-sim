@@ -22,6 +22,7 @@ cache_t::cache_t(std::string _name, io::json _config, event_list_t *_events)
 	JSON_CHECK(int, config["read_latency"], read_latency);
 	JSON_CHECK(int, config["write_latency"], write_latency);
 	JSON_CHECK(int, config["invalid_latency"], invalid_latency);
+	JSON_CHECK(int, config["ports"], ports);
 	std::string which_repl_policy;
 	JSON_CHECK(string, config["repl_policy"], which_repl_policy);
 	if(which_repl_policy.size() == 0) {
@@ -36,6 +37,8 @@ cache_t::cache_t(std::string _name, io::json _config, event_list_t *_events)
 	set_mask = (sets - 1) << set_offset;
 	tag_mask = ~(offset_mask | set_mask);
 	data.resize(lines);
+	status["read"] = 0;
+	status["write"] = 0;
 	// Stats
 	accesses.reset();
 	inserts.reset();
@@ -62,7 +65,25 @@ io::json cache_t::to_json() const {
 
 void cache_t::process(mem_read_event_t *event) {
 	TIME_VIOLATION_CHECK
+	if(status["write"] + status["read"] >= ports) { // Pending event promotion
+		event->ready_gc = false;
+		auto pending_event = new pending_event_t(this, 
+			event, clock.get() + 1);
+		pending_event->add_dependence([&](){ 
+			return status["write"] + status["read"] < ports; 
+		});
+		register_pending(pending_event);
+		events->push_back(pending_event);
+		return;
+	}
 	reads.inc();
+	// Increment write and also queue event to decrement write
+	status["read"]++;
+	auto pending_event = new pending_event_t(
+		this, nullptr, clock.get() + write_latency);
+	pending_event->add_fini([&](){ status["read"]--; });
+	register_pending(pending_event);
+	events->push_back(pending_event);
 	if(!access(event)) { // Read Miss
 		read_misses.inc();
 #if 0
@@ -71,33 +92,44 @@ void cache_t::process(mem_read_event_t *event) {
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_read_event_t(
-					child.second, event->data, clock.get() + read_latency, event));
+					child.second, event->data, clock.get() + read_latency));
 		}
-#if 0
-		for(auto parent : parents.raw<signal_handler_t *>()) {
-			events->push_back(
-				new stall_event_t(
-					parent.second, event->data, clock.get() + read_latency, event));
-		}
-#endif
 		return;
 	}
 	read_hits.inc();
 	for(auto parent : parents.raw<ram_t *>()) { // Insert in higher-level caches
 		events->push_back(
 			new mem_insert_event_t(
-				parent.second, event->data, clock.get() + read_latency, event));
+				parent.second, event->data, clock.get() + read_latency));
 	}
 	for(auto parent : parents.raw<signal_handler_t *>()) { // Blocking
 		events->push_back(
 			new ready_event_t(
-				parent.second, event->data, clock.get() + read_latency, event));
+				parent.second, event->data, clock.get() + read_latency));
 	}
 }
 
 void cache_t::process(mem_write_event_t *event) {
 	TIME_VIOLATION_CHECK
+	if(status["write"] + status["read"] >= ports) { // Pending event promotion
+		event->ready_gc = false;
+		auto pending_event = new pending_event_t(this, 
+			event, clock.get() + 1);
+		pending_event->add_dependence([&](){ 
+			return status["write"] + status["read"] < ports; 
+		});
+		register_pending(pending_event);
+		events->push_back(pending_event);
+		return;
+	}
 	writes.inc();
+	// Increment write and also queue event to decrement write
+	status["write"]++;
+	auto pending_event = new pending_event_t(
+		this, nullptr, clock.get() + write_latency);
+	pending_event->add_fini([&](){ status["write"]--; });
+	register_pending(pending_event);
+	events->push_back(pending_event);
 	if(!access(event)) { // Write Miss
 		write_misses.inc();
 #if 0
@@ -106,33 +138,44 @@ void cache_t::process(mem_write_event_t *event) {
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_write_event_t(
-					child.second, event->data, clock.get() + write_latency, event));
+					child.second, event->data, clock.get() + write_latency));
 		}
-#if 0
-		for(auto parent : parents.raw<signal_handler_t *>()) { // Blocking
-			events->push_back(
-				new stall_event_t(
-					parent.second, event->data, clock.get() + write_latency, event));
-		}
-#endif
 		return;
 	}
 	write_hits.inc();
 	for(auto parent : parents.raw<ram_t *>()) { // Insert in higher-level caches
 		events->push_back(
 			new mem_insert_event_t(
-				parent.second, event->data, clock.get() + write_latency, event));
+				parent.second, event->data, clock.get() + write_latency));
 	}
 	for(auto parent : parents.raw<signal_handler_t *>()) { // Blocking
 		events->push_back(
 			new ready_event_t(
-				parent.second, event->data, clock.get() + write_latency, event));
+				parent.second, event->data, clock.get() + write_latency));
 	}
 }
 
 void cache_t::process(mem_insert_event_t *event) {
 	TIME_VIOLATION_CHECK
+	if(status["write"] + status["read"] >= ports) { // Pending event promotion
+		event->ready_gc = false;
+		auto pending_event = new pending_event_t(this, 
+			event, clock.get() + 1);
+		pending_event->add_dependence([&](){ 
+			return status["write"] + status["read"] < ports; 
+		});
+		register_pending(pending_event);
+		events->push_back(pending_event);
+		return;
+	}
 	inserts.inc();
+	// Increment write and also queue event to decrement write
+	status["write"]++;
+	auto pending_event = new pending_event_t(
+		this, nullptr, clock.get() + write_latency);
+	pending_event->add_fini([&](){ status["write"]--; });
+	register_pending(pending_event);
+	events->push_back(pending_event);
 	uint32_t set = get_set(event->data);
 	uint32_t tag = get_tag(event->data);
 	std::vector<repl_cand_t> cands; // Create a set of candidates
@@ -144,7 +187,7 @@ void cache_t::process(mem_insert_event_t *event) {
 	for(auto parent : parents.raw<signal_handler_t *>()) { // Blocking
 		events->push_back(
 			new ready_event_t(
-				parent.second, event->data, clock.get() + invalid_latency, event));
+				parent.second, event->data, clock.get() + invalid_latency));
 	}
 }
 
@@ -182,17 +225,22 @@ uint32_t cache_t::get_tag(addr_t addr) {
 	return addr & tag_mask;
 }
 
-void cache_t::process(ready_event_t *event) {
+void cache_t::process(pending_event_t *event) {
 	TIME_VIOLATION_CHECK
-}
-
-void cache_t::process(stall_event_t *event) {
-	TIME_VIOLATION_CHECK
-#if 0
-	for(auto parent : parents.raw<signal_handler_t *>()) { // Blocking
-		events->push_back(
-			new stall_event_t(parent.second, event->data, clock.get() + 1, event));
+	check_pending();
+	if(!event->resolved()) {
+		// Recheck during next cycle
+		event->cycle = clock.get() + 1;
+		event->ready_gc = false;
+		events->push_back(event);
+		return;
 	}
-#endif
+	event->finish();
+	event->ready_gc = true;
+	remove_pending(event);
+	if(event->data != nullptr) {
+		event->data->ready_gc = true;
+		event->data->cycle = clock.get();
+		events->push_back(event->data);
+	}	
 }
-

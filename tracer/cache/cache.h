@@ -19,8 +19,9 @@ public:
 	void process(mem_read_event_t *event);
 	void process(mem_write_event_t *event);
 	void process(mem_insert_event_t *event);
-	void process(ready_event_t *event);
-	void process(stall_event_t *event);
+	void process(pending_event_t *event);
+	void process(ready_event_t *event) {}
+	void process(stall_event_t *event) {}
 protected:
 	bool access(mem_event_t *event);
 	uint32_t get_tag(addr_t addr);
@@ -28,6 +29,7 @@ protected:
 	uint32_t read_latency = 1;
 	uint32_t write_latency = 1;
 	uint32_t invalid_latency = 1;
+	uint32_t ports = 1;
 	uint32_t lines;
 	uint32_t line_size = 4; 
 	uint32_t sets;
@@ -38,6 +40,7 @@ protected:
 	uint32_t tag_mask;
 	repl_policy_t *repl_policy = nullptr;
 	std::vector<uint32_t> data; 
+protected:
 	// Stats
 	counter_stat_t<uint64_t> accesses;	
 	counter_stat_t<uint64_t> inserts;

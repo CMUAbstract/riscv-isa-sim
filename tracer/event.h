@@ -63,8 +63,6 @@ struct event_t: public event_base_t {
 		: event_base_t(0), handler(_handler), data(_data) {}
 	event_t(T *_handler, K _data, cycle_t _cycle)
 		: event_base_t(_cycle), handler(_handler), data(_data) {}
-	event_t(T *_handler, K _data, cycle_t _cycle, event_base_t *event)
-		: event_base_t(_cycle), handler(_handler), data(_data) {}
 	virtual ~event_t() {}
 	T* handler = nullptr;
 	K data;

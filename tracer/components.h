@@ -25,7 +25,7 @@ const std::map<std::string, ram_t*(*)(std::string name, io::json, event_list_t *
 ram_type_map = {
 	// {"simple_mem", &create_mem<simple_ram_t>},
 	{"cache", &create_component<ram_t, cache_t>},
-	{"main", &create_component<ram_t, main_ram_t>}
+	{"main", &create_component<ram_t, main_mem_t>}
 };
 
 #endif

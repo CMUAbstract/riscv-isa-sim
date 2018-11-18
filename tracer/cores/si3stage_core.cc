@@ -65,7 +65,7 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 		events->push_back(pending_event);
 	}
 	events->push_back(
-			new mem_read_event_t(icache, event->data.ws->pc, clock.get(), event));
+			new mem_read_event_t(icache, event->data.ws->pc, clock.get()));
 }
 
 // Does not yet include CSRs
@@ -118,8 +118,9 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 	}
 	for(auto it : event->data.ws->input.locs) {
 		for(auto child : children.raw<ram_handler_t *>()) {
+			if(child.second == icache) continue;
 			events->push_back(
-					new mem_read_event_t(child.second, it, clock.get(), event));
+					new mem_read_event_t(child.second, it, clock.get()));
 			pending_event->add_dependence<ready_event_t *>([it](ready_event_t *e) {
 				return e->data == it;
 			});
@@ -127,8 +128,9 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 	}
 	for(auto it : event->data.ws->output.locs) {
 		for(auto child : children.raw<ram_handler_t *>()) {
+			if(child.second == icache) continue;
 			events->push_back(
-					new mem_write_event_t(child.second, it, clock.get(), event));
+					new mem_write_event_t(child.second, it, clock.get()));
 			pending_event->add_dependence<ready_event_t *>([it](ready_event_t *e) {
 				return e->data == it;
 			});
