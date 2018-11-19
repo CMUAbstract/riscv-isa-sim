@@ -18,6 +18,7 @@ protected:
 	template<class T>
 	void check_pending(T event);
 	void check_pending();
+	void clear_pending() { pending_events.clear(); }
 private:
 	std::set<pending_event_t *> pending_events;
 };

@@ -166,18 +166,19 @@ void processor_t::reset()
   if(tracer != nullptr) tracer->reset();
 }
 
-void processor_t::handle() {
+bool processor_t::handle() {
   try {
     throw;
   } catch(intermittent_except_t& except) {
-    std::cout << state.minstret << " <=> " << except.minstret << std::endl;
+    std::cout << "Functional: " << state.minstret << "; Timing: " << except.minstret << std::endl;
     assert(state.minstret >= except.minstret);
     tracer->reset(except.minstret);
     reverse_step(state.minstret - except.minstret);
     sim->inter_reset();
   } catch(...) {
-    throw;
+    return false;
   }
+  return true;
 }
 
 // Count number of contiguous 0 bits starting from the LSB.

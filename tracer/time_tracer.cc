@@ -63,6 +63,7 @@ time_tracer_t::~time_tracer_t() {
 
 void time_tracer_t::reset(size_t minstret) {
 	events.clear();
+	fail();
 	for(auto c : components) c.second->reset();
 }
 
@@ -89,7 +90,7 @@ void time_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 #endif
 	if(intermittent && should_fail(core->get_clock())) {
 #if 1
-		std::cout << "Triggering intermittent failure" << std::endl;
+		std::cout << std::endl << "Triggering intermittent failure" << std::endl;
 #endif
 		// Throw intermittent exception here
 		intermittent_except_t except;

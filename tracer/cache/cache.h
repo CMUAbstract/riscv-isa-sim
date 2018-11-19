@@ -13,7 +13,7 @@ class cache_t: public ram_t {
 public:
 	cache_t(std::string _name, io::json _config, event_list_t *_events);
 	virtual ~cache_t() {}
-	virtual void reset() {}
+	virtual void reset();
 	virtual io::json to_json() const;	
 	void set(repl_policy_t *_repl_policy) { repl_policy = _repl_policy; }
 	void process(mem_read_event_t *event);

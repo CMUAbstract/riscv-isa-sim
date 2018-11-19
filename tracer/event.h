@@ -96,6 +96,10 @@ struct event_list_t {
 	bool empty() {
 		return events.size() == 0;
 	}
+	std::vector<event_base_t *>::iterator erase(
+		std::vector<event_base_t *>::iterator it) { return events.erase(it); }
+	std::vector<event_base_t *>::iterator begin() { return events.begin(); }
+	std::vector<event_base_t *>::iterator end() { return events.end(); }
 	bool ready() { return ready_flag; }
 	void set_ready() { ready_flag = true; }
 	void set_ready(bool val) { ready_flag = val; }

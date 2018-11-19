@@ -18,8 +18,14 @@ core_t::~core_t() {
 }
 
 void core_t::reset() {
+	component_t::reset();
+	clear_pending();
 	running_insns.inc(retired_insns.get());
 	retired_insns.reset();
+	status["decode"] = false;
+	status["exec"] = false;
+	for(auto it : insns) delete it;
+	insns.clear();
 }
 
 io::json core_t::to_json() const {

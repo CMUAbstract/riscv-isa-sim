@@ -24,7 +24,7 @@ public:
 	}
 	virtual ~component_base_t() {}
 	virtual void init() {}
-	virtual void reset() {}
+	virtual void reset() { clock.reset(); }
 	virtual io::json to_json() const;
 
 	virtual void enqueue(hvec *vec) = 0;
