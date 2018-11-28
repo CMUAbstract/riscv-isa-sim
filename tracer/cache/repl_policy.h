@@ -25,9 +25,8 @@ protected:
 
 class lru_repl_policy_t: public repl_policy_t {
 public:
-	lru_repl_policy_t(uint32_t _lines) : repl_policy_t(_lines) {
-		timestamps.resize(lines);
-	}
+	lru_repl_policy_t(uint32_t _lines) 
+		: repl_policy_t(_lines), timestamps(lines, 0) {}
 	void update(uint32_t id, mem_event_t *req);
 	uint32_t rank(mem_event_t *req, std::vector<repl_cand_t> *cands);
 	void replaced(uint32_t id);

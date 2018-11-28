@@ -12,7 +12,7 @@
 #define ACCESS_LIMIT 20
 #define ACCESS_LIMIT_ENABLE 0
 
-cache_t::cache_t(std::string _name, io::json _config, event_list_t *_events)
+cache_t::cache_t(std::string _name, io::json _config, event_hmap_t *_events)
 	: ram_t(_name, _config, _events), accesses("accesses"), inserts("inserts"),
 	read_misses("read_misses"), write_misses("write_misses"),
 	read_hits("read_hits"), write_hits("write_hits") {
@@ -83,11 +83,15 @@ void cache_t::process(mem_read_event_t *event) {
 		return;
 	}
 	reads.inc();
-	// Increment write and also queue event to decrement write
+	// Increment read and also queue event to decrement read
 	status["read"]++;
+	std::cout << "increasing " << name << " readers" << std::endl;
 	auto pending_event = new pending_event_t(
-		this, nullptr, clock.get() + write_latency);
-	pending_event->add_fini([&](){ status["read"]--; });
+		this, nullptr, clock.get() + read_latency);
+	pending_event->add_fini([&](){
+		std::cout << "decreasing " << name << " readers" << std::endl;
+		status["read"]--; 
+	});
 	register_pending(pending_event);
 	events->push_back(pending_event);
 	if(!access(event)) { // Read Miss
@@ -195,6 +199,11 @@ void cache_t::process(mem_insert_event_t *event) {
 			new ready_event_t(
 				parent.second, event->data, clock.get() + invalid_latency));
 	}
+	for(auto parent : parents.raw<ram_t *>()) { // Blocking
+		events->push_back(
+			new mem_insert_event_t(
+				parent.second, event->data, clock.get() + invalid_latency));
+	}
 }
 
 bool cache_t::access(mem_event_t *event) {
@@ -248,5 +257,6 @@ void cache_t::process(pending_event_t *event) {
 		event->data->ready_gc = true;
 		event->data->cycle = clock.get();
 		events->push_back(event->data);
+		event->data = nullptr;
 	}	
 }

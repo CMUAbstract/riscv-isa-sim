@@ -6,8 +6,9 @@
 
 #define SIGN_EXTEND(v) (0xFFFFFFFF00000000 | v)
 
-void basic_ram_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
-	for(auto loc : ws->input.locs) {
+void basic_ram_tracer_t::trace(
+	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
+	for(auto loc : ws.input.locs) {
 		auto it = tracked_locations.find(loc);
 		if(it == tracked_locations.end()) {
 			mem_loc_stat_t *mem_loc_stat = new mem_loc_stat_t();
@@ -17,7 +18,7 @@ void basic_ram_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) 
 		}
 		it->second->reads.inc();
 	}
-	for(auto loc : ws->output.locs) {
+	for(auto loc : ws.output.locs) {
 		auto it = tracked_locations.find(loc);
 		if(it == tracked_locations.end()) {
 			mem_loc_stat_t *mem_loc_stat = new mem_loc_stat_t();

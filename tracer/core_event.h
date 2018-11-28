@@ -9,21 +9,9 @@
 #include "event.h"
 #include "core.h"
 
-class working_set_t;
-struct timed_insn_t {
-	timed_insn_t();
-	timed_insn_t(shared_ptr_t<working_set_t> _ws, 
-		insn_bits_t _opc, insn_t _insn);
-	timed_insn_t(timed_insn_t *_insn);
-	~timed_insn_t() {}
-	shared_ptr_t<working_set_t> ws;
-	insn_bits_t opc;
-	insn_t insn;
-};
-
-struct insn_event_t: public event_t<core_handler_t, timed_insn_t> {
-	insn_event_t(core_handler_t *_handler, timed_insn_t *_insn) 
-		: event_t<core_handler_t, timed_insn_t>(_handler, _insn) {}
+struct timed_insn_t;
+struct insn_event_t: public event_t<core_handler_t, shared_ptr_t<timed_insn_t>> {
+	using event_t<core_handler_t, shared_ptr_t<timed_insn_t>>::event_t;
 	std::string to_string();
 };
 

@@ -11,10 +11,11 @@ public:
 	basic_ram_tracer_t(io::json _config, elfloader_t *_elf)
 		: tracer_impl_t("basic_ram_tracer", _config, _elf) {}
 	~basic_ram_tracer_t();
-	bool interested(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+	bool interested(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 		return true;
 	}
-	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn);
+	void trace(const working_set_t &ws, const insn_bits_t opc, const insn_t &insn);
 	void tabulate();
 	io::json to_json() const { return io::json(tracked_locations); }
 private:

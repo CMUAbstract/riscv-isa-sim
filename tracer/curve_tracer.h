@@ -15,10 +15,12 @@ public:
 		init();
 	}
 	~insn_curve_tracer_t();
-	bool interested(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+	bool interested(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 		return true;
 	}
-	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn);
+	void trace(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn);
 	void tabulate() {}
 	io::json to_json() const { return io::json(histogram); }
 protected:
@@ -37,7 +39,8 @@ public:
 		: insn_curve_tracer_t(_config, _elf) {
 		name = "miss_curve_tracer"; 
 	}
-	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn);
+	void trace(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn);
 private:
 	reg_t maccess = 0;
 };

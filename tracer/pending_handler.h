@@ -2,6 +2,7 @@
 #define PENDING_HANDLER
 
 #include <set>
+#include "event.h"
 
 class pending_event_t;
 class pending_handler_t {
@@ -11,16 +12,13 @@ protected:
 	void register_pending(pending_event_t *event) {
 		pending_events.insert(event);
 	}
-	void remove_pending(pending_event_t *event) {
-		auto it = pending_events.find(event);
-		if(it != pending_events.end()) pending_events.erase(it);
-	}
+	void remove_pending(eventref_t event);
 	template<class T>
 	void check_pending(T event);
 	void check_pending();
 	void clear_pending() { pending_events.clear(); }
-private:
-	std::set<pending_event_t *> pending_events;
+protected:
+	eventref_set_t<pending_event_t *> pending_events;
 };
 
 #include "pending_event.h"

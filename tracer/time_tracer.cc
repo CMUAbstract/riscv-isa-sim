@@ -9,8 +9,8 @@
 #include "core_event.h"
 #include "signal_event.h"
 
-#define TICK_LIMIT_ENABLE 0
-#define TICK_LIMIT 100
+#define TICK_LIMIT_ENABLE 1
+#define TICK_LIMIT 200
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
 	: tracer_impl_t("time_tracer", _config, _elf) {
@@ -73,17 +73,18 @@ io::json time_tracer_t::to_json() const {
 	return trace;
 }
 
-void time_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
-	auto shared_ws = shared_ptr_t<working_set_t>(new working_set_t(ws));
-	auto timed_insn = new timed_insn_t(shared_ws, opc, insn);
-	core->buffer_insn(timed_insn);
+void time_tracer_t::trace(
+	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
+	auto shared_timed_insn = shared_ptr_t<timed_insn_t>(
+		new timed_insn_t(ws, opc, insn));
+	core->buffer_insn(shared_timed_insn);
 	bool ran = false;
 	while(!events.ready() && !events.empty() && 
 		(core->get_clock() != TICK_LIMIT || !TICK_LIMIT_ENABLE)) {
 		ran = true;
 		event_base_t *e = events.pop_back();
-		e->handle();
-		if(e->ready_gc) delete e;
+		if(!e->squashed) e->handle();
+		if(e->ready_gc || e->squashed) delete e;
 	}
 #if TICK_LIMIT_ENABLE
 	if(TICK_LIMIT == core->get_clock()) exit(0);

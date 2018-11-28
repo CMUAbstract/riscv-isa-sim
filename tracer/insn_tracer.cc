@@ -12,7 +12,8 @@ void insn_tracer_t::register_insn_types(void) {
 	#undef DEFINE_INSN_STAT
 }
 
-void perf_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+void perf_tracer_t::trace(
+	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 	// reg_t vl = p->get_state()->vl;
 	switch(m[opc]) {
 		case LOAD: return mcycles.inc(load_cycles); 
@@ -34,7 +35,8 @@ void perf_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
 	}
 }
 
-void energy_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+void energy_tracer_t::trace(
+	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 	// reg_t vl = p->get_state()->vl;
 	switch(insn_tracer_t::m[opc]) {
 		case LOAD: return menergy.inc(load_energy); 

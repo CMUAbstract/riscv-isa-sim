@@ -3,9 +3,9 @@ exec_prefix=@prefix@
 libdir=${prefix}/@libdir@
 includedir=${prefix}/@includedir@
 
-Name: riscv-hcontainer
+Name: riscv-hstd
 Description: Handles IO
 Version: git
-Libs: -Wl,-rpath,${libdir} -L${libdir} -lhcontainer
+Libs: -Wl,-rpath,${libdir} -L${libdir} -lhstd
 Cflags: -I${includedir}
 URL: http://riscv.org/download.html#tab_spike

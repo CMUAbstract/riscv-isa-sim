@@ -29,10 +29,12 @@ public:
 		mcycles.reset();
 	}
 	~perf_tracer_t() {}
-	bool interested(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+	bool interested(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 		return true;
 	}
-	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn);
+	void trace(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn);
 	io::json to_json() const { return io::json(mcycles); }
 private:
 	counter_stat_t<uint64_t> mcycles;
@@ -46,10 +48,12 @@ public:
 		menergy.reset();
 	}
 	~energy_tracer_t() {}
-	bool interested(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+	bool interested(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 		return true;
 	}
-	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn);
+	void trace(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn);
 	io::json to_json() const { return io::json(menergy); }
 private:
 	counter_stat_t<double> menergy; 

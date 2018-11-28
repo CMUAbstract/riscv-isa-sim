@@ -20,11 +20,10 @@ public:
 
 class ram_t: public component_t<ram_t, ram_handler_t, signal_handler_t, pending_handler_t> {
 public:
-	ram_t(std::string _name, io::json _config, event_list_t *_events);
+	ram_t(std::string _name, io::json _config, event_hmap_t *_events);
 	virtual ~ram_t() {}
 	virtual void reset();
 	virtual io::json to_json() const;
-	bool get_status(std::string key) { return status[key]; }
 protected:
 	std::map<std::string, uint16_t> status;
 	counter_stat_t<uint64_t> reads;

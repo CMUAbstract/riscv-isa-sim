@@ -11,8 +11,8 @@ reg_t rv32_NAME(processor_t* p, insn_t insn, reg_t pc)
   if(p->get_tracer() != nullptr) {
     #include "insns/NAME.h"
     ws.pc = STATE.pc;
-    if(p->get_tracer()->interested(&ws, OPCODE, insn)) {
-      p->get_tracer()->trace(&ws, OPCODE, insn);
+    if(p->get_tracer()->interested(ws, OPCODE, insn)) {
+      p->get_tracer()->trace(ws, OPCODE, insn);
     }
   } else {
     #include "insns/NAME.h"
@@ -29,8 +29,8 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
   if(p->get_tracer() != nullptr) {
     #include "insns/NAME.h"
     ws.pc = STATE.pc; 
-    if(p->get_tracer()->interested(&ws, OPCODE, insn)) {
-      p->get_tracer()->trace(&ws, OPCODE, insn);
+    if(p->get_tracer()->interested(ws, OPCODE, insn)) {
+      p->get_tracer()->trace(ws, OPCODE, insn);
     }
   } else {
     #include "insns/NAME.h"
