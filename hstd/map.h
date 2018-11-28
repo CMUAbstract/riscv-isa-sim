@@ -6,19 +6,21 @@
 #include <map>
 #include <functional>
 
+namespace hstd {
+
 template<class K>
-class hmap {
+class map {
 public:
 	template<class T>
 	void insert(std::pair<K, T> _t) {
 		if (items<T>.find(this) == std::end(items<T>)) {   
-			clear_functions.emplace_back([](hmap& _c){items<T>.erase(&_c);});
+			clear_functions.emplace_back([](map& _c){items<T>.erase(&_c);});
 			// if someone copies me, they need to call each copy_function 
 			// and pass themself
-			copy_functions.emplace_back([](const hmap& _from, hmap& _to) {
+			copy_functions.emplace_back([](const map& _from, map& _to) {
 				items<T>[&_to] = items<T>[&_from];
 			});
-			size_functions.emplace_back([](const hmap& _c){
+			size_functions.emplace_back([](const map& _c){
 				return items<T>[&_c].size();
 			});
 		}
@@ -49,7 +51,7 @@ public:
 		for (auto&& clear_func : clear_functions) clear_func(*this);
 	}
 
-	hmap& operator=(const hmap& _other) {
+	map& operator=(const map& _other) {
 		clear();
 		clear_functions = _other.clear_functions;
 		copy_functions = _other.copy_functions;
@@ -77,15 +79,17 @@ public:
 	template<class T>
 	typename std::map<K, T>::iterator end() { return items<T>[this].end(); } 
 protected:
-	std::vector<std::function<void(hmap&)>> clear_functions;
-	std::vector<std::function<void(const hmap&, hmap&)>> copy_functions;
-	std::vector<std::function<size_t(const hmap&)>> size_functions;
+	std::vector<std::function<void(map&)>> clear_functions;
+	std::vector<std::function<void(const map&, map&)>> copy_functions;
+	std::vector<std::function<size_t(const map&)>> size_functions;
 	template<class T> 
-	static std::unordered_map<const hmap *, std::map<K, T>> items;
+	static std::unordered_map<const map *, std::map<K, T>> items;
 };
 
 template<class K>
 template<class T>
-std::unordered_map<const hmap<K> *, std::map<K, T>> hmap<K>::items;
+std::unordered_map<const map<K> *, std::map<K, T>> map<K>::items;
+
+}
 
 #endif

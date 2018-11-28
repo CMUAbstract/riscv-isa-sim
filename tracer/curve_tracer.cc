@@ -18,9 +18,10 @@ void insn_curve_tracer_t::init(void) {
 	}
 }
 
-void insn_curve_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+void insn_curve_tracer_t::trace(
+	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 	auto insn_count = minstret++;
-	for(auto loc : ws->output.locs) {
+	for(auto loc : ws.output.locs) {
 		if(loc >= text_base && loc <= text_base + text_size) continue;
 		auto it = tracked_locations.find(loc);
 		if(it == tracked_locations.end()) {
@@ -38,7 +39,7 @@ void insn_curve_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn)
 		}
 		hit->second->inc();
 	}
-	for(auto loc : ws->input.locs) {
+	for(auto loc : ws.input.locs) {
 		if(loc >= text_base && loc <= text_base+ text_size) continue;
 		auto it = tracked_locations.find(loc);
 		if(it == tracked_locations.end()) {
@@ -63,10 +64,11 @@ insn_curve_tracer_t::~insn_curve_tracer_t() {
 	for(auto it : histogram) delete it.second;
 }
 
-void miss_curve_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+void miss_curve_tracer_t::trace(
+	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 	auto access_count = maccess;
-	maccess += ws->output.locs.size() + ws->input.locs.size();
-	for(auto loc : ws->output.locs) {
+	maccess += ws.output.locs.size() + ws.input.locs.size();
+	for(auto loc : ws.output.locs) {
 		if(loc >= text_base && loc <= text_base + text_size) continue;
 		auto it = tracked_locations.find(loc);
 		if(it == tracked_locations.end()) {
@@ -84,7 +86,7 @@ void miss_curve_tracer_t::trace(working_set_t *ws, insn_bits_t opc, insn_t insn)
 		}
 		hit->second->inc();
 	}
-	for(auto loc : ws->input.locs) {
+	for(auto loc : ws.input.locs) {
 		if(loc >= text_base && loc <= text_base+ text_size) continue;
 		auto it = tracked_locations.find(loc);
 		if(it == tracked_locations.end()) {

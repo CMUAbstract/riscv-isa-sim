@@ -11,28 +11,30 @@
 struct working_set_t {
 public:
 	working_set_t() {}
-	working_set_t(working_set_t *ws) {
-		pc = ws->pc;
-		input.regs = ws->input.regs;
-		input.fregs = ws->input.fregs;
-		input.vregs = ws->input.vregs;
-		input.locs = ws->input.locs;
-		input.csrs = ws->input.csrs;
+	working_set_t(const working_set_t &ws) {
+		pc = ws.pc;
+		next_pc = ws.next_pc;
+		input.regs = ws.input.regs;
+		input.fregs = ws.input.fregs;
+		input.vregs = ws.input.vregs;
+		input.locs = ws.input.locs;
+		input.csrs = ws.input.csrs;
 
-		diff.regs = ws->diff.regs;
-		diff.fregs = ws->diff.fregs;
-		diff.vregs = ws->diff.vregs;
-		diff.locs = ws->diff.locs;
-		diff.csrs = ws->diff.csrs;
+		diff.regs = ws.diff.regs;
+		diff.fregs = ws.diff.fregs;
+		diff.vregs = ws.diff.vregs;
+		diff.locs = ws.diff.locs;
+		diff.csrs = ws.diff.csrs;
 
-		output.regs = ws->output.regs;
-		output.fregs = ws->output.fregs;
-		output.vregs = ws->output.vregs;
-		output.locs = ws->output.locs;
-		output.csrs = ws->output.csrs;
+		output.regs = ws.output.regs;
+		output.fregs = ws.output.fregs;
+		output.vregs = ws.output.vregs;
+		output.locs = ws.output.locs;
+		output.csrs = ws.output.csrs;
 	}
 public:
 	reg_t pc;
+	reg_t next_pc;
 	struct {
 		std::set<size_t> regs;
 		std::set<size_t> fregs;
@@ -88,16 +90,20 @@ public:
 			diff.vregs.push_back(std::make_tuple(reg, i, value[i]));
 		return reg;
 	}
+	template <typename T>
 	addr_t log_input_loc(addr_t addr) {
 		input.locs.insert(addr);
+		if(sizeof(T) == 8) input.locs.insert(addr + sizeof(uint32_t));
 		return addr;
 	}
 	template <typename T>
 	addr_t log_output_loc(addr_t addr, T value) {
 		output.locs.insert(addr);
+		if(sizeof(T) == 8) output.locs.insert(addr + sizeof(uint32_t));
 		uint8_t *bytes = (uint8_t *)&value;
-		for(size_t i = 0; i < sizeof(T); i++)
+		for(size_t i = 0; i < sizeof(T); i++) {
 			diff.locs.push_back(std::make_tuple(addr + i, bytes[i]));
+		}
 		return addr;
 	}
 	size_t log_input_csr(size_t reg) {
@@ -108,6 +114,10 @@ public:
 		input.csrs.insert(reg);
 		diff.csrs.push_back(std::make_tuple(reg, value));
 		return reg;
+	}
+	addr_t log_next_pc(addr_t addr) {
+		next_pc = addr;
+		return addr;
 	}
 };
 

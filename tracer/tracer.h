@@ -19,8 +19,10 @@ class tracer_t: public io::serializable {
 public:
 	tracer_t() {}
 	virtual ~tracer_t() {}
-	virtual bool interested(working_set_t *ws, insn_bits_t opc, insn_t insn) = 0;
-	virtual void trace(working_set_t *ws, insn_bits_t opc, insn_t insn) = 0;
+	virtual bool interested(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) = 0;
+	virtual void trace(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) = 0;
 	virtual void tabulate() = 0;
 	virtual void reset(size_t minstret) {}
 	virtual void reset() {}
@@ -46,13 +48,15 @@ public:
 	~tracer_list_t() {
 		for(auto it : list) delete it;
 	}
-	bool interested(working_set_t *ws, insn_bits_t opc, insn_t insn) {
+	bool interested(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 		for(auto it : list)
 			if (it->interested(ws, opc, insn))
 				return true;
 		return false;
 	}
-	virtual void trace(working_set_t *ws, insn_bits_t opc, insn_t insn){
+	virtual void trace(
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 		for(auto it : list) it->trace(ws, opc, insn);
 	}
 	void tabulate() {
@@ -96,7 +100,7 @@ public:
 public:
 	core_tracer_t(std::string _config, elfloader_t *_elf);
 	~core_tracer_t() {}
-	void trace(working_set_t *ws, insn_bits_t opc, insn_t insn){
+	void trace(const working_set_t &ws, insn_bits_t opc, insn_t insn){
 		diffs.push_back(shared_ptr_t<working_set_t>(new working_set_t(ws)));
 		tracer_list_t::trace(ws, opc, insn);
 	}

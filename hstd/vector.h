@@ -5,23 +5,26 @@
 #include <unordered_map>
 #include <functional>
 
-class hvec {
+namespace hstd {
+
+class vector {
 public:
+	~vector() { clear(); }
 	template<class T>
 	void push_back(T _t) {
 		if (items<T>.find(this) == std::end(items<T>)) {   
-			clear_functions.emplace_back([](hvec *_c){
+			clear_functions.emplace_back([](vector *_c){
 				if(items<T>.find(_c) == items<T>.end()) return;
 				items<T>.erase(_c);
 			});
 			// if someone copies me, they need to call each copy_function 
 			// and pass themself
-			copy_functions.emplace_back([](const hvec *_from, hvec *_to) {
+			copy_functions.emplace_back([](const vector *_from, vector *_to) {
 				if(items<T>.find(_to) == items<T>.end()) return;
 				if(items<T>.find(_from) == items<T>.end()) return;
 				items<T>[_to] = items<T>[_from];
 			});
-			size_functions.emplace_back([](const hvec *_c){
+			size_functions.emplace_back([](const vector *_c){
 				if(items<T>.find(_c) == items<T>.end()) return (size_t)0;
 				return items<T>[_c].size();
 			});
@@ -53,7 +56,7 @@ public:
 		for (auto&& clear_func : clear_functions) clear_func(this);
 	}
 
-	hvec& operator=(const hvec& _other) {
+	vector& operator=(const vector& _other) {
 		clear();
 		clear_functions = _other.clear_functions;
 		copy_functions = _other.copy_functions;
@@ -80,14 +83,16 @@ public:
 	template<class T>
 	typename std::vector<T>::iterator end() { return items<T>[this].end(); } 
 protected:
-	std::vector<std::function<void(hvec*)>> clear_functions;
-	std::vector<std::function<void(const hvec*, hvec*)>> copy_functions;
-	std::vector<std::function<size_t(const hvec*)>> size_functions;
+	std::vector<std::function<void(vector*)>> clear_functions;
+	std::vector<std::function<void(const vector*, vector*)>> copy_functions;
+	std::vector<std::function<size_t(const vector*)>> size_functions;
 	template<class T> 
-	static std::unordered_map<const hvec *, std::vector<T>> items;
+	static std::unordered_map<const vector *, std::vector<T>> items;
 };
 
 template<class T>
-std::unordered_map<const hvec *, std::vector<T>> hvec::items;
+std::unordered_map<const vector *, std::vector<T>> vector::items;
+
+}
 
 #endif

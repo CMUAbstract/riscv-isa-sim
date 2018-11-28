@@ -1,8 +1,10 @@
 common_subproject_deps = 
 
 common_hdrs = \
-		hvec.h \
-		hmap.h \
+	vector.h \
+	map.h \
+	memory.h \
+	uuid.h \
 
 common_srcs =
 

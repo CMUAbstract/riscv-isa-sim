@@ -48,14 +48,14 @@
 			ws.log_output_vreg(reg, wdata, READP_VREG(reg, pos)), wdata, wpos);	\
 	})
 
-#define load_uint8(addr) load_uint8(ws.log_input_loc(addr))
-#define load_uint16(addr) load_uint16(ws.log_input_loc(addr))
-#define load_uint32(addr) load_uint32(ws.log_input_loc(addr))
-#define load_uint64(addr) load_uint64(ws.log_input_loc(addr))
-#define load_int8(addr) load_int8(ws.log_input_loc(addr))
-#define load_int16(addr) load_int16(ws.log_input_loc(addr))
-#define load_int32(addr) load_int32(ws.log_input_loc(addr))
-#define load_int64(addr) load_int64(ws.log_input_loc(addr))
+#define load_uint8(addr) load_uint8(ws.log_input_loc<uint8_t>(addr))
+#define load_uint16(addr) load_uint16(ws.log_input_loc<uint16_t>(addr))
+#define load_uint32(addr) load_uint32(ws.log_input_loc<uint32_t>(addr))
+#define load_uint64(addr) load_uint64(ws.log_input_loc<uint64_t>(addr))
+#define load_int8(addr) load_int8(ws.log_input_loc<int8_t>(addr))
+#define load_int16(addr) load_int16(ws.log_input_loc<int16_t>(addr))
+#define load_int32(addr) load_int32(ws.log_input_loc<int32_t>(addr))
+#define load_int64(addr) load_int64(ws.log_input_loc<int64_t>(addr))
 
 #define store_uint8(addr, val) store_uint8(										\
 	ws.log_output_loc<uint8_t>(addr, MMU.load_uint8(addr)), val);
@@ -76,4 +76,11 @@
 
 #define get_csr(reg) get_csr(ws.log_input_csr(reg))
 #define set_csr(reg, value) set_csr(ws.log_output_csr(reg, p->get_csr(reg)), value)
+
+#undef set_pc
+#define set_pc(x)																\
+	do {																		\
+		p->check_pc_alignment(x);												\
+		npc = ws.log_next_pc(sext_xlen(x));										\
+	} while (0)
 

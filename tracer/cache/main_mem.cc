@@ -4,7 +4,7 @@
 #include "signal_event.h"
 #include "pending_event.h"
 
-main_mem_t::main_mem_t(std::string _name, io::json _config, event_list_t *_events)
+main_mem_t::main_mem_t(std::string _name, io::json _config, event_heap_t *_events)
 	: ram_t(_name, _config, _events) {
 	JSON_CHECK(int, config["read_latency"], read_latency);
 	JSON_CHECK(int, config["write_latency"], write_latency);
@@ -91,10 +91,10 @@ void main_mem_t::process(pending_event_t *event) {
 	}
 	event->finish();
 	event->ready_gc = true;
-	remove_pending(event);
 	if(event->data != nullptr) {
 		event->data->ready_gc = true;
 		event->data->cycle = clock.get();
 		events->push_back(event->data);
+		event->data = nullptr;
 	}
 }
