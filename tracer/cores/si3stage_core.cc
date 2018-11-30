@@ -56,9 +56,8 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 	TIME_VIOLATION_CHECK
 	auto pending_event = new pending_event_t(
 		this, new insn_decode_event_t(this, event->data), clock.get() + 1);
-	auto pc = event->data->ws.pc;
-	pending_event->add_dependence<ready_event_t *>([pc](ready_event_t *e) {
-		return e->data == pc;
+	pending_event->add_dependence<ready_event_t *>([pc_val=pc](ready_event_t *e) {
+		return e->data == pc_val;
 	});
 	pending_event->add_fini([&](){
 		if(!state["decode"]) next_insn();
@@ -67,8 +66,9 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 	events->push_back(pending_event);
 	register_squashed("fetch", pending_event);
 
-	auto read_event = new mem_read_event_t(icache, event->data->ws.pc, clock.get());
+	auto read_event = new mem_read_event_t(icache, pc, clock.get());
 	events->push_back(read_event);
+	pc += 4;
 }
 
 // Does not yet include CSRs
@@ -203,6 +203,7 @@ void si3stage_core_t::process(squash_event_t *event) {
 		state[stage] = false;
 	}
 	insn_idx -= event->data.size();
+	pc = insns[insn_idx]->ws.pc;
 	next_insn();
 }
 

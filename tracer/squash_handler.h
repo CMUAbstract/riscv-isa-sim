@@ -14,7 +14,6 @@ protected:
 	}
 	void squash(const std::string &key) {
 		auto it = squashed_events[key].begin(ref_events);
-		std::cout << squashed_events[key].size() << std::endl;
 		while(it != squashed_events[key].end(ref_events)) {
 			it->squashed = true;
 			it++;

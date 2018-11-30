@@ -50,7 +50,7 @@ public:
 protected:
 	std::vector<shared_ptr_t<timed_insn_t>> insns;
 	size_t insn_idx = 0;
-protected:
+	reg_t pc = 0x1000;
 	std::map<std::string, bool> state;
 protected: // stats
 	counter_stat_t<size_t> retired_insns;
