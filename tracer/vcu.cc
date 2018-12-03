@@ -20,3 +20,13 @@ bool vcu_t::check_vec(insn_bits_t opc) {
 	};
 	return false;
 }
+
+void vcu_t::check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn) {
+	if(insn->opc != MATCH_VSETVL) return;
+	for(auto csr : insn->ws.output.csrs) {
+		if(std::get<0>(csr) == CSR_VL) {
+			vl = std::get<1>(csr);
+			break;
+		}
+	}
+}

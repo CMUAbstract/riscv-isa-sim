@@ -10,6 +10,8 @@
 
 #include <common/decode.h>
 #include <hstd/uuid.h>
+#include <hstd/memory.h>
+
 #include "log.h"
 
 typedef uint64_t cycle_t;
@@ -27,7 +29,7 @@ struct event_base_t {
 	bool squashed = false;
 };
 
-#define HANDLER_INFO 2
+#define HANDLER_INFO 0
 #if HANDLER_INFO == 2
 #define HANDLER 																\
 	void handle() { 															\
@@ -74,11 +76,10 @@ struct event_t: public event_base_t {
 };
 
 struct eventref_t {
-	eventref_t() {}
 	template<class T, typename std::enable_if<
 		std::is_pointer<typename std::decay<T>::type>::value, int>::type = 0>
-	eventref_t(T e): id(e->id) {}
-	eventref_t(hstd::uuid _id): id(_id) {}
+	eventref_t(T e): id(new hstd::uuid(e->id)) {}
+	eventref_t(hstd::shared_ptr<hstd::uuid> _id): id(_id) {}
 	eventref_t(eventref_t const& copy): id(copy.get_id()) {}
 	eventref_t& operator=(eventref_t rhs) {
 		rhs.swap(*this);
@@ -88,13 +89,13 @@ struct eventref_t {
 		std::swap(id,  other.id);
 	}
 	bool operator==(const eventref_t &other) const { 
-		return get_id() == other.get_id(); 
+		return *get_id() == *(other.get_id()); 
 	}
 	bool operator<(const eventref_t &other) const { 
-		return get_id() < other.get_id(); 
+		return *get_id() < *(other.get_id()); 
 	}
-	hstd::uuid get_id(void) const { return id; }
-	hstd::uuid id;
+	hstd::shared_ptr<hstd::uuid> get_id(void) const { return id; }
+	hstd::shared_ptr<hstd::uuid> id;
 };
 
 // Heap map that iterates like a vector (oh man!!)
@@ -108,7 +109,7 @@ public:
 	
 	std::vector<event_base_t *>::iterator 
 	erase(std::vector<event_base_t *>::iterator it) { 
-		events_set.erase((*it)->id);
+		events_set.erase(*it);
 		return events_heap.erase(it); 
 	}
 	void clear() { 
@@ -135,56 +136,6 @@ private:
 	std::vector<event_base_t *> events_heap;
 	std::set<eventref_t> events_set;
 	bool ready_flag = false;
-};
-
-template<class T>
-class eventref_set_t {
-public:
-	class iterator: public std::map<eventref_t, T>::iterator {
-	public:
-		iterator(const typename std::map<eventref_t, T>::iterator &it) 
-			: std::map<eventref_t, T>::iterator(it) {}
-		T& operator*() { 
-			return std::map<eventref_t, T>::iterator::operator*().second;
-		}
-		T operator->() {
-			return std::map<eventref_t, T>::iterator::operator*().second;
-		}
-	};
-public:
-	size_t size() { return events_map.size(); }
-	void insert(T e) { 
-		events_map.insert({e, e}); 
-	}
-	iterator find(eventref_t e, event_heap_t *ref) {
-		assert_msg(ref != nullptr, "ref event_heap is null");
-		auto it = events_map.find(e);
-		if(it != events_map.end() && ref->count(e) == 0) {
-			events_map.erase(it); 
-			return events_map.end();
-		}
-		return it; 
-	}
-	iterator erase(iterator it, event_heap_t *ref = nullptr) { 
-		return events_map.erase(it); 
-	}
-	void clear() { events_map.clear(); }
-	iterator begin(event_heap_t *ref) { 
-		assert_msg(ref != nullptr, "ref event_heap is null");
-		gc(ref);
-		return events_map.begin(); 
-	}
-	iterator end(event_heap_t *ref = nullptr) { return events_map.end(); }
-private:
-	void gc(event_heap_t *ref) {
-		typename std::map<eventref_t, T>::iterator it = events_map.begin();
-		while(it != events_map.end()) {
-			if(ref->count(it->first) == 0) it = events_map.erase(it);
-			else ++it;
-		}
-	}
-private:
-	std::map<eventref_t, T> events_map;
 };
 
 #endif

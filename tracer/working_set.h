@@ -47,7 +47,7 @@ public:
 		std::set<size_t> fregs;
 		std::set<size_t> vregs;
 		std::set<addr_t> locs;
-		std::set<size_t> csrs;
+		std::set<std::tuple<size_t, reg_t>> csrs;
 	} output;
 	struct {
 		std::vector<std::tuple<size_t, reg_t>> regs;
@@ -110,9 +110,9 @@ public:
 		input.csrs.insert(reg);
 		return reg;
 	}
-	size_t log_output_csr(size_t reg, reg_t value) {
-		input.csrs.insert(reg);
-		diff.csrs.push_back(std::make_tuple(reg, value));
+	size_t log_output_csr(size_t reg, reg_t old_value, reg_t new_value) {
+		output.csrs.insert(std::make_tuple(reg, new_value));
+		diff.csrs.push_back(std::make_tuple(reg, old_value));
 		return reg;
 	}
 	addr_t log_next_pc(addr_t addr) {

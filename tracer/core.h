@@ -1,7 +1,7 @@
 #ifndef CORE_H
 #define CORE_H
 
-#include <vector>
+#include <deque>
 
 #include <common/decode.h>
 #include <stat/stat.h>
@@ -49,7 +49,7 @@ public:
 	virtual void buffer_insn(hstd::shared_ptr<timed_insn_t> insn) = 0;
 	virtual size_t minstret() const { return retired_insns.get(); }
 protected:
-	std::vector<hstd::shared_ptr<timed_insn_t>> insns;
+	std::deque<hstd::shared_ptr<timed_insn_t>> insns;
 	size_t insn_idx = 0;
 	reg_t pc = 0x1000;
 	std::map<std::string, bool> state;

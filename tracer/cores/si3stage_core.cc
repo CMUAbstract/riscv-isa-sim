@@ -14,7 +14,7 @@
 #include "vector_event.h"
 #include "branch_predictor.h"
 
-#define SQUASH_LOG 1
+// #define SQUASH_LOG 1
 
 si3stage_core_t::si3stage_core_t(std::string _name, io::json _config, 
 	event_heap_t *_events) : core_t(_name, _config, _events) {
@@ -141,7 +141,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 	}
 	// Check for branch misprediction
 	if(predictor->check_branch(event->data->opc) && 
-		predictor->check_predict(event->data->ws.pc, event->data->ws.next_pc)) {
+		!predictor->check_predict(event->data->ws.pc, event->data->ws.next_pc)) {
 		predictor->update(event->data->ws.pc, event->data->ws.next_pc);
 		// ADD 2x BUBBLE
 #if SQUASH_LOG
@@ -155,7 +155,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 		return;
 	}
 	// Effectively commit instruction (as in branch resolved)
-	insns.erase(insns.begin());
+	insns.pop_front();
 	insn_idx--;
 	state["exec"] = true;
 	auto pending_event = new pending_event_t(this, 
@@ -187,12 +187,16 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 			});
 		}
 	}
-	if(vcu != nullptr && vcu->check_vec(event->data->opc)) {
-		events->push_back(new vector_exec_event_t(vcu, event->data, clock.get()));
-		pending_event->add_dependence<vector_ready_event_t *>(
-			[pc_val=event->data->ws.pc](vector_ready_event_t *e) {
-				return e->data->ws.pc == pc_val;
-		});
+	if(vcu != nullptr) {
+		vcu->check_and_set_vl(event->data);
+		if(vcu->check_vec(event->data->opc)) {
+			events->push_back(
+				new vector_exec_event_t(vcu, event->data, clock.get()));
+			pending_event->add_dependence<vector_ready_event_t *>(
+				[pc_val=event->data->ws.pc](vector_ready_event_t *e) {
+					return e->data->ws.pc == pc_val;
+			});
+		}
 	}
 	register_pending(pending_event);
 	events->push_back(pending_event);

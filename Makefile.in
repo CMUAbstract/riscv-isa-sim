@@ -82,11 +82,12 @@ VPATH := $(addprefix $(src_dir)/, $(sprojs_enabled))
 #  - CPPFLAGS : flags for the preprocessor (eg. -I,-D)
 #  - CXXFLAGS : flags for C++ compiler (eg. -Wall,-g,-O3)
 
+GPROF         := -g 
 CC            := @CC@
 CXX           := @CXX@
-CFLAGS        += @CFLAGS@ -DPREFIX=\"$(prefix)\"
+CFLAGS        += @CFLAGS@ -DPREFIX=\"$(prefix)\" $(GPROF)
 CPPFLAGS      += @CPPFLAGS@
-CXXFLAGS      += @CXXFLAGS@ -DPREFIX=\"$(prefix)\"
+CXXFLAGS      += @CXXFLAGS@ -DPREFIX=\"$(prefix)\" $(GPROF)
 COMPILE       := $(CXX) -fPIC -MMD -MP $(CPPFLAGS) $(CXXFLAGS) \
                  $(sprojs_include)
 COMPILE_C     := $(CC) -fPIC -MMD -MP $(CPPFLAGS) $(CFLAGS) \
@@ -97,7 +98,7 @@ COMPILE_C     := $(CC) -fPIC -MMD -MP $(CPPFLAGS) $(CFLAGS) \
 
 comma := ,
 LD            := $(CXX)
-LDFLAGS       := @LDFLAGS@
+LDFLAGS       := @LDFLAGS@ $(GPROF)
 LIBS          := @LIBS@ -lstdc++fs -luuid
 LINK          := $(LD) -L. $(LDFLAGS) -Wl,-rpath,$(install_libs_dir) $(patsubst -L%,-Wl$(comma)-rpath$(comma)%,$(filter -L%,$(LDFLAGS)))
 

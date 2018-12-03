@@ -75,7 +75,7 @@
 	ws.log_output_loc<int64_t>(addr, MMU.load_int64(addr)), val);
 
 #define get_csr(reg) get_csr(ws.log_input_csr(reg))
-#define set_csr(reg, value) set_csr(ws.log_output_csr(reg, p->get_csr(reg)), value)
+#define set_csr(reg, value) set_csr(ws.log_output_csr(reg, p->get_csr(reg), value), value)
 
 #undef set_pc
 #define set_pc(x)																\
