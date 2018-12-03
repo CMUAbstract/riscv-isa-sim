@@ -4,6 +4,7 @@
 
 #include "log.h"
 #include "ram.h"
+#include "vcu.h"
 #include "working_set.h"
 #include "core_event.h"
 #include "mem_event.h"
@@ -24,18 +25,26 @@ si3stage_core_t::si3stage_core_t(std::string _name, io::json _config,
 }
 
 void si3stage_core_t::init() {
-	std::string icache_id;
-	JSON_CHECK(string, config["icache"], icache_id);
-	auto child = children.find<ram_t *>(icache_id);
-	assert_msg(child != children.end<ram_t *>(), "icache not found");
-	icache = child->second;
+	{
+		std::string id;
+		JSON_CHECK(string, config["icache"], id);
+		auto child = children.find<ram_t *>(id);
+		assert_msg(child != children.end<ram_t *>(), "icache not found");
+		icache = child->second;
+	}
+	{
+		std::string id;
+		JSON_CHECK(string, config["vcu"], id);
+		auto child = children.find<vcu_t *>(id);
+		vcu = child->second;
+	}
 }
 
 io::json si3stage_core_t::to_json() const {
 	return core_t::to_json();
 }
 
-void si3stage_core_t::buffer_insn(shared_ptr_t<timed_insn_t> insn) {
+void si3stage_core_t::buffer_insn(hstd::shared_ptr<timed_insn_t> insn) {
 	insns.push_back(insn);
 	next_insn();
 }
@@ -193,7 +202,7 @@ void si3stage_core_t::process(pending_event_t *event) {
 void si3stage_core_t::process(squash_event_t *event) {
 	TIME_VIOLATION_CHECK
 	for(auto stage : event->data) {
-#if 1
+#if 0
 		std::cout << "================================================" << std::endl;
 		std::cout << "Squashing pipeline state: " << stage << std::endl;
 		std::cout << "================================================" << std::endl;

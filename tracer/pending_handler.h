@@ -1,7 +1,6 @@
 #ifndef PENDING_HANDLER
 #define PENDING_HANDLER
 
-#include <set>
 #include "event.h"
 
 class pending_event_t;

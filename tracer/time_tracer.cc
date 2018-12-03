@@ -1,7 +1,8 @@
 #include "time_tracer.h"
 
+#include <hstd/memory.h>
+
 #include "log.h"
-#include "smartptr.h"
 #include "except.h"
 #include "working_set.h"
 #include "components.h"
@@ -39,6 +40,14 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 			ram_t *mem = ram_type_map.at(it["model"].string_value())(
 				it["name"].string_value(), it, &events);
 			components.insert({it["name"].string_value(), mem});
+		} else if(it["type"].string_value().compare("vcu") == 0) {
+			assert_msg(it["model"].is_string(), "No vcu model");
+			assert_msg(it["name"].is_string(), "No name");
+			assert_msg(vcu_type_map.find(it["model"].string_value()) 
+				!= vcu_type_map.end(), "Invalid vcu model");
+			vcu_t *vcu = vcu_type_map.at(it["model"].string_value())(
+				it["name"].string_value(), it, &events);
+			components.insert({it["name"].string_value(), vcu});
 		}
 	}
 	for(auto it : config["config"].array_items()) {
@@ -75,7 +84,7 @@ io::json time_tracer_t::to_json() const {
 
 void time_tracer_t::trace(
 	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
-	auto shared_timed_insn = shared_ptr_t<timed_insn_t>(
+	auto shared_timed_insn = hstd::shared_ptr<timed_insn_t>(
 		new timed_insn_t(ws, opc, insn));
 	core->buffer_insn(shared_timed_insn);
 	bool ran = false;

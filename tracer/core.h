@@ -5,13 +5,14 @@
 
 #include <common/decode.h>
 #include <stat/stat.h>
+#include <hstd/memory.h>
 
-#include "smartptr.h"
 #include "working_set.h"
 #include "component.h"
 #include "signal_handler.h"
 #include "pending_handler.h"
 #include "squash_handler.h"
+#include "vector_handler.h"
 
 struct timed_insn_t {
 	timed_insn_t(working_set_t _ws, insn_bits_t _opc, insn_t _insn)
@@ -45,10 +46,10 @@ public:
 	~core_t() {}
 	virtual void reset();
 	virtual io::json to_json() const;
-	virtual void buffer_insn(shared_ptr_t<timed_insn_t> insn) = 0;
+	virtual void buffer_insn(hstd::shared_ptr<timed_insn_t> insn) = 0;
 	virtual size_t minstret() const { return retired_insns.get(); }
 protected:
-	std::vector<shared_ptr_t<timed_insn_t>> insns;
+	std::vector<hstd::shared_ptr<timed_insn_t>> insns;
 	size_t insn_idx = 0;
 	reg_t pc = 0x1000;
 	std::map<std::string, bool> state;
