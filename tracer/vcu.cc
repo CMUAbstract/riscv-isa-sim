@@ -10,5 +10,13 @@ io::json vcu_t::to_json() const {
 }
 
 bool vcu_t::check_vec(insn_bits_t opc) {
-	return true;
+	switch(opc) {
+		case MATCH_VADD:
+		case MATCH_VMUL:
+		case MATCH_VREDSUM:
+		case MATCH_VLH:
+		case MATCH_VLXH:
+		case MATCH_VSH: return true;
+	};
+	return false;
 }

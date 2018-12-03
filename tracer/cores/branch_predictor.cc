@@ -1,14 +1,16 @@
 #include "branch_predictor.h"
 
 bool branch_predictor_t::check_branch(insn_bits_t opc) {
-	if((opc & MATCH_BNE) == MATCH_BNE) return true;
-	else if((opc & MATCH_BEQ) == MATCH_BEQ) return true;
-	else if((opc & MATCH_C_BNEZ) == MATCH_C_BNEZ) return true;
-	else if((opc & MATCH_BGEU) == MATCH_BGEU) return true;
-	else if((opc & MATCH_BLTU) == MATCH_BLTU) return true;
-	else if((opc & MATCH_C_BEQZ) == MATCH_C_BEQZ) return true;
-	else if((opc & MATCH_BGE) == MATCH_BGE) return true;
-	else if((opc & MATCH_BLT) == MATCH_BLT) return true;
+	switch(opc) {
+		case MATCH_BNE:
+		case MATCH_BEQ:
+		case MATCH_C_BNEZ:
+		case MATCH_BGEU:
+		case MATCH_BLTU:
+		case MATCH_C_BEQZ:
+		case MATCH_BGE:
+		case MATCH_BLT: return true;
+	};
 	return false;
 }
 

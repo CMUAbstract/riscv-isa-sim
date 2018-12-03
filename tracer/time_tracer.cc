@@ -11,7 +11,7 @@
 #include "signal_event.h"
 
 #define TICK_LIMIT_ENABLE 1
-#define TICK_LIMIT 40
+#define TICK_LIMIT 50
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
 	: tracer_impl_t("time_tracer", _config, _elf) {

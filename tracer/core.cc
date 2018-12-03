@@ -29,3 +29,15 @@ io::json core_t::to_json() const {
 	return io::json::merge_objects(
 		component_t::to_json(), retired_insns, running_insns);
 }
+
+bool core_t::check_jump(insn_bits_t opc) {
+	switch(opc) {
+		case MATCH_JALR:
+		case MATCH_C_J:
+		case MATCH_C_JR:
+		case MATCH_C_JAL:
+		case MATCH_JAL:
+		case MATCH_C_JALR: return true;
+	};
+	return false;
+}

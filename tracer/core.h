@@ -53,6 +53,7 @@ protected:
 	size_t insn_idx = 0;
 	reg_t pc = 0x1000;
 	std::map<std::string, bool> state;
+	bool check_jump(insn_bits_t opc);
 protected: // stats
 	counter_stat_t<size_t> retired_insns;
 	counter_stat_t<size_t> running_insns;

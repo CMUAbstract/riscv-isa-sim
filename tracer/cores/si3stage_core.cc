@@ -11,7 +11,10 @@
 #include "signal_event.h"
 #include "pending_event.h"
 #include "squash_event.h"
+#include "vector_event.h"
 #include "branch_predictor.h"
+
+#define SQUASH_LOG 1
 
 si3stage_core_t::si3stage_core_t(std::string _name, io::json _config, 
 	event_heap_t *_events) : core_t(_name, _config, _events) {
@@ -35,8 +38,10 @@ void si3stage_core_t::init() {
 	{
 		std::string id;
 		JSON_CHECK(string, config["vcu"], id);
-		auto child = children.find<vcu_t *>(id);
-		vcu = child->second;
+		if(id.size() != 0) {
+			auto child = children.find<vcu_t *>(id);
+			vcu = child->second;
+		}
 	}
 }
 
@@ -95,8 +100,14 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 	}
 	check_pending(event);
 	// Make a branch prediction
-	if(predictor->check_branch(event->data->opc) && 
-		predictor->predict(event->data->ws.pc)) {
+	if((predictor->check_branch(event->data->opc) && 
+		predictor->predict(event->data->ws.pc)) || check_jump(event->data->opc)) {
+#if SQUASH_LOG
+		std::cout << "================================================" << std::endl;
+		std::cout << "Squashing pipeline state: fetch (0x";
+		std::cout << std::hex << event->data->insn.bits() << ")" << std::dec << std::endl;
+		std::cout << "================================================" << std::endl;
+#endif
 		events->push_back(
 			new squash_event_t(this, {"fetch"}, clock.get()));
 		return;
@@ -133,6 +144,12 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 		predictor->check_predict(event->data->ws.pc, event->data->ws.next_pc)) {
 		predictor->update(event->data->ws.pc, event->data->ws.next_pc);
 		// ADD 2x BUBBLE
+#if SQUASH_LOG
+		std::cout << "================================================" << std::endl;
+		std::cout << "Squashing pipeline state: decode, fetch (0x";
+		std::cout << std::hex << event->data->insn.bits() << std::dec << ")" << std::endl;
+		std::cout << "================================================" << std::endl;
+#endif
 		events->push_back(
 			new squash_event_t(this, {"fetch", "decode"}, clock.get()));
 		return;
@@ -170,6 +187,13 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 			});
 		}
 	}
+	if(vcu != nullptr && vcu->check_vec(event->data->opc)) {
+		events->push_back(new vector_exec_event_t(vcu, event->data, clock.get()));
+		pending_event->add_dependence<vector_ready_event_t *>(
+			[pc_val=event->data->ws.pc](vector_ready_event_t *e) {
+				return e->data->ws.pc == pc_val;
+		});
+	}
 	register_pending(pending_event);
 	events->push_back(pending_event);
 }
@@ -202,11 +226,6 @@ void si3stage_core_t::process(pending_event_t *event) {
 void si3stage_core_t::process(squash_event_t *event) {
 	TIME_VIOLATION_CHECK
 	for(auto stage : event->data) {
-#if 0
-		std::cout << "================================================" << std::endl;
-		std::cout << "Squashing pipeline state: " << stage << std::endl;
-		std::cout << "================================================" << std::endl;
-#endif
 		squash(stage);
 		clear_squash(stage);
 		state[stage] = false;
@@ -233,4 +252,9 @@ void si3stage_core_t::process(ready_event_t *event) {
 
 void si3stage_core_t::process(stall_event_t *event) {
 	TIME_VIOLATION_CHECK
+}
+
+void si3stage_core_t::process(vector_ready_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
 }

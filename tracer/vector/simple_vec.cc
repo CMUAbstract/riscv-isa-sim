@@ -4,9 +4,7 @@
 #include "pending_event.h"
 
 simple_vec_t::simple_vec_t(std::string _name, io::json _config, event_heap_t *_events)
-	: vcu_t(_name, _config, _events) {
-
-}
+	: vcu_t(_name, _config, _events) {}
 
 void simple_vec_t::process(vector_exec_event_t *event) {
 
