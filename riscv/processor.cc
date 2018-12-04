@@ -181,6 +181,10 @@ bool processor_t::handle() {
   return true;
 }
 
+void processor_t::finish() {
+  if(tracer != nullptr) tracer->tabulate();
+}
+
 // Count number of contiguous 0 bits starting from the LSB.
 static int ctz(reg_t val)
 {

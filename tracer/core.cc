@@ -23,6 +23,8 @@ void core_t::reset() {
 	state["decode"] = false;
 	state["exec"] = false;
 	insns.clear();
+	insn_idx = 0;
+	retired_idx = 0;
 }
 
 io::json core_t::to_json() const {

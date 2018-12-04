@@ -30,6 +30,7 @@ public:
 			static_cast<vector_signal_handler_t *>(this));	
 	}	
 	void buffer_insn(hstd::shared_ptr<timed_insn_t> insn);
+	void next_insn();
 	void process(insn_fetch_event_t *event);
 	void process(insn_decode_event_t *event);
 	void process(insn_exec_event_t *event);
@@ -45,8 +46,6 @@ private:
 	ram_t *icache;
 	vcu_t *vcu = nullptr;
 	branch_predictor_t *predictor;
-private:
-	void next_insn();
 };
 
 #endif

@@ -20,6 +20,8 @@ struct timed_insn_t {
 	working_set_t ws;
 	insn_bits_t opc;
 	insn_t insn;
+	bool resolved = false;
+	size_t idx = 0;
 };
 
 struct insn_fetch_event_t;
@@ -47,10 +49,12 @@ public:
 	virtual void reset();
 	virtual io::json to_json() const;
 	virtual void buffer_insn(hstd::shared_ptr<timed_insn_t> insn) = 0;
+	virtual void next_insn() = 0;
 	virtual size_t minstret() const { return retired_insns.get(); }
 protected:
 	std::deque<hstd::shared_ptr<timed_insn_t>> insns;
 	size_t insn_idx = 0;
+	size_t retired_idx = 0;
 	reg_t pc = 0x1000;
 	std::map<std::string, bool> state;
 	bool check_jump(insn_bits_t opc);

@@ -21,7 +21,7 @@ public:
 	void trace(
 		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn);
 	void reset(size_t minstret);
-	void tabulate() {}
+	void tabulate();
 	io::json to_json() const;
 private:
 	event_heap_t events;

@@ -110,6 +110,7 @@ int sim_t::run()
     if(exit_debug) {
       io::tinycon::run();
     }
+    for(size_t i = 0; i < procs.size(); i++) procs[i]->finish();
     return exit_code;
 }
 

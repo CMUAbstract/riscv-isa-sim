@@ -57,7 +57,8 @@ void si3stage_core_t::buffer_insn(hstd::shared_ptr<timed_insn_t> insn) {
 void si3stage_core_t::next_insn() {
 	if(insns.size() > insn_idx && insns.size() - insn_idx >= 3) {
 		events->set_ready(false);
-		auto insn = insns[insn_idx++];
+		auto insn = insns[insn_idx];
+		insn->idx = retired_idx + insn_idx++;
 		auto event = new insn_fetch_event_t(this, insn, clock.get());
 		events->push_back(event);
 		register_squashed("fetch", event);
@@ -85,7 +86,6 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 	pc += 4;
 }
 
-// Does not yet include CSRs
 void si3stage_core_t::process(insn_decode_event_t *event) {
 	TIME_VIOLATION_CHECK
 	if(state["decode"]) { // Pending event promotion
@@ -94,22 +94,28 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 			event, clock.get() + 1);
 		pending_event->add_dependence([&](){ return !state["decode"]; });
 		register_pending(pending_event);
-		events->push_back(pending_event);
 		register_squashed("fetch", pending_event);
+		events->push_back(pending_event);
 		return;
 	}
 	check_pending(event);
 	// Make a branch prediction
-	if((predictor->check_branch(event->data->opc) && 
-		predictor->predict(event->data->ws.pc)) || check_jump(event->data->opc)) {
+	bool take_branch = predictor->check_branch(event->data->opc) && 
+		predictor->predict(event->data->ws.pc) && !event->data->resolved;
+	bool take_jump = check_jump(event->data->opc) && !event->data->resolved;
+	
+	if(take_jump || take_branch) {
+		event->data->resolved = true;
 #if SQUASH_LOG
 		std::cout << "================================================" << std::endl;
 		std::cout << "Squashing pipeline state: fetch (0x";
-		std::cout << std::hex << event->data->insn.bits() << ")" << std::dec << std::endl;
+		std::cout << std::hex << event->data->insn.bits() << ", 0x" << event->data->ws.pc;
+		std::cout << ")" << std::dec << std::endl;
 		std::cout << "================================================" << std::endl;
 #endif
 		events->push_back(
-			new squash_event_t(this, {"fetch"}, clock.get()));
+			new squash_event_t(this, 
+				{.idx=event->data->idx, .stages={"fetch"}}, clock.get()));
 		return;
 	}
 	state["decode"] = true;
@@ -151,12 +157,14 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 		std::cout << "================================================" << std::endl;
 #endif
 		events->push_back(
-			new squash_event_t(this, {"fetch", "decode"}, clock.get()));
+			new squash_event_t(this, 
+				{.idx=event->data->idx, .stages={"fetch", "decode"}}, clock.get()));
 		return;
 	}
 	// Effectively commit instruction (as in branch resolved)
 	insns.pop_front();
 	insn_idx--;
+	retired_idx++;
 	state["exec"] = true;
 	auto pending_event = new pending_event_t(this, 
 		new insn_retire_event_t(this, event->data), clock.get() + 1);
@@ -229,12 +237,12 @@ void si3stage_core_t::process(pending_event_t *event) {
 
 void si3stage_core_t::process(squash_event_t *event) {
 	TIME_VIOLATION_CHECK
-	for(auto stage : event->data) {
+	for(auto stage : event->data.stages) {
 		squash(stage);
 		clear_squash(stage);
 		state[stage] = false;
 	}
-	insn_idx -= event->data.size();
+	insn_idx = event->data.idx - retired_idx;
 	pc = insns[insn_idx]->ws.pc;
 	next_insn();
 }

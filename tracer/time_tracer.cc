@@ -76,6 +76,31 @@ void time_tracer_t::reset(size_t minstret) {
 	for(auto c : components) c.second->reset();
 }
 
+void time_tracer_t::tabulate() {
+		core->next_insn();
+		while(!events.empty() && !events.ready() &&
+			(core->get_clock() != TICK_LIMIT || !TICK_LIMIT_ENABLE)) {
+			event_base_t *e = events.pop_back();
+			if(!e->squashed) e->handle();
+			if(e->ready_gc || e->squashed) {
+				events.invalidate(e);
+				delete e;
+			}
+		}
+#if TICK_LIMIT_ENABLE
+		if(TICK_LIMIT == core->get_clock()) exit(0);
+#endif
+		if(intermittent && should_fail(core->get_clock())) {
+#if 1
+			std::cout << std::endl << "Triggering intermittent failure" << std::endl;
+#endif
+			// Throw intermittent exception here
+			intermittent_except_t except;
+			except.minstret = core->minstret();
+			throw except;
+		}
+}
+
 io::json time_tracer_t::to_json() const {
 	auto trace = tracer_impl_t::to_json();
 	trace[name] = io::json(components);
@@ -87,10 +112,8 @@ void time_tracer_t::trace(
 	auto shared_timed_insn = hstd::shared_ptr<timed_insn_t>(
 		new timed_insn_t(ws, opc, insn));
 	core->buffer_insn(shared_timed_insn);
-	bool ran = false;
 	while(!events.ready() && !events.empty() && 
 		(core->get_clock() != TICK_LIMIT || !TICK_LIMIT_ENABLE)) {
-		ran = true;
 		event_base_t *e = events.pop_back();
 		if(!e->squashed) e->handle();
 		if(e->ready_gc || e->squashed) {
