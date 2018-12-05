@@ -42,6 +42,7 @@ public:
 	void process(pending_event_t *event);
 	void process(squash_event_t *event);
 	void process(vector_ready_event_t *event);
+	void process(vector_retire_event_t *event);
 private:
 	ram_t *icache;
 	vcu_t *vcu = nullptr;

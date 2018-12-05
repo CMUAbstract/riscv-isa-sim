@@ -43,6 +43,8 @@ namespace hstd {
 		// Const correct access owned object
 		T* operator->() const {return data;}
 		T& operator*()  const {return *data;}
+		bool operator==(const shared_ptr<T> &other) { return data == other.get(); }
+		bool operator<(const shared_ptr<T> &other) { return data < other.get(); }
 
 		// Access to smart pointer state
 		T* get() const {return data;}

@@ -3,6 +3,9 @@
 vcu_t::vcu_t(std::string _name, io::json _config, event_heap_t *_events)
 	: component_t(_name, _config, _events) {
 	pending_handler_t::set_ref(events);
+	JSON_CHECK(int, config["line_size"], line_size);
+	JSON_CHECK(int, config["lines"], lines);
+	JSON_CHECK(int, config["reg_count"], reg_count);
 }
 
 io::json vcu_t::to_json() const {
