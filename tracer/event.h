@@ -12,7 +12,11 @@
 #include <hstd/uuid.h>
 #include <hstd/memory.h>
 
+#include <fesvr/memif.h>
+#include <common/decode.h>
+
 #include "log.h"
+#include "component.h"
 
 typedef uint64_t cycle_t;
 
@@ -29,7 +33,7 @@ struct event_base_t {
 	bool squashed = false;
 };
 
-#define HANDLER_INFO 0
+#define HANDLER_INFO 2
 #if HANDLER_INFO == 2
 #define HANDLER 																\
 	void handle() { 															\

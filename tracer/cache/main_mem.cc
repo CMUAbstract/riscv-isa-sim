@@ -1,7 +1,6 @@
 #include "main_mem.h"
 
 #include "mem_event.h"
-#include "signal_event.h"
 #include "pending_event.h"
 
 main_mem_t::main_mem_t(std::string _name, io::json _config, event_heap_t *_events)
@@ -19,7 +18,7 @@ void main_mem_t::process(mem_read_event_t *event){
 		event->ready_gc = false;
 		auto pending_event = new pending_event_t(this, 
 			event, clock.get() + 1);
-		pending_event->add_dependence([&](){ 
+		pending_event->add_dep([&](){ 
 			return status["write"] + status["read"] < ports; 
 		});
 		register_pending(pending_event);
@@ -39,9 +38,9 @@ void main_mem_t::process(mem_read_event_t *event){
 			new mem_insert_event_t(
 				parent.second, event->data, clock.get() + read_latency));
 	}
-	for(auto parent : parents.raw<signal_handler_t *>()) {
+	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
-			new ready_event_t(
+			new mem_ready_event_t(
 				parent.second, event->data, clock.get() + read_latency));
 	}
 }
@@ -52,7 +51,7 @@ void main_mem_t::process(mem_write_event_t *event){
 		event->ready_gc = false;
 		auto pending_event = new pending_event_t(this, 
 			event, clock.get() + 1);
-		pending_event->add_dependence([&](){ 
+		pending_event->add_dep([&](){ 
 			return status["write"] + status["read"] < ports; 
 		});
 		register_pending(pending_event);
@@ -72,16 +71,15 @@ void main_mem_t::process(mem_write_event_t *event){
 			new mem_insert_event_t(
 				parent.second, event->data, clock.get() + write_latency));
 	}
-	for(auto parent : parents.raw<signal_handler_t *>()) {
+	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
-			new ready_event_t(
+			new mem_ready_event_t(
 				parent.second, event->data, clock.get() + write_latency));
 	}
 }
 
 void main_mem_t::process(pending_event_t *event) {
 	TIME_VIOLATION_CHECK
-	check_pending();
 	if(!event->resolved()) {
 		// Recheck during next cycle
 		event->cycle = clock.get() + 1;

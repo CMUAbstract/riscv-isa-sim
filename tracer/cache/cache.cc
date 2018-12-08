@@ -6,7 +6,6 @@
 #include "log.h"
 #include "event.h"
 #include "mem_event.h"
-#include "signal_event.h"
 #include "repl_policy.h"
 
 #define ACCESS_LIMIT 20
@@ -75,7 +74,7 @@ void cache_t::process(mem_read_event_t *event) {
 		event->ready_gc = false;
 		auto pending_event = new pending_event_t(this, 
 			event, clock.get() + 1);
-		pending_event->add_dependence([&](){ 
+		pending_event->add_dep([&](){ 
 			return status["write"] + status["read"] < ports; 
 		});
 		register_pending(pending_event);
@@ -110,9 +109,9 @@ void cache_t::process(mem_read_event_t *event) {
 			new mem_insert_event_t(
 				parent.second, event->data, clock.get() + read_latency));
 	}
-	for(auto parent : parents.raw<signal_handler_t *>()) { // Blocking
+	for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
 		events->push_back(
-			new ready_event_t(
+			new mem_ready_event_t(
 				parent.second, event->data, clock.get() + read_latency));
 	}
 }
@@ -123,7 +122,7 @@ void cache_t::process(mem_write_event_t *event) {
 		event->ready_gc = false;
 		auto pending_event = new pending_event_t(this, 
 			event, clock.get() + 1);
-		pending_event->add_dependence([&](){ 
+		pending_event->add_dep([&](){ 
 			return status["write"] + status["read"] < ports; 
 		});
 		register_pending(pending_event);
@@ -156,9 +155,9 @@ void cache_t::process(mem_write_event_t *event) {
 			new mem_insert_event_t(
 				parent.second, event->data, clock.get() + write_latency));
 	}
-	for(auto parent : parents.raw<signal_handler_t *>()) { // Blocking
+	for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
 		events->push_back(
-			new ready_event_t(
+			new mem_ready_event_t(
 				parent.second, event->data, clock.get() + write_latency));
 	}
 }
@@ -169,7 +168,7 @@ void cache_t::process(mem_insert_event_t *event) {
 		event->ready_gc = false;
 		auto pending_event = new pending_event_t(this, 
 			event, clock.get() + 1);
-		pending_event->add_dependence([&](){ 
+		pending_event->add_dep([&](){ 
 			return status["write"] + status["read"] < ports; 
 		});
 		register_pending(pending_event);
@@ -192,9 +191,9 @@ void cache_t::process(mem_insert_event_t *event) {
 	id = repl_policy->rank(event, &cands); // find which to replace
 	data[id] = event->data & tag_mask; // record new element in cache
 	repl_policy->replaced(id); // tell repl policy element replaced
-	for(auto parent : parents.raw<signal_handler_t *>()) { // Blocking
+	for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
 		events->push_back(
-			new ready_event_t(
+			new mem_ready_event_t(
 				parent.second, event->data, clock.get() + invalid_latency));
 	}
 	for(auto parent : parents.raw<ram_t *>()) { // Blocking
@@ -240,7 +239,6 @@ uint32_t cache_t::get_tag(addr_t addr) {
 
 void cache_t::process(pending_event_t *event) {
 	TIME_VIOLATION_CHECK
-	check_pending();
 	if(!event->resolved()) {
 		// Recheck during next cycle
 		event->cycle = clock.get() + 1;

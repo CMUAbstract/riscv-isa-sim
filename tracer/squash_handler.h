@@ -2,13 +2,14 @@
 #define SQUASH_HANDLER_H
 
 #include <map>
+#include "handler.h"
 #include "event.h"
 
 struct squash_event_t;
-class squash_handler_t{
+class squash_handler_t: public handler_t<squash_event_t *> {
 public:
+	using handler_t<squash_event_t *>::process;
 	void set_ref(event_heap_t *_ref_events) { ref_events = _ref_events; }
-	virtual void process(squash_event_t *event) = 0;
 protected:
 	void register_squashed(const std::string &key, event_base_t *event) {
 		squashed_events[key].insert({event, event});

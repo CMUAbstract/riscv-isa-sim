@@ -1,7 +1,7 @@
 #ifndef SIMPLE_VEC_H
 #define SIMPLE_VEC_H
 
-#include <vector>
+#include <deque>
 
 #include "vcu.h"
 
@@ -15,10 +15,11 @@ public:
 	void process(pending_event_t *event);
 	void process(vector_reg_read_event_t *event);
 	void process(vector_reg_write_event_t *event);
-	void process(ready_event_t *event);
-	void process(stall_event_t *event);
+	void process(mem_ready_event_t *event);
+	void process(mem_match_event_t *event);
 private:
-	std::vector<size_t> state; // Keep index of each register
+	std::deque<size_t> state; // Keep index for each instruction
+	size_t retired_idx = 0;
 };
 
 #endif

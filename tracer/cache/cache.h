@@ -20,8 +20,8 @@ public:
 	void process(mem_write_event_t *event);
 	void process(mem_insert_event_t *event);
 	void process(pending_event_t *event);
-	void process(ready_event_t *event) {}
-	void process(stall_event_t *event) {}
+	void process(mem_ready_event_t *event) {}
+	void process(mem_match_event_t *event) {}
 protected:
 	bool access(mem_event_t *event);
 	uint32_t get_tag(addr_t addr);

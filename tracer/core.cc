@@ -11,8 +11,8 @@ core_t::core_t(std::string _name, io::json _config, event_heap_t *_events)
 	squash_handler_t::set_ref(events);
 	retired_insns.reset();
 	running_insns.reset();	
-	state["decode"] = false;
-	state["exec"] = false;
+	status["decode"] = false;
+	status["exec"] = false;
 }
 
 void core_t::reset() {
@@ -20,8 +20,8 @@ void core_t::reset() {
 	clear_pending();
 	running_insns.inc(retired_insns.get());
 	retired_insns.reset();
-	state["decode"] = false;
-	state["exec"] = false;
+	status["decode"] = false;
+	status["exec"] = false;
 	insns.clear();
 	insn_idx = 0;
 	retired_idx = 0;

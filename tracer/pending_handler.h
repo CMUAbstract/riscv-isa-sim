@@ -3,20 +3,20 @@
 
 #include <map>
 
+#include "handler.h"
 #include "event.h"
 
-class pending_event_t;
-class pending_handler_t {
+struct pending_event_t;
+class pending_handler_t: public handler_t<pending_event_t *> {
 public:
+	using handler_t<pending_event_t *>::process;
 	void set_ref(event_heap_t *_ref_events) { ref_events = _ref_events; }
-	virtual void process(pending_event_t *event) = 0;
 protected:
 	void register_pending(pending_event_t *event) {
 		pending_events.insert({event, event});
 	}
 	template<class T>
 	void check_pending(T event);
-	void check_pending();
 	void clear_pending() { pending_events.clear(); }
 protected:
 	std::map<eventref_t, pending_event_t *> pending_events;

@@ -8,7 +8,6 @@
 #include "working_set.h"
 #include "core_event.h"
 #include "mem_event.h"
-#include "signal_event.h"
 #include "pending_event.h"
 #include "squash_event.h"
 #include "vector_event.h"
@@ -71,15 +70,14 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 	TIME_VIOLATION_CHECK
 	auto pending_event = new pending_event_t(
 		this, new insn_decode_event_t(this, event->data), clock.get() + 1);
-	pending_event->add_dependence<ready_event_t *>([pc_val=pc](ready_event_t *e) {
+	pending_event->add_dep<mem_ready_event_t *>([pc_val=pc](mem_ready_event_t *e) {
 		return e->data == pc_val;
 	});
-	pending_event->add_fini([&](){
-		if(!state["decode"]) next_insn();
-	});
+	pending_event->add_dep([&](){ return !status["decode"]; });
+	pending_event->add_fini([&](){ next_insn(); });
 	register_pending(pending_event);
-	events->push_back(pending_event);
 	register_squashed("fetch", pending_event);
+	events->push_back(pending_event);
 
 	auto read_event = new mem_read_event_t(icache, pc, clock.get());
 	events->push_back(read_event);
@@ -88,16 +86,6 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 
 void si3stage_core_t::process(insn_decode_event_t *event) {
 	TIME_VIOLATION_CHECK
-	if(state["decode"]) { // Pending event promotion
-		event->ready_gc = false;
-		auto pending_event = new pending_event_t(this, 
-			event, clock.get() + 1);
-		pending_event->add_dependence([&](){ return !state["decode"]; });
-		register_pending(pending_event);
-		register_squashed("fetch", pending_event);
-		events->push_back(pending_event);
-		return;
-	}
 	check_pending(event);
 	// Make a branch prediction
 	bool take_branch = predictor->check_branch(event->data->opc) && 
@@ -108,7 +96,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		event->data->resolved = true;
 #if SQUASH_LOG
 		std::cout << "================================================" << std::endl;
-		std::cout << "Squashing pipeline state: fetch (0x";
+		std::cout << "Squashing pipeline status: fetch (0x";
 		std::cout << std::hex << event->data->insn.bits() << ", 0x" << event->data->ws.pc;
 		std::cout << ")" << std::dec << std::endl;
 		std::cout << "================================================" << std::endl;
@@ -116,69 +104,62 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		events->push_back(
 			new squash_event_t(this, 
 				{.idx=event->data->idx, .stages={"fetch"}}, clock.get()));
-		return;
 	}
-	state["decode"] = true;
+
+	status["decode"] = true;
 	auto pending_event = new pending_event_t(this, 
 		new insn_exec_event_t(this, event->data), clock.get() + 1);
-	pending_event->add_fini([&](){ state["decode"] = false; });
+	pending_event->add_fini([&](){ status["decode"] = false; });
 	for(auto it : event->data->ws.input.regs) {
 		events->push_back(new reg_read_event_t(this, it, clock.get()));
-		pending_event->add_dependence<reg_read_event_t *>([it](reg_read_event_t *e){
+		pending_event->add_dep<reg_read_event_t *>([it](reg_read_event_t *e){
 			return e->data == it;
 		});
 	}
+	pending_event->add_dep([&]() { return !status["exec"]; });
 	register_pending(pending_event);
-	events->push_back(pending_event);
 	register_squashed("decode", pending_event);
+	events->push_back(pending_event);
 }
 
 void si3stage_core_t::process(insn_exec_event_t *event) {
 	TIME_VIOLATION_CHECK
-	if(state["exec"]) { // Pending event promotion
-		event->ready_gc = false;
-		auto pending_event = new pending_event_t(this, 
-			event, clock.get() + 1);
-		pending_event->add_dependence([&](){ return !state["exec"]; });
-		register_pending(pending_event);
-		events->push_back(pending_event);
-		register_squashed("decode", pending_event);
-		return;
-	}
+	check_pending(event);
 	// Check for branch misprediction
 	if(predictor->check_branch(event->data->opc) && 
 		!predictor->check_predict(event->data->ws.pc, event->data->ws.next_pc)) {
 		predictor->update(event->data->ws.pc, event->data->ws.next_pc);
+		event->data->resolved = true;
 		// ADD 2x BUBBLE
 #if SQUASH_LOG
 		std::cout << "================================================" << std::endl;
-		std::cout << "Squashing pipeline state: decode, fetch (0x";
+		std::cout << "Squashing pipeline status: decode, fetch (0x";
 		std::cout << std::hex << event->data->insn.bits() << std::dec << ")" << std::endl;
 		std::cout << "================================================" << std::endl;
 #endif
 		events->push_back(
 			new squash_event_t(this, 
 				{.idx=event->data->idx, .stages={"fetch", "decode"}}, clock.get()));
-		return;
 	}
 	// Effectively commit instruction (as in branch resolved)
 	insns.pop_front();
 	insn_idx--;
 	retired_idx++;
-	state["exec"] = true;
+	status["exec"] = true;
 
 	if(vcu != nullptr) {
 		vcu->check_and_set_vl(event->data);
 		if(vcu->check_vec(event->data->opc)) {
 			events->push_back(
 				new vector_exec_event_t(vcu, event->data, clock.get()));
+
 			auto pending_event = new pending_event_t(this, 
 				new insn_retire_event_t(this, event->data), clock.get() + 1);
-			pending_event->add_dependence<vector_ready_event_t *>(
+			pending_event->add_dep<vector_ready_event_t *>(
 				[pc=event->data->ws.pc](vector_ready_event_t *e){
 				return pc == e->data->ws.pc;
 			});
-			pending_event->add_fini([&](){ state["exec"] = false; });
+			pending_event->add_fini([&](){ status["exec"] = false; });
 			register_pending(pending_event);
 			events->push_back(pending_event);
 			return; // Leave for the VCU to finish
@@ -187,10 +168,10 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 
 	auto pending_event = new pending_event_t(this, 
 		new insn_retire_event_t(this, event->data), clock.get() + 1);
-	pending_event->add_fini([&](){ state["exec"] = false; });
+	pending_event->add_fini([&](){ status["exec"] = false; });
 	for(auto it : event->data->ws.input.regs) {
 		events->push_back(new reg_write_event_t(this, it, clock.get()));
-		pending_event->add_dependence<reg_write_event_t *>([it](reg_write_event_t *e){
+		pending_event->add_dep<reg_write_event_t *>([it](reg_write_event_t *e){
 			return e->data == it;
 		});
 	}
@@ -199,7 +180,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 			if(child.second == icache) continue;
 			events->push_back(
 					new mem_read_event_t(child.second, it, clock.get()));
-			pending_event->add_dependence<ready_event_t *>([it](ready_event_t *e) {
+			pending_event->add_dep<mem_ready_event_t *>([it](mem_ready_event_t *e) {
 				return e->data == it;
 			});
 		}
@@ -209,7 +190,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 			if(child.second == icache) continue;
 			events->push_back(
 					new mem_write_event_t(child.second, it, clock.get()));
-			pending_event->add_dependence<ready_event_t *>([it](ready_event_t *e) {
+			pending_event->add_dep<mem_ready_event_t *>([it](mem_ready_event_t *e) {
 				return e->data == it;
 			});
 		}
@@ -225,7 +206,6 @@ void si3stage_core_t::process(insn_retire_event_t *event) {
 
 void si3stage_core_t::process(pending_event_t *event) {
 	TIME_VIOLATION_CHECK
-	check_pending();
 	if(!event->resolved()) {
 		// Recheck during next cycle
 		event->cycle = clock.get() + 1;
@@ -248,9 +228,9 @@ void si3stage_core_t::process(squash_event_t *event) {
 	for(auto stage : event->data.stages) {
 		squash(stage);
 		clear_squash(stage);
-		state[stage] = false;
+		status[stage] = false;
 	}
-	insn_idx = event->data.idx - retired_idx;
+	insn_idx = event->data.idx - retired_idx + event->data.stages.size();
 	pc = insns[insn_idx]->ws.pc;
 	next_insn();
 }
@@ -265,13 +245,14 @@ void si3stage_core_t::process(reg_write_event_t *event) {
 	check_pending(event);
 }
 
-void si3stage_core_t::process(ready_event_t *event) {
+void si3stage_core_t::process(mem_ready_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
 }
 
-void si3stage_core_t::process(stall_event_t *event) {
+void si3stage_core_t::process(mem_match_event_t *event) {
 	TIME_VIOLATION_CHECK
+	check_pending(event);
 }
 
 void si3stage_core_t::process(vector_ready_event_t *event) {

@@ -7,7 +7,7 @@
 #include <hstd/memory.h>
 
 #include "event.h"
-#include "core.h"
+#include "core_handler.h"
 #include "working_set.h"
 
 struct timed_insn_t;

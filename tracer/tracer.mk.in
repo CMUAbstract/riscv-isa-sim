@@ -13,7 +13,8 @@ tracer_hdrs = \
         core.h \
         ram.h \
         vcu.h \
-        signal_handler.h \
+        core_handler.h \
+        ram_handler.h \
         pending_handler.h \
         squash_handler.h \
         vector_handler.h \
@@ -22,7 +23,6 @@ tracer_hdrs = \
         components.h \
         core_event.h \
         mem_event.h \
-        signal_event.h \
         pending_event.h \
         squash_event.h \
         vector_event.h \
@@ -39,7 +39,6 @@ tracer_srcs = \
         core.cc \
         ram.cc \
         vcu.cc \
-        pending_handler.cc \
         component.cc \
         basic_tracer.cc \
         curve_tracer.cc \

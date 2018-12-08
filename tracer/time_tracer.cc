@@ -6,12 +6,9 @@
 #include "except.h"
 #include "working_set.h"
 #include "components.h"
-#include "mem_event.h"
-#include "core_event.h"
-#include "signal_event.h"
 
 #define TICK_LIMIT_ENABLE 0
-#define TICK_LIMIT 50
+#define TICK_LIMIT 60
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
 	: tracer_impl_t("time_tracer", _config, _elf) {
