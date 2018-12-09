@@ -12,7 +12,6 @@ public:
 	virtual ~main_mem_t() {}
 	void process(mem_read_event_t *event);
 	void process(mem_write_event_t *event);
-	void process(pending_event_t *event);
 	void process(mem_insert_event_t *event) {}
 protected:
 	addr_t get_bank(addr_t addr);

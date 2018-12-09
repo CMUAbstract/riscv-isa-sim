@@ -13,13 +13,14 @@ main_mem_t::main_mem_t(std::string _name, io::json _config, event_heap_t *_event
 	JSON_CHECK(int, config["write_ports"], write_ports, 0);
 	
 	// Calculate number of ports and ports/bank
-	assert_msg((ports > 0 || (read_ports > 0 && write_ports > 0)) &&
-		!(ports > 0 && (read_ports > 0 && write_ports > 0)), 
-			"can't define both total # ports and read and write ports");
+	assert_msg(ports > 0 || (read_ports > 0 && write_ports > 0),
+		"either ports > 0 or (read_ports > = and write_ports > 0)"
+		);
 	assert_msg(ports % bank_count == 0 
 		|| (read_ports % bank_count == 0 && write_ports % bank_count == 0),
 		"port - bank mismatch");
 	banks.resize(bank_count, std::make_tuple(0, 0));
+	if(read_ports == 0) total_ports = true;
 	if(ports > 0) total_ports = true;
 	ports_per_bank = ports / bank_count;
 	read_ports_per_bank = read_ports / bank_count;

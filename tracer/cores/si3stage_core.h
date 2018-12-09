@@ -36,7 +36,6 @@ public:
 	void process(insn_retire_event_t *event);
 	void process(reg_read_event_t *event);
 	void process(reg_write_event_t *event);	
-	void process(pending_event_t *event);
 	void process(squash_event_t *event);
 	void process(mem_ready_event_t *event);
 	void process(mem_retire_event_t *event);

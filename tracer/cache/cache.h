@@ -20,7 +20,6 @@ public:
 	void process(mem_read_event_t *event);
 	void process(mem_write_event_t *event);
 	void process(mem_insert_event_t *event);
-	void process(pending_event_t *event);
 protected:
 	bool access(mem_event_t *event);
 	void set_dirty(mem_event_t *event);

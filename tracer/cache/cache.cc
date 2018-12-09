@@ -24,17 +24,17 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 	JSON_CHECK(int, config["invalid_latency"], invalid_latency, 1);
 	JSON_CHECK(int, config["read_ports"], read_ports, 0);
 	JSON_CHECK(int, config["write_ports"], write_ports, 0);
-	JSON_CHECK(int, config["ports"], ports, 0);
+	JSON_CHECK(int, config["ports"], ports, 1);
 	
 	// Calculate number of ports and ports/bank
-	assert_msg((ports > 0 || (read_ports > 0 && write_ports > 0)) &&
-		!(ports > 0 && (read_ports > 0 && write_ports > 0)), 
-			"can't define both total # ports and read and write ports");
+	assert_msg(ports > 0 || (read_ports > 0 && write_ports > 0),
+		"either ports > 0 or (read_ports > = and write_ports > 0)"
+		);
 	assert_msg(ports % bank_count == 0 
 		|| (read_ports % bank_count == 0 && write_ports % bank_count == 0),
 		"port - bank mismatch");
 	banks.resize(bank_count, std::make_tuple(0, 0));
-	if(ports > 0) total_ports = true;
+	if(read_ports == 0) total_ports = true;
 	ports_per_bank = ports / bank_count;
 	read_ports_per_bank = read_ports / bank_count;
 	write_ports_per_bank = write_ports / bank_count;	
@@ -293,23 +293,4 @@ uint32_t cache_t::get_tag(addr_t addr) {
 
 uint32_t cache_t::get_bank(addr_t addr) {
 	return (addr & bank_mask) >> set_offset;
-}
-
-void cache_t::process(pending_event_t *event) {
-	TIME_VIOLATION_CHECK
-	if(!event->resolved()) {
-		// Recheck during next cycle
-		event->cycle = clock.get() + 1;
-		event->ready_gc = false;
-		events->push_back(event);
-		return;
-	}
-	event->finish();
-	event->ready_gc = true;
-	if(event->data != nullptr) {
-		event->data->ready_gc = true;
-		event->data->cycle = clock.get();
-		events->push_back(event->data);
-		event->data = nullptr;
-	}	
 }
