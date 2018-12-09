@@ -13,7 +13,7 @@
 #include "vector_event.h"
 #include "branch_predictor.h"
 
-// #define SQUASH_LOG 1
+#define SQUASH_LOG 1
 
 si3stage_core_t::si3stage_core_t(std::string _name, io::json _config, 
 	event_heap_t *_events) : core_t(_name, _config, _events) {
@@ -70,10 +70,10 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 	TIME_VIOLATION_CHECK
 	auto pending_event = new pending_event_t(
 		this, new insn_decode_event_t(this, event->data), clock.get() + 1);
-	pending_event->add_dep<mem_ready_event_t *>([pc_val=pc](mem_ready_event_t *e) {
+	pending_event->add_dep<mem_retire_event_t *>([pc_val=pc](mem_retire_event_t *e) {
 		return e->data == pc_val;
 	});
-	pending_event->add_dep([&](){ return !status["decode"]; });
+	pending_event->add_dep([&](){ return !stages["decode"]; });
 	pending_event->add_fini([&](){ next_insn(); });
 	register_pending(pending_event);
 	register_squashed("fetch", pending_event);
@@ -106,17 +106,17 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 				{.idx=event->data->idx, .stages={"fetch"}}, clock.get()));
 	}
 
-	status["decode"] = true;
+	stages["decode"] = true;
 	auto pending_event = new pending_event_t(this, 
 		new insn_exec_event_t(this, event->data), clock.get() + 1);
-	pending_event->add_fini([&](){ status["decode"] = false; });
+	pending_event->add_fini([&](){ stages["decode"] = false; });
 	for(auto it : event->data->ws.input.regs) {
 		events->push_back(new reg_read_event_t(this, it, clock.get()));
 		pending_event->add_dep<reg_read_event_t *>([it](reg_read_event_t *e){
 			return e->data == it;
 		});
 	}
-	pending_event->add_dep([&]() { return !status["exec"]; });
+	pending_event->add_dep([&]() { return !stages["exec"]; });
 	register_pending(pending_event);
 	register_squashed("decode", pending_event);
 	events->push_back(pending_event);
@@ -145,7 +145,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 	insns.pop_front();
 	insn_idx--;
 	retired_idx++;
-	status["exec"] = true;
+	stages["exec"] = true;
 
 	if(vcu != nullptr) {
 		vcu->check_and_set_vl(event->data);
@@ -159,7 +159,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 				[pc=event->data->ws.pc](vector_ready_event_t *e){
 				return pc == e->data->ws.pc;
 			});
-			pending_event->add_fini([&](){ status["exec"] = false; });
+			pending_event->add_fini([&](){ stages["exec"] = false; });
 			register_pending(pending_event);
 			events->push_back(pending_event);
 			return; // Leave for the VCU to finish
@@ -168,7 +168,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 
 	auto pending_event = new pending_event_t(this, 
 		new insn_retire_event_t(this, event->data), clock.get() + 1);
-	pending_event->add_fini([&](){ status["exec"] = false; });
+	pending_event->add_fini([&](){ stages["exec"] = false; });
 	for(auto it : event->data->ws.input.regs) {
 		events->push_back(new reg_write_event_t(this, it, clock.get()));
 		pending_event->add_dep<reg_write_event_t *>([it](reg_write_event_t *e){
@@ -204,31 +204,12 @@ void si3stage_core_t::process(insn_retire_event_t *event) {
 	retired_insns.inc();
 }
 
-void si3stage_core_t::process(pending_event_t *event) {
-	TIME_VIOLATION_CHECK
-	if(!event->resolved()) {
-		// Recheck during next cycle
-		event->cycle = clock.get() + 1;
-		event->ready_gc = false;
-		events->push_back(event);
-		return;
-	}
-	event->finish();
-	event->ready_gc = true;
-	if(event->data != nullptr) {
-		event->data->ready_gc = true;
-		event->data->cycle = clock.get();
-		events->push_back(event->data);
-		event->data = nullptr;
-	}
-}
-
 void si3stage_core_t::process(squash_event_t *event) {
 	TIME_VIOLATION_CHECK
 	for(auto stage : event->data.stages) {
 		squash(stage);
 		clear_squash(stage);
-		status[stage] = false;
+		stages[stage] = false;
 	}
 	insn_idx = event->data.idx - retired_idx + event->data.stages.size();
 	pc = insns[insn_idx]->ws.pc;
@@ -246,6 +227,11 @@ void si3stage_core_t::process(reg_write_event_t *event) {
 }
 
 void si3stage_core_t::process(mem_ready_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
+}
+
+void si3stage_core_t::process(mem_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
 }

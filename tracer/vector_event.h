@@ -58,7 +58,7 @@ struct pe_ready_event_t: public insn_event_t<vector_handler_t> {
 
 struct vector_reg_info_t {
 	reg_t reg;
-	size_t idx;
+	uint32_t idx;
 };
 
 struct vector_reg_read_event_t: public event_t<vector_handler_t, vector_reg_info_t> {

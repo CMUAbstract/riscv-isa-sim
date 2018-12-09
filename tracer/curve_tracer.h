@@ -26,9 +26,9 @@ public:
 protected:
 	void init(void);
 	std::map<addr_t, reg_t> tracked_locations;
-	map_stat_t<size_t, counter_stat_t<size_t> *> histogram;
+	map_stat_t<uint32_t, counter_stat_t<uint32_t> *> histogram;
 	addr_t text_base = 0;
-	size_t text_size = 0;
+	uint32_t text_size = 0;
 private:
 	reg_t minstret = 0;
 };

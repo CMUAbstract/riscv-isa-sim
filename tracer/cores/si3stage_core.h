@@ -1,7 +1,6 @@
 #ifndef SINGLE_ISSUE_3_STAGE_H
 #define SINGLE_ISSUE_3_STAGE_H
 
-#include <tuple>
 #include <map>
 #include <sstream>
 
@@ -29,8 +28,6 @@ public:
 		map->insert<vector_signal_handler_t *>(key,
 			static_cast<vector_signal_handler_t *>(this));	
 	}	
-	template<class T>
-	bool get_status() { return handler_t<T>::get_status(); }
 	void buffer_insn(hstd::shared_ptr<timed_insn_t> insn);
 	void next_insn();
 	void process(insn_fetch_event_t *event);
@@ -42,6 +39,7 @@ public:
 	void process(pending_event_t *event);
 	void process(squash_event_t *event);
 	void process(mem_ready_event_t *event);
+	void process(mem_retire_event_t *event);
 	void process(mem_match_event_t *event);
 	void process(vector_ready_event_t *event);
 	void process(vector_retire_event_t *event);

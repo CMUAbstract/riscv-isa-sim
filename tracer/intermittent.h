@@ -10,8 +10,8 @@ protected:
 	bool should_fail(cycle_t cycle) { return cycle >= fail_cycle; }
 protected:
 	bool intermittent = false;
-	size_t intermittent_max = 350000;
-	size_t intermittent_min = 150000;
+	uint32_t intermittent_max = 350000;
+	uint32_t intermittent_min = 150000;
 private:
 	cycle_t fail_cycle = 0;
 	bool fail_flag = false;

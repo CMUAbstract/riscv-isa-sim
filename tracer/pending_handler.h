@@ -3,18 +3,18 @@
 
 #include <map>
 
-#include "handler.h"
 #include "event.h"
 
 struct pending_event_t;
-class pending_handler_t: public handler_t<pending_event_t *> {
+class pending_handler_t {
 public:
-	using handler_t<pending_event_t *>::process;
 	void set_ref(event_heap_t *_ref_events) { ref_events = _ref_events; }
+	virtual void process(pending_event_t *event);
 protected:
 	void register_pending(pending_event_t *event) {
 		pending_events.insert({event, event});
 	}
+	pending_event_t *promote_pending(event_base_t *event, std::function<bool()> cond);
 	template<class T>
 	void check_pending(T event);
 	void clear_pending() { pending_events.clear(); }

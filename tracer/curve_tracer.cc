@@ -28,11 +28,11 @@ void insn_curve_tracer_t::trace(
 			tracked_locations.insert(std::make_pair(loc, insn_count));
 			continue;
 		}
-		size_t diff = insn_count - it->second;
+		uint32_t diff = insn_count - it->second;
 		tracked_locations[loc] = insn_count;
 		auto hit = histogram.find(diff);
 		if(hit == histogram.end()) {
-			counter_stat_t<size_t> *counter_stat = new counter_stat_t<size_t>();
+			counter_stat_t<uint32_t> *counter_stat = new counter_stat_t<uint32_t>();
 			counter_stat->inc();
 			histogram.insert(diff, counter_stat);
 			continue;
@@ -46,11 +46,11 @@ void insn_curve_tracer_t::trace(
 			tracked_locations.insert(std::make_pair(loc, insn_count));
 			continue;
 		}
-		size_t diff = insn_count - it->second;
+		uint32_t diff = insn_count - it->second;
 		tracked_locations[loc] = insn_count;
 		auto hit = histogram.find(diff);
 		if(hit == histogram.end()) {
-			counter_stat_t<size_t> *counter_stat = new counter_stat_t<size_t>();
+			counter_stat_t<uint32_t> *counter_stat = new counter_stat_t<uint32_t>();
 			counter_stat->inc();
 			histogram.insert(diff, counter_stat);
 			continue;
@@ -75,11 +75,11 @@ void miss_curve_tracer_t::trace(
 			tracked_locations.insert(std::make_pair(loc, access_count));
 			continue;
 		}
-		size_t diff = access_count - it->second;
+		uint32_t diff = access_count - it->second;
 		tracked_locations[loc] = access_count;
 		auto hit = histogram.find(diff);
 		if(hit == histogram.end()) {
-			counter_stat_t<size_t> *counter_stat = new counter_stat_t<size_t>();
+			counter_stat_t<uint32_t> *counter_stat = new counter_stat_t<uint32_t>();
 			counter_stat->inc();
 			histogram.insert(diff, counter_stat);
 			continue;
@@ -93,11 +93,11 @@ void miss_curve_tracer_t::trace(
 			tracked_locations.insert(std::make_pair(loc, access_count));
 			continue;
 		}
-		size_t diff = access_count - it->second;
+		uint32_t diff = access_count - it->second;
 		tracked_locations[loc] = access_count;
 		auto hit = histogram.find(diff);
 		if(hit == histogram.end()) {
-			counter_stat_t<size_t> *counter_stat = new counter_stat_t<size_t>();
+			counter_stat_t<uint32_t> *counter_stat = new counter_stat_t<uint32_t>();
 			counter_stat->inc();
 			histogram.insert(diff, counter_stat);
 			continue;

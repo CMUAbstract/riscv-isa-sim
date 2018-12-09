@@ -18,7 +18,7 @@ void simple_vec_t::process(vector_exec_event_t *event) {
 
 void simple_vec_t::process(pe_exec_event_t *event) {
 	TIME_VIOLATION_CHECK
-	size_t idx = state[event->data->idx - retired_idx];
+	uint32_t idx = state[event->data->idx - retired_idx];
 	pending_event_t *pending_event;
 	if(idx + 1 == vl) {
 		event->ready_gc = true;
@@ -62,7 +62,7 @@ void simple_vec_t::process(pe_exec_event_t *event) {
 		}
 	}
 
-	size_t latency = 0;
+	uint32_t latency = 0;
 	if(event->data->ws.input.vregs.size() > 0) latency = 1;
 	for(auto it : event->data->ws.output.vregs) {
 		events->push_back(
@@ -91,25 +91,6 @@ void simple_vec_t::process(pe_ready_event_t *event) {
 	retired_idx++;
 }
 
-void simple_vec_t::process(pending_event_t *event) {
-	TIME_VIOLATION_CHECK
-	if(!event->resolved()) {
-		// Recheck during next cycle
-		event->cycle = clock.get() + 1;
-		event->ready_gc = false;
-		events->push_back(event);
-		return;
-	}
-	event->finish();
-	event->ready_gc = true;
-	if(event->data != nullptr) {
-		event->data->ready_gc = true;
-		event->data->cycle = clock.get();
-		events->push_back(event->data);
-		event->data = nullptr;
-	}
-}
-
 void simple_vec_t::process(vector_reg_read_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
@@ -121,6 +102,11 @@ void simple_vec_t::process(vector_reg_write_event_t *event) {
 }
 
 void simple_vec_t::process(mem_ready_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
+}
+
+void simple_vec_t::process(mem_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
 }

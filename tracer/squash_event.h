@@ -8,7 +8,7 @@
 #include "squash_handler.h"
 
 struct squash_event_info_t {
-	size_t idx;
+	uint32_t idx;
 	std::vector<std::string> stages;
 };
 

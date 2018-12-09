@@ -29,13 +29,13 @@ local_predictor_t::local_predictor_t(io::json config) {
 }
 
 bool local_predictor_t::predict(addr_t cur_pc) {
-	size_t idx = cur_pc & mask;
+	uint32_t idx = cur_pc & mask;
 	if(predictors[idx] == cur_pc && counters[idx] > 1) return true;
 	return false;
 }
 
 void local_predictor_t::update(addr_t cur_pc, addr_t next_pc) {
-	size_t idx = cur_pc & mask;
+	uint32_t idx = cur_pc & mask;
 	if(predictors[idx] != cur_pc) {
 		predictors[idx] = cur_pc;
 		if(next_pc == cur_pc + 4) counters[idx] = 1;

@@ -29,8 +29,8 @@ private:
 		}
 		std::string symbol;
 		std::string section;
-		counter_stat_t<size_t> reads;
-		counter_stat_t<size_t> writes;
+		counter_stat_t<uint32_t> reads;
+		counter_stat_t<uint32_t> writes;
 		io::json to_json() const {
 			return io::json::object{
 				{"symbol", symbol},
@@ -44,9 +44,9 @@ private:
 private:
 	struct region_t {
 		addr_t base;
-		size_t size;
+		uint32_t size;
 		region_t() : region_t(0, 0) {}
-		region_t(addr_t _base, size_t _size) : base(_base), size(_size) {}
+		region_t(addr_t _base, uint32_t _size) : base(_base), size(_size) {}
 		region_t(const region_t &other) {base = other.base; size = other.size; } 
 	};
 };

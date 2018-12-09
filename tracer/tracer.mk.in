@@ -46,6 +46,7 @@ tracer_srcs = \
         time_tracer.cc \
         mem_event.cc \
         intermittent.cc \
+        pending_handler.cc \
         cores/si3stage_core.cc \
         cores/branch_predictor.cc \
         cache/main_mem.cc \

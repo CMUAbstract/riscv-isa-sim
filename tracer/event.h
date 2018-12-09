@@ -108,7 +108,7 @@ public:
 	void heapify();
 	void push_back(event_base_t * e);
 	event_base_t * pop_back();
-	size_t size() { return events_heap.size(); }
+	uint32_t size() { return events_heap.size(); }
 	bool empty() { return events_heap.size() == 0; }
 	
 	std::vector<event_base_t *>::iterator 
@@ -124,7 +124,7 @@ public:
 	std::vector<event_base_t *>::iterator begin() { return events_heap.begin(); }
 	std::vector<event_base_t *>::iterator end() { return events_heap.end(); }
 	void invalidate(eventref_t e) { events_set.erase(e); }
-	size_t count(eventref_t e) { return events_set.count(e); }
+	uint32_t count(eventref_t e) { return events_set.count(e); }
 	
 	bool ready() { return ready_flag; }
 	void set_ready() { ready_flag = true; }

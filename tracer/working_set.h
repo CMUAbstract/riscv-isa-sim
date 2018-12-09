@@ -36,57 +36,57 @@ public:
 	reg_t pc;
 	reg_t next_pc;
 	struct {
-		std::set<size_t> regs;
-		std::set<size_t> fregs;
-		std::set<size_t> vregs;
+		std::set<uint32_t> regs;
+		std::set<uint32_t> fregs;
+		std::set<uint32_t> vregs;
 		std::set<addr_t> locs; 
-		std::set<size_t> csrs;
+		std::set<uint32_t> csrs;
 	} input;
 	struct {
-		std::set<size_t> regs;
-		std::set<size_t> fregs;
-		std::set<size_t> vregs;
+		std::set<uint32_t> regs;
+		std::set<uint32_t> fregs;
+		std::set<uint32_t> vregs;
 		std::set<addr_t> locs;
-		std::set<std::tuple<size_t, reg_t>> csrs;
+		std::set<std::tuple<uint32_t, reg_t>> csrs;
 	} output;
 	struct {
-		std::vector<std::tuple<size_t, reg_t>> regs;
-		std::vector<std::tuple<size_t, freg_t>> fregs;
-		std::vector<std::tuple<size_t, size_t, reg_t>> vregs;
+		std::vector<std::tuple<uint32_t, reg_t>> regs;
+		std::vector<std::tuple<uint32_t, freg_t>> fregs;
+		std::vector<std::tuple<uint32_t, uint32_t, reg_t>> vregs;
 		std::vector<std::tuple<addr_t, uint8_t>> locs;
-		std::vector<std::tuple<size_t, reg_t>> csrs;
+		std::vector<std::tuple<uint32_t, reg_t>> csrs;
 	} diff;
 public:
-	size_t log_input_reg(size_t reg) {
+	uint32_t log_input_reg(uint32_t reg) {
 		input.regs.insert(reg);
 		return reg;
 	}
-	size_t log_input_freg(size_t reg) {
+	uint32_t log_input_freg(uint32_t reg) {
 		input.fregs.insert(reg);
 		return reg;
 	}
-	size_t log_input_vreg(size_t reg) {
+	uint32_t log_input_vreg(uint32_t reg) {
 		input.vregs.insert(reg);
 		return reg;
 	}
-	size_t log_output_reg(size_t reg, reg_t value) {
+	uint32_t log_output_reg(uint32_t reg, reg_t value) {
 		output.regs.insert(reg);
 		diff.regs.push_back(std::make_tuple(reg, value));
 		return reg;
 	}
-	size_t log_output_freg(size_t reg, freg_t value) {
+	uint32_t log_output_freg(uint32_t reg, freg_t value) {
 		output.fregs.insert(reg);
 		diff.fregs.push_back(std::make_tuple(reg, value));
 		return reg;
 	}
-	size_t log_output_vreg(size_t reg, reg_t value, size_t pos) {
+	uint32_t log_output_vreg(uint32_t reg, reg_t value, uint32_t pos) {
 		output.vregs.insert(reg);
 		diff.vregs.push_back(std::make_tuple(reg, pos, value));
 		return reg;
 	}
-	size_t log_output_vreg(size_t reg, reg_t value[MAXVL]) {
+	uint32_t log_output_vreg(uint32_t reg, reg_t value[MAXVL]) {
 		output.vregs.insert(reg);
-		for(size_t i = 0; i < MAXVL; i++)
+		for(uint32_t i = 0; i < MAXVL; i++)
 			diff.vregs.push_back(std::make_tuple(reg, i, value[i]));
 		return reg;
 	}
@@ -101,16 +101,16 @@ public:
 		output.locs.insert(addr);
 		if(sizeof(T) == 8) output.locs.insert(addr + sizeof(uint32_t));
 		uint8_t *bytes = (uint8_t *)&value;
-		for(size_t i = 0; i < sizeof(T); i++) {
+		for(uint32_t i = 0; i < sizeof(T); i++) {
 			diff.locs.push_back(std::make_tuple(addr + i, bytes[i]));
 		}
 		return addr;
 	}
-	size_t log_input_csr(size_t reg) {
+	uint32_t log_input_csr(uint32_t reg) {
 		input.csrs.insert(reg);
 		return reg;
 	}
-	size_t log_output_csr(size_t reg, reg_t old_value, reg_t new_value) {
+	uint32_t log_output_csr(uint32_t reg, reg_t old_value, reg_t new_value) {
 		output.csrs.insert(std::make_tuple(reg, new_value));
 		diff.csrs.push_back(std::make_tuple(reg, old_value));
 		return reg;

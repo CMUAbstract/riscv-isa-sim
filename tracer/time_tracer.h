@@ -20,7 +20,7 @@ public:
 	}
 	void trace(
 		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn);
-	void reset(size_t minstret);
+	void reset(uint32_t minstret);
 	void tabulate();
 	io::json to_json() const;
 private:

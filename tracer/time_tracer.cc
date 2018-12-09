@@ -7,7 +7,7 @@
 #include "working_set.h"
 #include "components.h"
 
-#define TICK_LIMIT_ENABLE 0
+#define TICK_LIMIT_ENABLE 1
 #define TICK_LIMIT 60
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
@@ -67,7 +67,7 @@ time_tracer_t::~time_tracer_t() {
 	for(auto it : components) delete it.second;
 }
 
-void time_tracer_t::reset(size_t minstret) {
+void time_tracer_t::reset(uint32_t minstret) {
 	events.clear();
 	fail();
 	for(auto c : components) c.second->reset();

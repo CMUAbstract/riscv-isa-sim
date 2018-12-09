@@ -22,7 +22,7 @@ struct timed_insn_t {
 	insn_bits_t opc;
 	insn_t insn;
 	bool resolved = false;
-	size_t idx = 0;
+	uint32_t idx = 0;
 };
 
 class core_t: public component_t<core_t, core_handler_t, 
@@ -32,21 +32,19 @@ public:
 	~core_t() {}
 	virtual void reset();
 	virtual io::json to_json() const;
-	template<class T>
-	bool get_status() { return handler_t<T>::get_status(); }
 	virtual void buffer_insn(hstd::shared_ptr<timed_insn_t> insn) = 0;
 	virtual void next_insn() = 0;
-	virtual size_t minstret() const { return retired_insns.get(); }
+	virtual uint32_t minstret() const { return retired_insns.get(); }
 protected:
 	std::deque<hstd::shared_ptr<timed_insn_t>> insns;
-	size_t insn_idx = 0;
-	size_t retired_idx = 0;
+	uint32_t insn_idx = 0;
+	uint32_t retired_idx = 0;
 	reg_t pc = 0x1000;
-	std::map<std::string, bool> status;
+	std::map<std::string, bool> stages;
 	bool check_jump(insn_bits_t opc);
 protected: // stats
-	counter_stat_t<size_t> retired_insns;
-	counter_stat_t<size_t> running_insns;
+	counter_stat_t<uint32_t> retired_insns;
+	counter_stat_t<uint32_t> running_insns;
 };
 
 #endif

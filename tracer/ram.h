@@ -8,17 +8,13 @@
 #include "ram_handler.h"
 #include "pending_handler.h"
 
-class ram_t: public component_t<ram_t, ram_handler_t, 
-	ram_signal_handler_t, pending_handler_t> {
+class ram_t: public component_t<ram_t, ram_handler_t, pending_handler_t> {
 public:
 	ram_t(std::string _name, io::json _config, event_heap_t *_events);
 	virtual ~ram_t() {}
 	virtual void reset();
 	virtual io::json to_json() const;
-	template<class T>
-	bool get_status() { return handler_t<T>::get_status(); }
 protected:
-	std::map<std::string, uint16_t> status;
 	counter_stat_t<uint64_t> reads;
 	counter_stat_t<uint64_t> writes;
 };

@@ -16,12 +16,29 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 	read_misses("read_misses"), write_misses("write_misses"),
 	read_hits("read_hits"), write_hits("write_hits") {
 	JSON_CHECK(int, config["lines"], lines, 64);
-	JSON_CHECK(int, config["line_size"], line_size);
+	JSON_CHECK(int, config["line_size"], line_size, 4);
 	JSON_CHECK(int, config["sets"], sets, 8);
-	JSON_CHECK(int, config["read_latency"], read_latency);
-	JSON_CHECK(int, config["write_latency"], write_latency);
-	JSON_CHECK(int, config["invalid_latency"], invalid_latency);
-	JSON_CHECK(int, config["ports"], ports);
+	JSON_CHECK(int, config["banks"], bank_count, 1);
+	JSON_CHECK(int, config["read_latency"], read_latency, 1);
+	JSON_CHECK(int, config["write_latency"], write_latency, 1);
+	JSON_CHECK(int, config["invalid_latency"], invalid_latency, 1);
+	JSON_CHECK(int, config["read_ports"], read_ports, 0);
+	JSON_CHECK(int, config["write_ports"], write_ports, 0);
+	JSON_CHECK(int, config["ports"], ports, 0);
+	
+	// Calculate number of ports and ports/bank
+	assert_msg((ports > 0 || (read_ports > 0 && write_ports > 0)) &&
+		!(ports > 0 && (read_ports > 0 && write_ports > 0)), 
+			"can't define both total # ports and read and write ports");
+	assert_msg(ports % bank_count == 0 
+		|| (read_ports % bank_count == 0 && write_ports % bank_count == 0),
+		"port - bank mismatch");
+	banks.resize(bank_count, std::make_tuple(0, 0));
+	if(ports > 0) total_ports = true;
+	ports_per_bank = ports / bank_count;
+	read_ports_per_bank = read_ports / bank_count;
+	write_ports_per_bank = write_ports / bank_count;	
+
 	std::string which_repl_policy;
 	JSON_CHECK(string, config["repl_policy"], which_repl_policy);
 	if(which_repl_policy.size() == 0) {
@@ -29,15 +46,17 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 	} else {
 		repl_policy = repl_policy_type_map.at(which_repl_policy)(lines); 
 	}
+
 	offset_mask = line_size - 1; 
 	uint32_t idx = line_size;
 	while (idx >>= 1) ++set_offset;
 	set_size = lines / sets;
 	set_mask = (sets - 1) << set_offset;
+	bank_mask = (bank_count - 1) << set_offset;
 	tag_mask = ~(offset_mask | set_mask);
-	data.resize(lines);
-	status["read"] = 0;
-	status["write"] = 0;
+	data.resize(lines, 0);
+	dirty.resize(lines, false);
+
 	// Stats
 	accesses.reset();
 	inserts.reset();
@@ -58,8 +77,8 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 
 void cache_t::reset() {
 	ram_t::reset();
-	status["read"] = 0;
-	status["write"] = 0;
+	data.resize(lines, 0);
+	dirty.resize(lines, false);
 }
 
 io::json cache_t::to_json() const {
@@ -70,36 +89,39 @@ io::json cache_t::to_json() const {
 
 void cache_t::process(mem_read_event_t *event) {
 	TIME_VIOLATION_CHECK
-	if(status["write"] + status["read"] >= ports) { // Pending event promotion
-		event->ready_gc = false;
-		auto pending_event = new pending_event_t(this, 
-			event, clock.get() + 1);
-		pending_event->add_dep([&](){ 
-			return status["write"] + status["read"] < ports; 
-		});
-		register_pending(pending_event);
-		events->push_back(pending_event);
-		return;
-	}
+
+	auto bank = get_bank(event->data);
+	if(promote_pending(event, [&, bank](){
+		if(total_ports && std::get<0>(banks[bank]) < ports_per_bank) return false;
+		else if(std::get<0>(banks[bank]) < read_ports_per_bank) return false; 
+		return true;
+	}) != nullptr) return;
+
 	reads.inc();
-	// Increment read and also queue event to decrement read
-	status["read"]++;
+
+	// Increment readers
+	std::get<0>(banks[bank])++;
 	auto pending_event = new pending_event_t(
 		this, nullptr, clock.get() + read_latency);
-	pending_event->add_fini([&](){
-		status["read"]--; 
-	});
+	pending_event->add_fini([&](){ std::get<0>(banks[bank])--; });
 	register_pending(pending_event);
 	events->push_back(pending_event);
+
 	if(!access(event)) { // Read Miss
 		read_misses.inc();
-#if 0
-	std::cout << "	read_miss" << std::endl;
-#endif
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_read_event_t(
 					child.second, event->data, clock.get() + read_latency));
+		}
+		auto loc = event->data;
+		pending_event->add_dep<mem_insert_event_t *>([loc](mem_insert_event_t *e){
+			return e->data == loc;
+		});
+		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
+			events->push_back(
+				new mem_ready_event_t(
+					parent.second, event->data, clock.get() + write_latency));
 		}
 		return;
 	}
@@ -118,71 +140,86 @@ void cache_t::process(mem_read_event_t *event) {
 
 void cache_t::process(mem_write_event_t *event) {
 	TIME_VIOLATION_CHECK
-	if(status["write"] + status["read"] >= ports) { // Pending event promotion
-		event->ready_gc = false;
-		auto pending_event = new pending_event_t(this, 
-			event, clock.get() + 1);
-		pending_event->add_dep([&](){ 
-			return status["write"] + status["read"] < ports; 
-		});
-		register_pending(pending_event);
-		events->push_back(pending_event);
-		return;
-	}
+	auto bank = get_bank(event->data);
+
+	if(promote_pending(event, [&, bank](){
+		if(total_ports && std::get<0>(banks[bank]) < ports_per_bank) return false;
+		else if(std::get<1>(banks[bank]) < write_ports_per_bank) return false; 
+		return true;
+	}) != nullptr) return;
+
 	writes.inc();
-	// Increment write and also queue event to decrement write
-	status["write"]++;
+
+	// Increment writers
+	if(total_ports) std::get<0>(banks[bank])++;
+	else std::get<1>(banks[bank])++;
 	auto pending_event = new pending_event_t(
-		this, nullptr, clock.get() + write_latency);
-	pending_event->add_fini([&](){ status["write"]--; });
+		this, nullptr, clock.get() + read_latency);
+	pending_event->add_fini([&](){ 
+		if(total_ports) std::get<0>(banks[bank])--;
+		else std::get<1>(banks[bank])--;
+	});
 	register_pending(pending_event);
 	events->push_back(pending_event);
+
 	if(!access(event)) { // Write Miss
 		write_misses.inc();
-#if 0
-	std::cout << "	write_miss" << std::endl;
-#endif
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_write_event_t(
-					child.second, event->data, clock.get() + write_latency));
+					child.second, event->data, clock.get() + read_latency));
+		}
+		auto loc = event->data;
+		pending_event->add_dep<mem_insert_event_t *>([loc](mem_insert_event_t *e){
+			return e->data == loc;
+		});
+		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
+			events->push_back(
+				new mem_ready_event_t(
+					parent.second, event->data, clock.get() + read_latency));
 		}
 		return;
 	}
+
 	write_hits.inc();
+	set_dirty(event); // Mark line as dirty
 	for(auto parent : parents.raw<ram_t *>()) { // Insert in higher-level caches
 		events->push_back(
 			new mem_insert_event_t(
 				parent.second, event->data, clock.get() + write_latency));
 	}
-	for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
+	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
-			new mem_ready_event_t(
+			new mem_retire_event_t(
 				parent.second, event->data, clock.get() + write_latency));
 	}
 }
 
 void cache_t::process(mem_insert_event_t *event) {
 	TIME_VIOLATION_CHECK
-	if(status["write"] + status["read"] >= ports) { // Pending event promotion
-		event->ready_gc = false;
-		auto pending_event = new pending_event_t(this, 
-			event, clock.get() + 1);
-		pending_event->add_dep([&](){ 
-			return status["write"] + status["read"] < ports; 
-		});
-		register_pending(pending_event);
-		events->push_back(pending_event);
-		return;
-	}
-	inserts.inc();
-	// Increment write and also queue event to decrement write
-	status["write"]++;
+	check_pending(event);
+	auto bank = get_bank(event->data);
+
+	if(promote_pending(event, [&, bank](){
+		if(total_ports && std::get<0>(banks[bank]) < ports_per_bank) return false;
+		else if(std::get<1>(banks[bank]) < write_ports_per_bank) return false; 
+		return true;
+	}) != nullptr) return;
+
+	writes.inc();
+
+	// Increment writers
+	if(total_ports) std::get<0>(banks[bank])++;
+	else std::get<1>(banks[bank])++;
 	auto pending_event = new pending_event_t(
-		this, nullptr, clock.get() + write_latency);
-	pending_event->add_fini([&](){ status["write"]--; });
+		this, nullptr, clock.get() + read_latency);
+	pending_event->add_fini([&](){ 
+		if(total_ports) std::get<0>(banks[bank])--;
+		else std::get<1>(banks[bank])--;
+	});
 	register_pending(pending_event);
 	events->push_back(pending_event);
+
 	uint32_t set = get_set(event->data);
 	uint32_t tag = get_tag(event->data);
 	std::vector<repl_cand_t> cands; // Create a set of candidates
@@ -191,12 +228,22 @@ void cache_t::process(mem_insert_event_t *event) {
 	id = repl_policy->rank(event, &cands); // find which to replace
 	data[id] = event->data & tag_mask; // record new element in cache
 	repl_policy->replaced(id); // tell repl policy element replaced
-	for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
-		events->push_back(
-			new mem_ready_event_t(
-				parent.second, event->data, clock.get() + invalid_latency));
+
+	if(dirty[id]) { // Determine if write back needed
+		for(auto child : children.raw<ram_t *>()) {
+			events->push_back(
+				new mem_write_event_t(
+					child.second, event->data, clock.get() + write_latency));
+		}
+	} else {
+		for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
+			events->push_back(
+				new mem_retire_event_t(
+					parent.second, event->data, clock.get() + invalid_latency));
+		}
 	}
-	for(auto parent : parents.raw<ram_t *>()) { // Blocking
+	dirty[id] = false;
+	for(auto parent : parents.raw<ram_t *>()) {
 		events->push_back(
 			new mem_insert_event_t(
 				parent.second, event->data, clock.get() + invalid_latency));
@@ -229,12 +276,23 @@ bool cache_t::access(mem_event_t *event) {
 	return false;
 }
 
+void cache_t::set_dirty(mem_event_t *event) {
+	uint32_t set = get_set(event->data);
+	uint32_t tag = get_tag(event->data);
+	for(uint32_t id = set * set_size; id < (set + 1) * set_size; id++) 
+		dirty[id] = true;
+}
+
 uint32_t cache_t::get_set(addr_t addr) {
 	return (addr & set_mask) >> set_offset;
 }
 
 uint32_t cache_t::get_tag(addr_t addr) {
 	return addr & tag_mask;
+}
+
+uint32_t cache_t::get_bank(addr_t addr) {
+	return (addr & bank_mask) >> set_offset;
 }
 
 void cache_t::process(pending_event_t *event) {

@@ -59,8 +59,8 @@ private:
 	}
 private:
 	hstd::vector deps;
-	size_t signal_deps = 0;
-	size_t persistent_deps = 0;
+	uint32_t signal_deps = 0;
+	uint32_t persistent_deps = 0;
 	std::vector<std::function<void()>> finis;
 };
 

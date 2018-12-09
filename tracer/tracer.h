@@ -24,7 +24,7 @@ public:
 	virtual void trace(
 		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) = 0;
 	virtual void tabulate() = 0;
-	virtual void reset(size_t minstret) {}
+	virtual void reset(uint32_t minstret) {}
 	virtual void reset() {}
 };
 
@@ -65,7 +65,7 @@ public:
 	io::json to_json() const {
 		return io::json(list);
 	}
-	void reset(size_t minstret) {
+	void reset(uint32_t minstret) {
 		for(auto it : list) it->reset(minstret);
 	}
 	void reset() {
@@ -84,10 +84,10 @@ public:
 	class diff_list_t {
 	public:
 		diff_list_t() {}
-		diff_list_t(const diff_list_t &d, size_t offset) 
+		diff_list_t(const diff_list_t &d, uint32_t offset) 
 			: diffs(d.begin() + offset, d.end()) {}
 		void push_back(shared_ptr_t<working_set_t> ws) { diffs.push_back(ws); }
-		size_t size(void) const { return diffs.size(); }
+		uint32_t size(void) const { return diffs.size(); }
 		vec_ws_t::iterator begin() { return diffs.begin(); }
 		vec_ws_t::const_iterator begin() const { return diffs.begin(); }
 		vec_ws_t::reverse_iterator rbegin() { return diffs.rbegin(); }
@@ -104,7 +104,7 @@ public:
 		diffs.push_back(shared_ptr_t<working_set_t>(new working_set_t(ws)));
 		tracer_list_t::trace(ws, opc, insn);
 	}
-	shared_ptr_t<diff_list_t> get_diff(size_t minstret_delta) {
+	shared_ptr_t<diff_list_t> get_diff(uint32_t minstret_delta) {
 		return shared_ptr_t<diff_list_t>(
 			new diff_list_t(diffs, diffs.size() - minstret_delta));
 	}
