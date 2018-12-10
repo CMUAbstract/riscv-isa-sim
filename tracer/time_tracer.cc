@@ -85,7 +85,7 @@ void time_tracer_t::tabulate() {
 			}
 		}
 #if TICK_LIMIT_ENABLE
-		if(TICK_LIMIT == core->get_clock()) exit(0);
+		if(TICK_LIMIT <= core->get_clock()) exit(0);
 #endif
 		if(intermittent && should_fail(core->get_clock())) {
 #if 1
@@ -119,7 +119,7 @@ void time_tracer_t::trace(
 		}
 	}
 #if TICK_LIMIT_ENABLE
-	if(TICK_LIMIT == core->get_clock()) exit(0);
+	if(TICK_LIMIT <= core->get_clock()) exit(0);
 #endif
 	if(intermittent && should_fail(core->get_clock())) {
 #if 1

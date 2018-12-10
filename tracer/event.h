@@ -7,6 +7,7 @@
 #include <map>
 #include <iostream>
 #include <typeinfo>
+#include <limits>
 
 #include <common/decode.h>
 #include <hstd/uuid.h>
@@ -21,15 +22,16 @@
 typedef uint64_t cycle_t;
 
 struct event_base_t {
-	event_base_t(cycle_t _cycle): cycle(_cycle), id() {}
+	event_base_t(cycle_t _cycle)
+		: id(), cycle(_cycle), priority(std::numeric_limits<cycle_t>::max()) {}
 	virtual void handle() = 0;
 	virtual std::string to_string() = 0;
 	virtual std::string get_name() = 0;
 	virtual ~event_base_t() {}
-	cycle_t cycle = 0;
 	hstd::uuid id;
+	cycle_t cycle = 0;
+	cycle_t priority;
 	bool ready_gc = true;
-	bool pending = false;
 	bool squashed = false;
 };
 
@@ -132,7 +134,7 @@ public:
 private:
 	struct comparator_t {
 		bool operator()(const event_base_t *a,const event_base_t* b) const{
-			if(a->cycle == b->cycle) return a->pending <= b->pending;
+			if(a->cycle == b->cycle) return a->priority > b->priority;
 			return a->cycle > b->cycle;
 		}
 	};

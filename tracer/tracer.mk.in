@@ -31,7 +31,7 @@ tracer_hdrs = \
         cache/main_mem.h \
         cache/cache.h \
         cache/repl_policy.h \
-        vector/simple_vec.h \
+        vector/vec1d.h \
 
 tracer_srcs = \
         tracer.cc \
@@ -52,7 +52,7 @@ tracer_srcs = \
         cache/main_mem.cc \
         cache/cache.cc \
         cache/repl_policy.cc \
-        vector/simple_vec.cc \
+        vector/vec1d.cc \
 
 tracer_test_srcs =
 
