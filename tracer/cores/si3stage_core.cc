@@ -13,7 +13,7 @@
 #include "vector_event.h"
 #include "branch_predictor.h"
 
-#define SQUASH_LOG 1
+// #define SQUASH_LOG 1
 
 si3stage_core_t::si3stage_core_t(std::string _name, io::json _config, 
 	event_heap_t *_events) : core_t(_name, _config, _events) {
@@ -71,7 +71,7 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 	auto pending_event = new pending_event_t(
 		this, new insn_decode_event_t(this, event->data), clock.get() + 1);
 	pending_event->add_dep<mem_retire_event_t *>([pc_val=pc](mem_retire_event_t *e) {
-		return e->data == pc_val;
+		return e->data.addr == pc_val;
 	});
 	pending_event->add_dep([&](){ return !stages["decode"]; });
 	pending_event->add_fini([&](){ next_insn(); });
@@ -181,7 +181,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 			events->push_back(
 					new mem_read_event_t(child.second, it, clock.get()));
 			pending_event->add_dep<mem_ready_event_t *>([it](mem_ready_event_t *e) {
-				return e->data == it;
+				return e->data.addr == it;
 			});
 		}
 	}
@@ -191,7 +191,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 			events->push_back(
 					new mem_write_event_t(child.second, it, clock.get()));
 			pending_event->add_dep<mem_ready_event_t *>([it](mem_ready_event_t *e) {
-				return e->data == it;
+				return e->data.addr == it;
 			});
 		}
 	}

@@ -36,7 +36,7 @@ void simple_vec_t::process(pe_exec_event_t *event) {
 				new mem_read_event_t(child.second, input_loc, clock.get()));
 			pending_event->add_dep<mem_ready_event_t *>(
 				[input_loc](mem_ready_event_t *e){
-				return e->data == input_loc;
+				return e->data.addr == input_loc;
 			});
 		}
 	}
@@ -57,7 +57,7 @@ void simple_vec_t::process(pe_exec_event_t *event) {
 				new mem_write_event_t(child.second, output_loc, clock.get()));
 			pending_event->add_dep<mem_ready_event_t *>(
 				[output_loc](mem_ready_event_t *e){
-				return e->data == output_loc;
+				return e->data.addr == output_loc;
 			});
 		}
 	}
