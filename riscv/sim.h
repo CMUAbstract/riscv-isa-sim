@@ -49,9 +49,10 @@ public:
   void inter_reset();
 
   // Sim Calls
-  void mark_input(addr_t taddr, size_t len, size_t tag);
-  void mark_output(addr_t taddr, size_t len, size_t tag);
-  void clear_mark(addr_t taddr, size_t len, size_t tag);
+  void mark(addr_t addr, size_t len, size_t tag);
+  void unmark(addr_t addr, size_t len, size_t tag);
+  void trace(void);
+  void stop_trace(void);
 
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;

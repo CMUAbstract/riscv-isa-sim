@@ -291,14 +291,19 @@ void sim_t::proc_reset(unsigned id)
   debug_module.proc_reset(id);
 }
 
-void sim_t::mark_input(addr_t taddr, size_t len, size_t tag) {
+void sim_t::mark(addr_t taddr, size_t len, size_t tag) {
   fprintf(stderr, "Marked Input @ 0x%lx, %lu bytes\n", taddr, len);
 }
 
-void sim_t::mark_output(addr_t taddr, size_t len, size_t tag) {
+void sim_t::unmark(addr_t taddr, size_t len, size_t tag) {
   fprintf(stderr, "Marked Output @ 0x%lx, %lu bytes\n", taddr, len);
 }
 
-void sim_t::clear_mark(addr_t taddr, size_t len, size_t tag) {
-  fprintf(stderr, "Cleared mark @ 0x%lx, %lu bytes\n", taddr, len);
+void sim_t::trace(void) {
+  fprintf(stderr, "Starting tracers\n");
 }
+
+void sim_t::stop_trace(void) {
+  fprintf(stderr, "Stopping tracers\n");
+}
+
