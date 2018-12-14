@@ -301,9 +301,21 @@ void sim_t::unmark(addr_t taddr, size_t len, size_t tag) {
 
 void sim_t::trace(void) {
   fprintf(stderr, "Starting tracers\n");
+  for(size_t i = 0; i < procs.size(); i++) {
+    procs[i]->resume_tracer();
+  }
+}
+
+void sim_t::trace_roi(addr_t start_pc, addr_t end_pc) {
+  for(size_t i = 0; i < procs.size(); i++) {
+    procs[i]->trace_roi(start_pc, end_pc);
+  }
 }
 
 void sim_t::stop_trace(void) {
   fprintf(stderr, "Stopping tracers\n");
+  for(size_t i = 0; i < procs.size(); i++) {
+    procs[i]->stop_tracer();
+  }
 }
 

@@ -307,6 +307,9 @@ public:
   void trigger_updated();
 
   void register_tracer(core_tracer_t *t);
+  void resume_tracer();
+  void trace_roi(reg_t start_pc, reg_t end_pc);
+  void stop_tracer();
   core_tracer_t* get_tracer(void) { return tracer; }
 
 private:

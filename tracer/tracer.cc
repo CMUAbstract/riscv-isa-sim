@@ -37,6 +37,17 @@ void tracer_impl_t::dump() {
 	}
 }
 
+#define SIGN_EXTEND(v) (0xFFFFFFFF00000000 | v)
+bool tracer_list_t::interested(
+	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
+	if(ws.pc == SIGN_EXTEND(roi_start)) set_hyperdrive(false);
+	else if(ws.pc == SIGN_EXTEND(roi_end)) set_hyperdrive(true);
+	for(auto it : list)
+		if (it->interested(ws, opc, insn))
+			return !hyperdrive && true;
+	return false;
+}
+
 template<typename T> tracer_t* create_tracer(io::json config, elfloader_t *elf) { 
 	return new T(config, elf);
 }

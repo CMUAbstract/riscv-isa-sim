@@ -52,6 +52,7 @@ public:
   void mark(addr_t addr, size_t len, size_t tag);
   void unmark(addr_t addr, size_t len, size_t tag);
   void trace(void);
+  void trace_roi(addr_t start_pc, addr_t end_pc=0);
   void stop_trace(void);
 
 private:

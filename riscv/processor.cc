@@ -876,3 +876,15 @@ void processor_t::trigger_updated()
 void processor_t::register_tracer(core_tracer_t *t) {
   tracer = t;
 }
+
+void processor_t::resume_tracer() {
+  tracer->set_hyperdrive(false);
+}
+
+void processor_t::trace_roi(reg_t start_pc, reg_t end_pc) {
+  tracer->set_roi(start_pc, end_pc);
+}
+
+void processor_t::stop_tracer() {
+  tracer->set_hyperdrive(true);
+}

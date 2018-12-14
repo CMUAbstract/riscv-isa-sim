@@ -26,6 +26,15 @@ public:
 	virtual void tabulate() = 0;
 	virtual void reset(uint32_t minstret) {}
 	virtual void reset() {}
+	virtual void set_hyperdrive(bool _hyperdrive=true) { hyperdrive = _hyperdrive; }
+	virtual void set_roi(addr_t start_pc, addr_t end_pc) { 
+		roi_start = start_pc;
+		roi_end = end_pc;
+	}
+protected:
+	bool hyperdrive = false;
+	addr_t roi_start;
+	addr_t roi_end;
 };
 
 class elfloader_t;
@@ -49,12 +58,7 @@ public:
 		for(auto it : list) delete it;
 	}
 	bool interested(
-		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
-		for(auto it : list)
-			if (it->interested(ws, opc, insn))
-				return true;
-		return false;
-	}
+		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn);
 	virtual void trace(
 		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 		for(auto it : list) it->trace(ws, opc, insn);

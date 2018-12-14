@@ -19,8 +19,8 @@ fi
 echo "Starting RISC-V SPIKE build process"
 cd build
 echo "Building project ."
-$MAKE -j8 >> build.log
+$MAKE -j$THREADS >> build.log
 echo "Installing project ."
-$MAKE -j8 install >> build.log
+$MAKE -j$THREADS install >> build.log
 cd - > /dev/null
 echo "RISC-V SPIKE build done"

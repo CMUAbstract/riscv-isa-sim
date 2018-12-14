@@ -30,6 +30,7 @@ static void help()
   fprintf(stderr, "  --exit-debug          Exit into debug mode\n");
   fprintf(stderr, "  --isa=<name>          RISC-V ISA string [default %s]\n", DEFAULT_ISA);
   fprintf(stderr, "  --pc=<address>        Override ELF entry point\n");
+  fprintf(stderr, "  --hyperdrive=<sim> / <pc_start, (pc_end)> Stop tracing until ROI\n");
   fprintf(stderr, "  --hartids=<a,b,...>   Explicitly specify hartids, default is 0,1,...\n");
   fprintf(stderr, "  --extension=<name>    Specify RoCC Extension\n");
   fprintf(stderr, "  --outdir=<dir>        Directory for output files.\n");
@@ -109,6 +110,24 @@ int main(int argc, char** argv)
     }
   };
 
+  struct {
+    reg_t start_pc = 0;
+    reg_t end_pc = 0;
+    bool simcall = false;
+  } hyperdrive;
+
+  auto const hyperdrive_parser = [&](const char *s) {
+    std::string const str(s);
+    if(str.size() == 3 && strncmp("sim", s, 3) == 0) {
+       hyperdrive.simcall = true;
+       return;
+    }
+    size_t comma_posn = str.find(',');
+    hyperdrive.start_pc = std::stoul(str, nullptr, 16);
+    if(comma_posn == std::string::npos) return;
+    hyperdrive.end_pc = std::stoul(str.substr(comma_posn + 1), nullptr, 16);
+  };
+
   option_parser_t parser;
   parser.help(&help);
   parser.option('h', 0, 0, [&](const char* s){help();});
@@ -122,6 +141,7 @@ int main(int argc, char** argv)
   parser.option(0, "rbb-port", 1, [&](const char* s){use_rbb = true; rbb_port = atoi(s);});
   parser.option(0, "pc", 1, [&](const char* s){start_pc = strtoull(s, 0, 0);});
   parser.option(0, "hartids", 1, hartids_parser);
+  parser.option(0, "hyperdrive", 1, hyperdrive_parser);
   parser.option(0, "isa", 1, [&](const char* s){isa = s;});
   parser.option(0, "inter", 0, [&](const char* s){run_intermittent = true;});
   parser.option(0, "trace", 1, [&](const char* s){tconfig = s;});
@@ -169,5 +189,7 @@ int main(int argc, char** argv)
   s.set_intermittent(run_intermittent);
   s.set_log(log);
   s.set_histogram(histogram);
+  if(hyperdrive.simcall || hyperdrive.start_pc) s.stop_trace();
+  if(hyperdrive.start_pc) s.trace_roi(hyperdrive.start_pc, hyperdrive.end_pc);
   return s.run();
 }
