@@ -33,8 +33,8 @@ public:
 		output.csrs = ws.output.csrs;
 	}
 public:
-	reg_t pc;
-	reg_t next_pc;
+	reg_t pc = 0;
+	reg_t next_pc = 0;
 	struct {
 		std::set<uint32_t> regs;
 		std::set<uint32_t> fregs;

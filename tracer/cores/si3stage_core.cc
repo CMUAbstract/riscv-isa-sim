@@ -211,7 +211,7 @@ void si3stage_core_t::process(squash_event_t *event) {
 		clear_squash(stage);
 		stages[stage] = false;
 	}
-	insn_idx = event->data.idx - retired_idx + event->data.stages.size();
+	insn_idx = event->data.idx - retired_idx + 1;
 	pc = insns[insn_idx]->ws.pc;
 	next_insn();
 }

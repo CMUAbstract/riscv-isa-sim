@@ -35,7 +35,7 @@ struct event_base_t {
 	bool squashed = false;
 };
 
-#define HANDLER_INFO 2
+#define HANDLER_INFO 1
 #if HANDLER_INFO == 2
 #define HANDLER 																\
 	void handle() { 															\
@@ -57,12 +57,12 @@ struct event_base_t {
 	void handle() { 															\
 		auto handler = dynamic_cast<component_base_t *>(this->handler);			\
 		if(handler != nullptr) {												\
-			std::cout << handler->get_name() << ", ";							\
+			std::cout << handler->get_name() << "| ";							\
 		} else {																\
-			std::cout << "generic, ";											\
+			std::cout << "generic| ";											\
 		}																		\
-		std::cout << this->get_name();											\
-		std::cout << ", " << cycle;												\
+		std::cout << this->to_string();											\
+		std::cout << "| " << cycle;												\
 		std::cout << std::endl;													\
 		this->handler->process(this);											\
 	}

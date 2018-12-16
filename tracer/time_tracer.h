@@ -23,9 +23,14 @@ public:
 	void reset(uint32_t minstret);
 	void tabulate();
 	io::json to_json() const;
+	void set_hyperdrive(bool _hyperdrive=true) {
+		if(!_hyperdrive && hyperdrive) hyperdrive_disabled = true;
+		hyperdrive = _hyperdrive;
+	}
 private:
 	event_heap_t events;
 	core_t *core = nullptr;
+	bool hyperdrive_disabled = false;
 	std::map<std::string, component_base_t *> components;
 };
 

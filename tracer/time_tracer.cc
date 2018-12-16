@@ -109,6 +109,10 @@ void time_tracer_t::trace(
 	auto shared_timed_insn = hstd::shared_ptr<timed_insn_t>(
 		new timed_insn_t(ws, opc, insn));
 	core->buffer_insn(shared_timed_insn);
+	if(hyperdrive_disabled) {
+		core->update_pc(ws.pc);
+		hyperdrive_disabled = false;
+	}
 	while(!events.ready() && !events.empty() && 
 		(core->get_clock() != TICK_LIMIT || !TICK_LIMIT_ENABLE)) {
 		event_base_t *e = events.pop_back();

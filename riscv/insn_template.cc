@@ -9,8 +9,9 @@ reg_t rv32_NAME(processor_t* p, insn_t insn, reg_t pc)
   working_set_t ws;
   #include <tracer/tracer_macro.h>
   if(p->get_tracer() != nullptr) {
-    #include "insns/NAME.h"
     ws.pc = STATE.pc;
+    ws.next_pc = npc;
+    #include "insns/NAME.h"
     if(p->get_tracer()->interested(ws, OPCODE, insn)) {
       p->get_tracer()->trace(ws, OPCODE, insn);
     }
@@ -27,8 +28,9 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
   working_set_t ws;
   #include <tracer/tracer_macro.h>
   if(p->get_tracer() != nullptr) {
-    #include "insns/NAME.h"
     ws.pc = STATE.pc; 
+    ws.next_pc = npc;
+    #include "insns/NAME.h"
     if(p->get_tracer()->interested(ws, OPCODE, insn)) {
       p->get_tracer()->trace(ws, OPCODE, insn);
     }

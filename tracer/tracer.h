@@ -75,6 +75,14 @@ public:
 	void reset() {
 		for(auto it : list) it->reset();
 	}
+	virtual void set_hyperdrive(bool _hyperdrive=true) { 
+		tracer_t::set_hyperdrive(_hyperdrive);
+		for(auto it : list) it->set_hyperdrive(_hyperdrive);
+	}
+	virtual void set_roi(addr_t start_pc, addr_t end_pc) {
+		tracer_t::set_roi(start_pc, end_pc);
+		for(auto it : list) it->set_roi(start_pc, end_pc);
+	}
 	void push_back(tracer_t *t) { list.push_back(t); }
 	std::vector<tracer_t *>::iterator begin() { return list.begin(); }
 	std::vector<tracer_t *>::iterator end() { return list.end(); }

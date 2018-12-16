@@ -35,6 +35,7 @@ public:
 	virtual void buffer_insn(hstd::shared_ptr<timed_insn_t> insn) = 0;
 	virtual void next_insn() = 0;
 	virtual uint32_t minstret() const { return retired_insns.get(); }
+	virtual void update_pc(reg_t _pc) { pc = _pc; }
 protected:
 	std::deque<hstd::shared_ptr<timed_insn_t>> insns;
 	uint32_t insn_idx = 0;
