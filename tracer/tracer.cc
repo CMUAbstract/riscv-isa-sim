@@ -17,7 +17,7 @@
 
 tracer_impl_t::tracer_impl_t(std::string _name, io::json _config, elfloader_t *_elf) 
 	: tracer_t(), name(_name), config(_config), elf(_elf) {
-	JSON_CHECK(string, config["output_dir"], output_dir);	
+	JSON_CHECK(string, config["outdir"], outdir);	
 }
 
 io::json tracer_impl_t::to_json() const {
@@ -25,8 +25,8 @@ io::json tracer_impl_t::to_json() const {
 }
 
 void tracer_impl_t::dump() {
-	if(output_dir.size()) {
-		std::experimental::filesystem::path dir(output_dir);
+	if(outdir.size()) {
+		std::experimental::filesystem::path dir(outdir);
 		std::string file_ext = ".json";
 		std::experimental::filesystem::path file(name + file_ext);
 		std::experimental::filesystem::path p = dir / file;

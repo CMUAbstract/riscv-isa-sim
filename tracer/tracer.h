@@ -26,12 +26,14 @@ public:
 	virtual void tabulate() = 0;
 	virtual void reset(uint32_t minstret) {}
 	virtual void reset() {}
+	virtual void set_outdir(const std::string &_outdir) { outdir = _outdir; }
 	virtual void set_hyperdrive(bool _hyperdrive=true) { hyperdrive = _hyperdrive; }
 	virtual void set_roi(addr_t start_pc, addr_t end_pc) { 
 		roi_start = start_pc;
 		roi_end = end_pc;
 	}
 protected:
+	std::string outdir;
 	bool hyperdrive = false;
 	addr_t roi_start;
 	addr_t roi_end;
@@ -45,7 +47,6 @@ public:
 	virtual void dump();
 protected:
 	std::string name;
-	std::string output_dir;
 	io::json config;
 	elfloader_t *elf;
 };
@@ -74,6 +75,10 @@ public:
 	}
 	void reset() {
 		for(auto it : list) it->reset();
+	}
+	virtual void set_outdir(const std::string &_outdir) {
+		tracer_t::set_outdir(_outdir);
+		for(auto it : list) it->set_outdir(_outdir);
 	}
 	virtual void set_hyperdrive(bool _hyperdrive=true) { 
 		tracer_t::set_hyperdrive(_hyperdrive);

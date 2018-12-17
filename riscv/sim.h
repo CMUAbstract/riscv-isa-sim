@@ -32,7 +32,7 @@ public:
   int run();
   void set_debug(bool value);
   void set_exit_debug(bool value);
-  void set_trace(const char *tconfig);
+  void set_trace(const char *tconfig, const char *outdir=nullptr);
   void set_intermittent(bool value);
   void set_log(bool value);
   void set_histogram(bool value);

@@ -77,6 +77,7 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 	pending_event->add_fini([&](){ next_insn(); });
 	register_pending(pending_event);
 	register_squashed("fetch", pending_event);
+	register_squashed("fetch", pending_event->data);
 	events->push_back(pending_event);
 
 	auto read_event = new mem_read_event_t(icache, pc, clock.get());
@@ -119,6 +120,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 	pending_event->add_dep([&]() { return !stages["exec"]; });
 	register_pending(pending_event);
 	register_squashed("decode", pending_event);
+	register_squashed("decode", pending_event->data);
 	events->push_back(pending_event);
 }
 
