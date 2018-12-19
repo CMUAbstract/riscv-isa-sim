@@ -10,11 +10,16 @@
 #include <hstd/vector.h>
 #include <hstd/map.h>
 
-#define TIME_VIOLATION_CHECK 													\
-	assert_msg(event->cycle >= clock.get(), 									\
-		"Timing violation e%lu < c%lu", event->cycle, clock.get());				\
-	clock.set(event->cycle);
 
+#define TIME_VIOLATION_CHECK 													\
+	{																			\
+		assert_msg(event->cycle >= clock.get(), 								\
+			"Timing violation e%lu < c%lu", event->cycle, clock.get());			\
+		clock.set(event->cycle);												\
+		account(event);															\
+	}
+
+struct event_base_t;
 class event_heap_t;
 class component_base_t: public io::serializable {
 public:
@@ -35,6 +40,8 @@ public:
 	std::string get_name() { return name; }
 	io::json get_config() { return config; }
 	cycle_t get_clock() { return clock.get(); }
+
+	void account(event_base_t *event);
 protected:
 	std::string name;
 	io::json config;
@@ -42,6 +49,7 @@ protected:
 	hstd::map<std::string> children;
 	hstd::map<std::string> parents;
 	counter_stat_t<cycle_t> clock;
+	map_stat_t<std::string, counter_stat_t<uint32_t>> event_counts;
 };
 
 template <class CHILD, class...EVENT_HANDLERS>

@@ -26,6 +26,7 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 			assert_msg(it["name"].is_string(), "No name");
 			assert_msg(core_type_map.find(it["model"].string_value()) 
 				!= core_type_map.end(), "Invalid core model");
+
 			core = core_type_map.at(it["model"].string_value())(
 				it["name"].string_value(), it, &events);
 			components.insert({it["name"].string_value(), core});
@@ -34,6 +35,7 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 			assert_msg(it["name"].is_string(), "No name");
 			assert_msg(ram_type_map.find(it["model"].string_value()) 
 				!= ram_type_map.end(), "Invalid mem model");
+
 			ram_t *mem = ram_type_map.at(it["model"].string_value())(
 				it["name"].string_value(), it, &events);
 			components.insert({it["name"].string_value(), mem});
@@ -42,6 +44,7 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 			assert_msg(it["name"].is_string(), "No name");
 			assert_msg(vcu_type_map.find(it["model"].string_value()) 
 				!= vcu_type_map.end(), "Invalid vcu model");
+			
 			vcu_t *vcu = vcu_type_map.at(it["model"].string_value())(
 				it["name"].string_value(), it, &events);
 			components.insert({it["name"].string_value(), vcu});

@@ -1,6 +1,7 @@
 #ifndef RAM_HANDLER_H
 #define RAM_HANDLER_H
 
+struct event_base_t;
 struct mem_read_event_t;
 struct mem_write_event_t;
 struct mem_insert_event_t;

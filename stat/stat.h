@@ -38,6 +38,16 @@ protected:
 	std::vector<T> list;
 };
 
+template<class T>
+struct to_string {
+	std::string operator()(T t) { return std::to_string(t); }
+};
+
+template<>
+struct to_string<std::string> {
+	std::string operator()(std::string t) { return t; }
+};
+
 template <typename Key, typename Value = stat_t *>
 class map_stat_t : public stat_t {
 public:
@@ -47,10 +57,11 @@ public:
 	typename std::map<Key, Value>::iterator find(Key key) { return m.find(key); }
 	typename std::map<Key, Value>::iterator begin() { return m.begin(); }
 	typename std::map<Key, Value>::iterator end() { return m.end(); }
+	Value& operator[](const Key& k) { return m[k]; }
 	io::json to_json() const {
 		std::map<std::string, Value> sm;
 		for(auto it : m) 
-			sm.insert(std::make_pair(std::to_string(it.first), it.second));
+			sm.insert(std::make_pair(to_string<Key>{}(it.first), it.second));
 		if(name.size() > 0) return io::json::object{{name, sm}};
 		return io::json(sm);
 	}

@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 
+struct event_base_t;
 struct insn_fetch_event_t;
 struct insn_decode_event_t;
 struct insn_exec_event_t;
