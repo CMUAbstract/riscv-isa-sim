@@ -28,6 +28,7 @@ public:
 	virtual void reset() {}
 	virtual void set_outdir(const std::string &_outdir) { outdir = _outdir; }
 	virtual void set_hyperdrive(bool _hyperdrive=true) { hyperdrive = _hyperdrive; }
+	virtual void set_intermittent(bool _intermittent=true) {}
 	virtual void set_roi(addr_t start_pc, addr_t end_pc) { 
 		roi_start = start_pc;
 		roi_end = end_pc;
@@ -83,6 +84,10 @@ public:
 	virtual void set_hyperdrive(bool _hyperdrive=true) { 
 		tracer_t::set_hyperdrive(_hyperdrive);
 		for(auto it : list) it->set_hyperdrive(_hyperdrive);
+	}
+	virtual void set_intermittent(bool _intermittent=true) { 
+		tracer_t::set_intermittent(_intermittent);
+		for(auto it : list) it->set_intermittent(_intermittent);
 	}
 	virtual void set_roi(addr_t start_pc, addr_t end_pc) {
 		tracer_t::set_roi(start_pc, end_pc);

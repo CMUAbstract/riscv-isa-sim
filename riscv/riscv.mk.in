@@ -292,9 +292,15 @@ riscv_insn_list = \
 	vconfig \
 	vlh \
 	vlxh \
+	vlsh \
 	vsh \
+	vssh \
 	vmul \
 	vredsum \
+	vpermute \
+	vcliph \
+	vsub \
+	vand \
 
 riscv_gen_srcs = \
 	$(addsuffix .cc,$(riscv_insn_list))

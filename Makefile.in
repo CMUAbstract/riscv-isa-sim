@@ -82,7 +82,7 @@ VPATH := $(addprefix $(src_dir)/, $(sprojs_enabled))
 #  - CPPFLAGS : flags for the preprocessor (eg. -I,-D)
 #  - CXXFLAGS : flags for C++ compiler (eg. -Wall,-g,-O3)
 
-GPROF         := -g 
+GPROF         :=  
 CC            := @CC@
 CXX           := @CXX@
 CFLAGS        += @CFLAGS@ -DPREFIX=\"$(prefix)\" $(GPROF)

@@ -888,3 +888,7 @@ void processor_t::trace_roi(reg_t start_pc, reg_t end_pc) {
 void processor_t::stop_tracer() {
   tracer->set_hyperdrive(true);
 }
+
+void processor_t::set_intermittent(bool val) {
+  tracer->set_intermittent(val);
+}

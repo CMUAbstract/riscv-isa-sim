@@ -54,6 +54,8 @@ public:
   void trace(void);
   void trace_roi(addr_t start_pc, addr_t end_pc=0);
   void stop_trace(void);
+  void enable_intermittent(void);
+  void disable_intermittent(void);
 
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;

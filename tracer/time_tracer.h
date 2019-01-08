@@ -27,6 +27,9 @@ public:
 		if(!_hyperdrive && hyperdrive) hyperdrive_disabled = true;
 		hyperdrive = _hyperdrive;
 	}
+	void set_intermittent(bool _intermittent=true) {
+		this->intermittent = _intermittent;
+	} 
 private:
 	event_heap_t events;
 	core_t *core = nullptr;

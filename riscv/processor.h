@@ -310,6 +310,7 @@ public:
   void resume_tracer();
   void trace_roi(reg_t start_pc, reg_t end_pc);
   void stop_tracer();
+  void set_intermittent(bool val);
   core_tracer_t* get_tracer(void) { return tracer; }
 
 private:

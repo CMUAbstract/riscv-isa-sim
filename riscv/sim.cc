@@ -321,3 +321,16 @@ void sim_t::stop_trace(void) {
   }
 }
 
+void sim_t::enable_intermittent(void) {
+  fprintf(stderr, "Enabling intermittence\n");
+  for(size_t i = 0; i < procs.size(); i++) {
+    procs[i]->set_intermittent(true); 
+  }
+}
+
+void sim_t::disable_intermittent(void) {
+  fprintf(stderr, "Disabling intermittence\n");
+  for(size_t i = 0; i < procs.size(); i++) {
+    procs[i]->set_intermittent(false); 
+  }
+}
