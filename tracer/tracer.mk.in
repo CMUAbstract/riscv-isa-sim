@@ -1,4 +1,4 @@
-tracer_subproject_deps = common
+tracer_subproject_deps = common io
 
 tracer_hdrs = \
         tracer.h \

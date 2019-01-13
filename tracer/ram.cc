@@ -1,5 +1,7 @@
 #include "ram.h"
 
+#include "mem_event.h"
+
 ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events) 
 	: component_t(_name, _config, _events), reads("reads"), writes("writes") {
 	JSON_CHECK(int, config["read_latency"], read_latency, 1);
@@ -45,4 +47,18 @@ io::json ram_t::to_json() const {
 
 addr_t ram_t::get_bank(addr_t addr) {
 	return addr & bank_mask;
+}
+
+void ram_t::process(mem_ready_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
+}
+
+void ram_t::process(mem_retire_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
+}
+
+void ram_t::process(mem_match_event_t *event) {
+	TIME_VIOLATION_CHECK
 }

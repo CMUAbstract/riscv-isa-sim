@@ -104,6 +104,12 @@ void cache_t::process(mem_read_event_t *event) {
 			events->push_back(
 				new mem_read_event_t(
 					child.second, event->data, clock.get() + 1));
+			auto pending_event = new pending_event_t (
+				this, new mem_insert_event_t(this, event->data), clock.get() + 1);
+			pending_event->add_dep<mem_retire_event_t *>(
+				[addr=event->data.addr](mem_retire_event_t *e) {
+				return e->data.addr == addr;
+			});
 		}
 		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 			events->push_back(
@@ -165,6 +171,12 @@ void cache_t::process(mem_write_event_t *event) {
 			events->push_back(
 				new mem_write_event_t(
 					child.second, event->data, clock.get() + 1));
+			auto pending_event = new pending_event_t (
+				this, new mem_insert_event_t(this, event->data), clock.get() + 1);
+			pending_event->add_dep<mem_retire_event_t *>(
+				[addr=event->data.addr](mem_retire_event_t *e) {
+				return e->data.addr == addr;
+			});
 		}
 		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 			events->push_back(
@@ -239,20 +251,12 @@ void cache_t::process(mem_insert_event_t *event) {
 				new mem_write_event_t(
 					child.second, event->data, clock.get() + write_latency));
 		}
-	} else {
-		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
-			events->push_back(
-				new mem_ready_event_t(
-					parent.second, event->data, clock.get() + 1));
-			events->push_back(
-				new mem_retire_event_t(
-					parent.second, event->data, clock.get() + invalid_latency));
-		}
 	}
 	dirty[id] = false;
-	for(auto parent : parents.raw<ram_t *>()) {
+	// Does this depend on finished write back?
+	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
-			new mem_insert_event_t(
+			new mem_retire_event_t(
 				parent.second, event->data, clock.get() + invalid_latency));
 	}
 }
