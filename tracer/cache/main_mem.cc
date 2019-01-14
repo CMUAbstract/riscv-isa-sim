@@ -39,11 +39,6 @@ void main_mem_t::process(mem_read_event_t *event){
 	register_pending(pending_event);
 	events->push_back(pending_event);
 
-	for(auto parent : parents.raw<ram_t *>()) {
-		events->push_back(
-			new mem_insert_event_t(
-				parent.second, event->data, clock.get() + read_latency));
-	}
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
 			new mem_ready_event_t(

@@ -110,6 +110,8 @@ void cache_t::process(mem_read_event_t *event) {
 				[addr=event->data.addr](mem_retire_event_t *e) {
 				return e->data.addr == addr;
 			});
+			register_pending(pending_event);
+			events->push_back(pending_event);
 		}
 		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 			events->push_back(
@@ -119,11 +121,6 @@ void cache_t::process(mem_read_event_t *event) {
 		return;
 	}
 	read_hits.inc();
-	for(auto parent : parents.raw<ram_t *>()) { // Insert in higher-level caches
-		events->push_back(
-			new mem_insert_event_t(
-				parent.second, event->data, clock.get() + read_latency));
-	}
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
 		events->push_back(
 			new mem_ready_event_t(
@@ -177,6 +174,8 @@ void cache_t::process(mem_write_event_t *event) {
 				[addr=event->data.addr](mem_retire_event_t *e) {
 				return e->data.addr == addr;
 			});
+			register_pending(pending_event);
+			events->push_back(pending_event);
 		}
 		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 			events->push_back(
@@ -188,11 +187,6 @@ void cache_t::process(mem_write_event_t *event) {
 
 	write_hits.inc();
 	set_dirty(event); // Mark line as dirty
-	for(auto parent : parents.raw<ram_t *>()) { // Insert in higher-level caches
-		events->push_back(
-			new mem_insert_event_t(
-				parent.second, event->data, clock.get() + write_latency));
-	}
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
 			new mem_ready_event_t(
@@ -253,7 +247,6 @@ void cache_t::process(mem_insert_event_t *event) {
 		}
 	}
 	dirty[id] = false;
-	// Does this depend on finished write back?
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
 			new mem_ready_event_t(
