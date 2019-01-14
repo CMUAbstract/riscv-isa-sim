@@ -256,6 +256,9 @@ void cache_t::process(mem_insert_event_t *event) {
 	// Does this depend on finished write back?
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
+			new mem_ready_event_t(
+				parent.second, event->data, clock.get() + 1));
+		events->push_back(
 			new mem_retire_event_t(
 				parent.second, event->data, clock.get() + invalid_latency));
 	}
