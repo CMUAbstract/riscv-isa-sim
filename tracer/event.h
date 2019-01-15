@@ -32,6 +32,7 @@ struct event_base_t {
 	cycle_t cycle = 0;
 	cycle_t priority;
 	bool ready_gc = true;
+	bool pending = false;
 	bool squashed = false;
 };
 
@@ -41,15 +42,15 @@ struct event_base_t {
 	void handle() { 															\
 		auto handler = dynamic_cast<component_base_t *>(this->handler);			\
 		if(handler != nullptr) {												\
-			std::cout << handler->get_name();									\
-			std::cout << " (" << handler->get_clock() << ")=> ";				\
+			std::cerr << handler->get_name();									\
+			std::cerr << " (" << handler->get_clock() << ")=> ";				\
 		} else {																\
-			std::cout << "generic";												\
-			std::cout << " => ";												\
+			std::cerr << "generic";												\
+			std::cerr << " => ";												\
 		}																		\
-		std::cout << this->to_string();											\
-		std::cout << " @ " << cycle;											\
-		std::cout << std::endl;													\
+		std::cerr << this->to_string();											\
+		std::cerr << " @ " << cycle;											\
+		std::cerr << std::endl;													\
 		this->handler->process(this);											\
 	}
 #elif HANDLER_INFO == 1
@@ -57,13 +58,13 @@ struct event_base_t {
 	void handle() { 															\
 		auto handler = dynamic_cast<component_base_t *>(this->handler);			\
 		if(handler != nullptr) {												\
-			std::cout << handler->get_name() << "| ";							\
+			std::cerr << handler->get_name() << "| ";							\
 		} else {																\
-			std::cout << "generic| ";											\
+			std::cerr << "generic| ";											\
 		}																		\
-		std::cout << this->to_string();											\
-		std::cout << "| " << cycle;												\
-		std::cout << std::endl;													\
+		std::cerr << this->to_string();											\
+		std::cerr << "| " << cycle;												\
+		std::cerr << std::endl;													\
 		this->handler->process(this);											\
 	}
 #else
@@ -134,7 +135,11 @@ public:
 private:
 	struct comparator_t {
 		bool operator()(const event_base_t *a,const event_base_t* b) const{
-			if(a->cycle == b->cycle) return a->priority > b->priority;
+			if(a->cycle == b->cycle) {
+				if((a->pending && b->pending) || (!a->pending && !b->pending))
+					return a->priority > b->priority;
+				return a->pending <= b->pending;
+			}
 			return a->cycle > b->cycle;
 		}
 	};
@@ -142,6 +147,7 @@ private:
 	std::vector<event_base_t *> events_heap;
 	std::set<eventref_t> events_set;
 	bool ready_flag = false;
+	size_t arrival = 0;
 };
 
 #endif

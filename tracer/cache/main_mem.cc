@@ -11,9 +11,8 @@ void main_mem_t::process(mem_read_event_t *event){
 
 	auto bank = get_bank(event->data.addr);
 	if(promote_pending(event, [&, bank](){
-		if(banks[bank].readers < read_ports_per_bank &&
-			banks[bank].total() < ports_per_bank) return false; 
-		return true;
+		return !(banks[bank].readers < read_ports_per_bank &&
+			banks[bank].total() < ports_per_bank);
 	}) != nullptr) {
 		// assert_msg(banks[bank].readerq <= load_buf_size, 
 			// "%s (%lu): Reader queue overflow", name.c_str(), clock.get());
@@ -54,9 +53,8 @@ void main_mem_t::process(mem_write_event_t *event){
 
 	auto bank = get_bank(event->data.addr);
 	if(promote_pending(event, [&, bank](){
-		if(banks[bank].writers < write_ports_per_bank &&
-			banks[bank].total() < ports_per_bank) return false;
-		return true;
+		return !(banks[bank].writers < write_ports_per_bank &&
+			banks[bank].total() < ports_per_bank);
 	}) != nullptr) {
 		banks[bank].writerq++;
 		if(banks[bank].writerq <= store_buf_size) {

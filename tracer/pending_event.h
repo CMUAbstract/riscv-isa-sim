@@ -12,7 +12,7 @@
 
 struct pending_event_t: public event_t<pending_handler_t, event_base_t *> {
 	pending_event_t(pending_handler_t *_handler, event_base_t *_data, cycle_t _cycle)
-		: event_t(_handler, _data, _cycle) { priority = cycle; }
+		: event_t(_handler, _data, _cycle) { pending = true; }
 	~pending_event_t() { if(data != nullptr) delete data; }
 	std::string to_string() {
 		std::ostringstream o;

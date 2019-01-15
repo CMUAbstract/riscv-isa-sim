@@ -8,6 +8,7 @@
 #include "mem_event.h"
 #include "repl_policy.h"
 
+#define CACHE_LOG 0
 #define ACCESS_LIMIT 20
 #define ACCESS_LIMIT_ENABLE 0
 
@@ -45,14 +46,14 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 	write_misses.reset();
 	read_hits.reset();
 	write_hits.reset();
-#if 0
-	std::cout << name << std::endl;
-	std::cout << "offset_mask: " << std::bitset<32>(offset_mask) << std::endl;
-	std::cout << "set_mask: " << std::bitset<32>(set_mask) << std::endl;
-	std::cout << "set_offset: " << set_offset << std::endl;
-	std::cout << "tag_mask: " << std::bitset<32>(tag_mask) << std::endl;
-	std::cout << "line_size: " << line_size << std::endl;
-	std::cout << "lines: " << lines << std::endl;
+#if CACHE_LOG
+	std::cerr << name << std::endl;
+	std::cerr << "offset_mask: " << std::bitset<32>(offset_mask) << std::endl;
+	std::cerr << "set_mask: " << std::bitset<32>(set_mask) << std::endl;
+	std::cerr << "set_offset: " << set_offset << std::endl;
+	std::cerr << "tag_mask: " << std::bitset<32>(tag_mask) << std::endl;
+	std::cerr << "line_size: " << line_size << std::endl;
+	std::cerr << "lines: " << lines << std::endl;
 #endif
 }
 
@@ -72,9 +73,8 @@ void cache_t::process(mem_read_event_t *event) {
 
 	auto bank = get_bank(event->data.addr);
 	if(promote_pending(event, [&, bank](){
-		if(banks[bank].readers < read_ports_per_bank &&
-			banks[bank].total() < ports_per_bank) return false; 
-		return true;
+		return !(banks[bank].readers < read_ports_per_bank &&
+			banks[bank].total() < ports_per_bank);
 	}) != nullptr) {
 		banks[bank].readerq++;
 		if(banks[bank].readerq <= load_buf_size) {
@@ -98,6 +98,13 @@ void cache_t::process(mem_read_event_t *event) {
 	register_pending(pending_event);
 	events->push_back(pending_event);
 
+#if CACHE_LOG
+	uint32_t set = get_set(event->data.addr);
+	uint32_t tag = get_tag(event->data.addr);
+	std::cerr << "READ: " << name << "(set: 0x" << std::hex << set;
+	std::cerr << ", tag: 0x" << tag << ", addr:" << event->data.addr;
+	std::cerr << ", clock: " << event->cycle << ")" << std::endl;
+#endif
 	if(!access(event)) { // Read Miss
 		read_misses.inc();
 		for(auto child : children.raw<ram_t *>()) {
@@ -136,9 +143,8 @@ void cache_t::process(mem_write_event_t *event) {
 	
 	auto bank = get_bank(event->data.addr);
 	if(promote_pending(event, [&, bank](){
-		if(banks[bank].writers < write_ports_per_bank &&
-			banks[bank].total() < ports_per_bank) return false;
-		return true;
+		return !(banks[bank].writers < write_ports_per_bank &&
+			banks[bank].total() < ports_per_bank);
 	}) != nullptr) {
 		banks[bank].writerq++;
 		if(banks[bank].writerq <= store_buf_size) {
@@ -153,6 +159,13 @@ void cache_t::process(mem_write_event_t *event) {
 
 	writes.inc();
 
+#if CACHE_LOG
+	uint32_t set = get_set(event->data.addr);
+	uint32_t tag = get_tag(event->data.addr);
+	std::cerr << "WRITE: " << name << "(set: 0x" << std::hex << set;
+	std::cerr << ", tag: 0x" << tag << ", addr:" << event->data.addr;
+	std::cerr << ", clock: " << event->cycle << ")" << std::endl;
+#endif
 	// Increment writers
 	banks[bank].writers++;
 	if(banks[bank].writerq > 0) banks[bank].writerq--;
@@ -202,9 +215,8 @@ void cache_t::process(mem_insert_event_t *event) {
 	check_pending(event);
 	auto bank = get_bank(event->data.addr);
 	if(promote_pending(event, [&, bank](){
-		if(banks[bank].writers < write_ports_per_bank &&
-			banks[bank].total() < ports_per_bank) return false;
-		return true;
+		return !(banks[bank].writers < write_ports_per_bank &&
+			banks[bank].total() < ports_per_bank);
 	}) != nullptr) {
 		banks[bank].writerq++;
 		if(banks[bank].writerq <= store_buf_size) {
@@ -249,9 +261,6 @@ void cache_t::process(mem_insert_event_t *event) {
 	dirty[id] = false;
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
-			new mem_ready_event_t(
-				parent.second, event->data, clock.get() + 1));
-		events->push_back(
 			new mem_retire_event_t(
 				parent.second, event->data, clock.get() + invalid_latency));
 	}
@@ -265,20 +274,20 @@ bool cache_t::access(mem_event_t *event) {
 	for(uint32_t id = set * set_size; id < (set + 1) * set_size; id++) {
 		if((data[id] & tag_mask) == tag) {
 			repl_policy->update(id, event);
-#if 0
-			std::cout << "	HIT: ";
-			std::cout << name;
-			std::cout << " => access (set: 0x" << std::hex << set;
-			std::cout << " tag: 0x" << tag << ")" << std::endl;
+#if CACHE_LOG
+			std::cerr << "	HIT: ";
+			std::cerr << name;
+			std::cerr << " => access (set: 0x" << std::hex << set;
+			std::cerr << " tag: 0x" << tag << ")" << std::endl;
 #endif
 			return true;
 		}
 	}
-#if 0
-	std::cout << "	MISS: ";
-	std::cout << name;
-	std::cout << " => access (set: 0x" << std::hex << set;
-	std::cout << " tag: 0x" << tag << ")" << std::endl;
+#if CACHE_LOG
+	std::cerr << "	MISS: ";
+	std::cerr << name;
+	std::cerr << " => access (set: 0x" << std::hex << set;
+	std::cerr << " tag: 0x" << tag << ")" << std::endl;
 #endif
 	return false;
 }

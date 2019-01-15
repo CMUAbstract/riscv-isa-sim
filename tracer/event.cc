@@ -10,8 +10,14 @@ void event_heap_t::heapify() {
 void event_heap_t::push_back(event_base_t *e) {
 	events_heap.push_back(e);
 	events_set.insert(e);
+	e->priority = arrival++;
 	std::push_heap(events_heap.begin(), events_heap.end(), 
 		event_heap_t::comparator_t()); 
+#if 0
+	for(auto event : events_heap)
+		std::cerr << event->get_name() << " " << event->cycle << std::endl; 
+	std::cerr << std::endl;
+#endif
 }
 
 event_base_t *event_heap_t::pop_back() {

@@ -13,7 +13,7 @@
 #include "vector_event.h"
 #include "branch_predictor.h"
 
-// #define SQUASH_LOG 1
+#define SQUASH_LOG 0
 
 si3stage_core_t::si3stage_core_t(std::string _name, io::json _config, 
 	event_heap_t *_events) : core_t(_name, _config, _events) {
@@ -96,11 +96,11 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 	if(take_jump || take_branch) {
 		event->data->resolved = true;
 #if SQUASH_LOG
-		std::cout << "================================================" << std::endl;
-		std::cout << "Squashing pipeline status: fetch (0x";
-		std::cout << std::hex << event->data->insn.bits() << ", 0x" << event->data->ws.pc;
-		std::cout << ")" << std::dec << std::endl;
-		std::cout << "================================================" << std::endl;
+		std::cerr << "================================================" << std::endl;
+		std::cerr << "Squashing pipeline status: fetch (0x";
+		std::cerr << std::hex << event->data->insn.bits() << ", 0x" << event->data->ws.pc;
+		std::cerr << ")" << std::dec << std::endl;
+		std::cerr << "================================================" << std::endl;
 #endif
 		events->push_back(
 			new squash_event_t(this, 
@@ -134,10 +134,10 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 		event->data->resolved = true;
 		// ADD 2x BUBBLE
 #if SQUASH_LOG
-		std::cout << "================================================" << std::endl;
-		std::cout << "Squashing pipeline status: decode, fetch (0x";
-		std::cout << std::hex << event->data->insn.bits() << std::dec << ")" << std::endl;
-		std::cout << "================================================" << std::endl;
+		std::cerr << "================================================" << std::endl;
+		std::cerr << "Squashing pipeline status: decode, fetch (0x";
+		std::cerr << std::hex << event->data->insn.bits() << std::dec << ")" << std::endl;
+		std::cerr << "================================================" << std::endl;
 #endif
 		events->push_back(
 			new squash_event_t(this, 
@@ -204,6 +204,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 void si3stage_core_t::process(insn_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	retired_insns.inc();
+	// std::cerr << "PC: " << std::hex << event->data->ws.pc << std::endl;
 }
 
 void si3stage_core_t::process(squash_event_t *event) {
