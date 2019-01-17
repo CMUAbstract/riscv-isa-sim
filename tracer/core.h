@@ -25,9 +25,11 @@ struct timed_insn_t {
 	uint32_t idx = 0;
 };
 
+class vcu_t;
 class core_t: public component_t<core_t, core_handler_t, 
 	pending_handler_t, squash_handler_t, ram_signal_handler_t> {
 public:
+	friend class vcu_t;
 	core_t(std::string _name, io::json _config, event_heap_t *_events);
 	~core_t() {}
 	virtual void reset();

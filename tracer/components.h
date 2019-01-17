@@ -10,6 +10,7 @@
 
 #include "vcu.h"
 #include "vector/vec1d.h"
+#include "vector/vecflow.h"
 
 template<typename T, typename K> 
 T* create_component(std::string name, io::json config, event_heap_t *events) {
@@ -23,7 +24,8 @@ core_type_map = {
 
 const std::map<std::string, vcu_t*(*)(std::string name, io::json, event_heap_t *)> 
 vcu_type_map = {
-	{"vec1d", &create_component<vcu_t, vec1d_t>}
+	{"vec1d", &create_component<vcu_t, vec1d_t>},
+	{"vecflow", &create_component<vcu_t, vecflow_t>}
 };
 
 const std::map<std::string, ram_t*(*)(std::string name, io::json, event_heap_t *)> 

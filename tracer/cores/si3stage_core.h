@@ -46,6 +46,7 @@ private:
 	ram_t *icache;
 	vcu_t *vcu = nullptr;
 	branch_predictor_t *predictor;
+	bool last_vec = false;
 };
 
 #endif

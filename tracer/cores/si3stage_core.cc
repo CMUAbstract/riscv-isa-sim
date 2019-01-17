@@ -40,6 +40,7 @@ void si3stage_core_t::init() {
 		if(id.size() != 0) {
 			auto child = children.find<vcu_t *>(id);
 			vcu = child->second;
+			vcu->set_core(this);
 		}
 	}
 }
@@ -107,10 +108,21 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 				{.idx=event->data->idx, .stages={"fetch"}}, clock.get()));
 	}
 
+	event_base_t *exec_event;
+	bool is_vec = vcu->check_vec(event->data->opc);
+	if(vcu != nullptr && is_vec) {
+		exec_event = new vector_exec_event_t(vcu, event->data);
+		last_vec = true;
+	} else {
+		exec_event = new insn_exec_event_t(this, event->data);
+	}
+
 	stages["decode"] = true;
-	auto pending_event = new pending_event_t(this, 
-		new insn_exec_event_t(this, event->data), clock.get() + 1);
-	pending_event->add_fini([&](){ stages["decode"] = false; });
+	auto pending_event = new pending_event_t(this, exec_event, clock.get() + 1);
+	pending_event->add_fini([&, is_vec](){ 
+		stages["decode"] = false;
+		last_vec = is_vec;
+	});
 	for(auto it : event->data->ws.input.regs) {
 		events->push_back(new reg_read_event_t(this, it, clock.get()));
 		pending_event->add_dep<reg_read_event_t *>([it](reg_read_event_t *e){
@@ -118,6 +130,11 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		});
 	}
 	pending_event->add_dep([&]() { return !stages["exec"]; });
+	if(last_vec && !is_vec) {
+		pending_event->add_dep<vector_retire_event_t *>([](vector_ready_event_t *e) { 
+			return true; 
+		});
+	}
 	register_pending(pending_event);
 	register_squashed("decode", pending_event);
 	register_squashed("decode", pending_event->data);
@@ -149,24 +166,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 	retired_idx++;
 	stages["exec"] = true;
 
-	if(vcu != nullptr) {
-		vcu->check_and_set_vl(event->data);
-		if(vcu->check_vec(event->data->opc)) {
-			events->push_back(
-				new vector_exec_event_t(vcu, event->data, clock.get()));
-
-			auto pending_event = new pending_event_t(this, 
-				new insn_retire_event_t(this, event->data), clock.get() + 1);
-			pending_event->add_dep<vector_ready_event_t *>(
-				[pc=event->data->ws.pc](vector_ready_event_t *e){
-				return pc == e->data->ws.pc;
-			});
-			pending_event->add_fini([&](){ stages["exec"] = false; });
-			register_pending(pending_event);
-			events->push_back(pending_event);
-			return; // Leave for the VCU to finish
-		}
-	}
+	if(vcu != nullptr) vcu->check_and_set_vl(event->data);
 
 	auto pending_event = new pending_event_t(this, 
 		new insn_retire_event_t(this, event->data), clock.get() + 1);
@@ -204,7 +204,6 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 void si3stage_core_t::process(insn_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	retired_insns.inc();
-	// std::cerr << "PC: " << std::hex << event->data->ws.pc << std::endl;
 }
 
 void si3stage_core_t::process(squash_event_t *event) {
@@ -246,10 +245,10 @@ void si3stage_core_t::process(mem_match_event_t *event) {
 
 void si3stage_core_t::process(vector_ready_event_t *event) {
 	TIME_VIOLATION_CHECK
-	check_pending(event);
 }
 
 void si3stage_core_t::process(vector_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
+	events->push_back(new insn_retire_event_t(this, event->data, clock.get()));
 }
