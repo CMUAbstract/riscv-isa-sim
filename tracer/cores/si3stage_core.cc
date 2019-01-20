@@ -131,7 +131,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 	}
 	pending_event->add_dep([&]() { return !stages["exec"]; });
 	if(last_vec && !is_vec) {
-		pending_event->add_dep<vector_retire_event_t *>([](vector_ready_event_t *e) { 
+		pending_event->add_dep<vector_retire_event_t *>([](vector_retire_event_t *e) { 
 			return true; 
 		});
 	}
