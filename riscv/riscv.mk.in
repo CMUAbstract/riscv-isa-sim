@@ -301,6 +301,8 @@ riscv_insn_list = \
 	vcliph \
 	vsub \
 	vand \
+	vor \
+	vnot \
 	vmove \
 	vslt \
 	vsle \
