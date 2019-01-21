@@ -598,7 +598,7 @@
 #define MATCH_VSGE 0x2077
 #define MASK_VSGE  0x607f
 #define MATCH_VMOVE 0x4077
-#define MASK_VMOVE  0x607f
+#define MASK_VMOVE  0xf800707f
 #define MATCH_VPERMUTE 0x6077
 #define MASK_VPERMUTE  0x607f
 #define MATCH_VREDSUM 0x7f
@@ -610,9 +610,9 @@
 #define MATCH_VLSH 0x607f
 #define MASK_VLSH  0x607f
 #define MATCH_VSH 0x4057
-#define MASK_VSH  0x607f
+#define MASK_VSH  0x600607f
 #define MATCH_VSSH 0x6057
-#define MASK_VSSH  0x607f
+#define MASK_VSSH  0x600607f
 #define CSR_FFLAGS 0x1
 #define CSR_FRM 0x2
 #define CSR_FCSR 0x3

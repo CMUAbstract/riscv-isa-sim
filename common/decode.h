@@ -91,6 +91,8 @@ public:
 	uint64_t rs2() { return x(20, 5); }
 	uint64_t rs3() { return x(27, 5); }
 	uint64_t rm() { return x(12, 3); }
+	uint64_t m() { return x(12, 1); }
+	uint64_t fr() { return x(25, 2); }
 	uint64_t csr() { return x(20, 12); }
 
 	int64_t rvc_imm() { return x(2, 5) + (xs(12, 1) << 5); }
@@ -199,10 +201,10 @@ public:
 #define WRITEP_VREG(reg, value, pos) STATE.VPR.write(reg, value, pos)
 #define VS1 READ_VREG(insn.rs1())
 #define VS2 READ_VREG(insn.rs2())
-#define VS3 READ_VREG(insn.rs3())
+#define VM READ_VREG(insn.rs3())
 #define VS1P(pos) READP_VREG(insn.rs1(), pos)
 #define VS2P(pos) READP_VREG(insn.rs2(), pos)
-#define VS3P(pos) READP_VREG(insn.rs3(), pos)
+#define VMP(pos) READP_VREG(insn.rs3(), pos)
 #define WRITE_VRD(value) WRITE_VREG(insn.rd(), value)
 #define WRITEP_VRD(value, pos) WRITEP_VREG(insn.rd(), value, pos)
 
