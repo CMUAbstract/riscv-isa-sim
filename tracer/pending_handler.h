@@ -5,10 +5,15 @@
 
 #include "event.h"
 
+template<class T>
+struct counter_stat_t;
 struct pending_event_t;
 class pending_handler_t {
 public:
-	void set_ref(event_heap_t *_ref_events) { ref_events = _ref_events; }
+	void set_ref(event_heap_t *_ref_events, counter_stat_t<cycle_t> *_ref_clock) { 
+		ref_events = _ref_events; 
+		ref_clock = _ref_clock;
+	}
 	virtual void process(pending_event_t *event);
 protected:
 	void register_pending(pending_event_t *event) {
@@ -21,7 +26,9 @@ protected:
 protected:
 	std::map<eventref_t, pending_event_t *> pending_events;
 private:
+	counter_stat_t<cycle_t> *ref_clock;
 	event_heap_t *ref_events = nullptr;
+	
 };
 
 #include "pending_event.h"

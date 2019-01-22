@@ -7,7 +7,7 @@
 core_t::core_t(std::string _name, io::json _config, event_heap_t *_events)
 	: component_t(_name, _config, _events), retired_insns("retired_insns", ""),
 	running_insns("running_insns", "") {
-	pending_handler_t::set_ref(events);
+	pending_handler_t::set_ref(events, &clock);
 	squash_handler_t::set_ref(events);
 	retired_insns.reset();
 	running_insns.reset();	

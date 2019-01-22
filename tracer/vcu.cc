@@ -5,7 +5,7 @@
 
 vcu_t::vcu_t(std::string _name, io::json _config, event_heap_t *_events)
 	: component_t(_name, _config, _events) {
-	pending_handler_t::set_ref(events);
+	pending_handler_t::set_ref(events, &clock);
 	JSON_CHECK(int, config["lanes"], lanes, 1);
 }
 
@@ -17,11 +17,18 @@ bool vcu_t::check_vec(insn_bits_t opc) {
 	switch(opc) {
 		case MATCH_VADD:
 		case MATCH_VSUB:
-		case MATCH_AND:
 		case MATCH_VMUL:
+		case MATCH_VAND:
+		case MATCH_VOR:
+		case MATCH_VNOT:
 		case MATCH_VCLIPH:
 		case MATCH_VREDSUM:
 		case MATCH_VPERMUTE:
+		case MATCH_VMOVE:
+		case MATCH_VSLT:
+		case MATCH_VSLE:
+		case MATCH_VSGT:
+		case MATCH_VSGE:
 		case MATCH_VLH:
 		case MATCH_VLXH:
 		case MATCH_VLSH:
@@ -29,6 +36,10 @@ bool vcu_t::check_vec(insn_bits_t opc) {
 		case MATCH_VSSH: return true;
 	};
 	return false;
+}
+
+bool vcu_t::check_flush(insn_t *insn) {
+	return insn->fr() == VCU_FLUSH;
 }
 
 void vcu_t::check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn) {

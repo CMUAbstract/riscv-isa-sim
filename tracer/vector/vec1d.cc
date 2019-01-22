@@ -8,6 +8,7 @@ void vec1d_t::process(vector_exec_event_t *event) {
 	TIME_VIOLATION_CHECK
 	events->push_back(new pe_exec_event_t(this, event->data, clock.get()));
 	vcu_t::set_core_stage("exec", true);
+	empty = false;
 }
 
 void vec1d_t::process(pe_exec_event_t *event) {
@@ -24,15 +25,15 @@ void vec1d_t::process(pe_exec_event_t *event) {
 	if(vl - idx > lanes) {
 		pending_event = new pending_event_t(this, 
 			new pe_exec_event_t(this, event->data), clock.get() + 1);
-		pending_event->add_fini([&, remaining](){ 
-			active_lanes -= remaining; 
-			idx = 0;
-			vcu_t::set_core_stage("exec", false);
-		});
+		pending_event->add_fini([&, remaining](){ active_lanes -= remaining; });
 	} else {
 		pending_event = new pending_event_t(this, 
 			new pe_ready_event_t(this, event->data), clock.get() + 1);
-		pending_event->add_fini([&, remaining](){ active_lanes -= remaining; });
+		pending_event->add_fini([&, remaining](){ 
+			active_lanes -= remaining; 
+			vcu_t::set_core_stage("exec", false);
+			empty = true;
+		});
 	}
 
 	active_lanes += remaining;
@@ -103,6 +104,7 @@ void vec1d_t::process(pe_exec_event_t *event) {
 
 void vec1d_t::process(pe_ready_event_t *event) {
 	TIME_VIOLATION_CHECK
+	idx = 0;
 	for(auto parent : parents.raw<vector_signal_handler_t *>()) {
 		events->push_back(
 			new vector_ready_event_t(parent.second, event->data, clock.get()));

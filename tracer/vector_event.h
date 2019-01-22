@@ -77,11 +77,11 @@ struct vector_reg_write_event_t: public event_t<vector_handler_t, vector_reg_inf
 	using event_t<vector_handler_t, vector_reg_info_t>::event_t;
 	std::string to_string() {
 		std::ostringstream os;
-		os << "vector_reg_read_event (" << cycle << ","; 
+		os << "vector_reg_write_event (" << cycle << ","; 
 		os << data.reg << ", " << data.idx << ")"; 
 		return os.str();
 	}
-	std::string get_name() { return "vector_reg_read_event"; }
+	std::string get_name() { return "vector_reg_write_event"; }
 	HANDLER;
 };
 

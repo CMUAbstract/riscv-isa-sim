@@ -110,6 +110,8 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 
 	event_base_t *exec_event;
 	bool is_vec = vcu->check_vec(event->data->opc);
+	bool is_flush = vcu->check_flush(&event->data->insn);
+	bool is_empty = vcu->check_empty();
 	if(vcu != nullptr && is_vec) {
 		exec_event = new vector_exec_event_t(vcu, event->data);
 		last_vec = true;
@@ -130,7 +132,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		});
 	}
 	pending_event->add_dep([&]() { return !stages["exec"]; });
-	if(last_vec && !is_vec) {
+	if((!is_empty && last_vec && !is_vec) || (is_flush && is_vec)) {
 		pending_event->add_dep<vector_retire_event_t *>([](vector_retire_event_t *e) { 
 			return true; 
 		});
@@ -250,5 +252,4 @@ void si3stage_core_t::process(vector_ready_event_t *event) {
 void si3stage_core_t::process(vector_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
-	events->push_back(new insn_retire_event_t(this, event->data, clock.get()));
 }

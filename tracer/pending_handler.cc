@@ -1,8 +1,12 @@
 #include "pending_handler.h"
 
+#include <stat/stat.h>
 #include "pending_event.h"
 
 void pending_handler_t::process(pending_event_t *event) {
+	assert_msg(event->cycle >= ref_clock->get(),
+		"Timing violation e%lu < c%lu", event->cycle, ref_clock->get());
+	ref_clock->set(event->cycle);
 	if(!event->resolved()) {
 		// Recheck during next cycle
 		event->cycle = event->cycle + 1;

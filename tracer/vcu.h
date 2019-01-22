@@ -10,6 +10,11 @@
 #include "ram.h"
 #include "core.h"
 
+#define VCU_REG_WRITE 0x0
+#define VCU_FORWARD 0x1
+#define VCU_FORWARD_REG_WRITE 0x1
+#define VCU_FLUSH 0x3
+
 class vcu_t: public component_t<vcu_t, vector_handler_t, 
 	pending_handler_t, ram_signal_handler_t> {
 public:
@@ -17,6 +22,8 @@ public:
 	~vcu_t() {}
 	void set_core(core_t *_core) { core = _core; }
 	bool check_vec(insn_bits_t opc);
+	bool check_flush(insn_t *insn);
+	bool check_empty() { return empty; }
 	void check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn);
 	virtual void reset() {}
 	virtual io::json to_json() const;
@@ -30,6 +37,7 @@ protected:
 	reg_t vl;
 	core_t *core;
 	uint16_t lanes;
+	bool empty = true;
 };
 
 #endif

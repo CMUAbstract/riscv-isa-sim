@@ -31,7 +31,7 @@ ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events)
 	}
 	bank_mask = bank_count - 1;
 
-	pending_handler_t::set_ref(events);
+	pending_handler_t::set_ref(events, &clock);
 	reads.reset();
 	writes.reset();
 }
