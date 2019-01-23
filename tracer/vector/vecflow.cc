@@ -65,6 +65,10 @@ void vecflow_t::process(pe_exec_event_t *event) {
 	active_lanes[insn_idx] += remaining;
 	indices[insn_idx] += remaining;
 
+	auto retire_event = new pending_event_t(this, nullptr, clock.get() + 1);
+	retire_event->add_fini([&] { if(outstanding > 0) outstanding--; });
+	uint32_t outstanding_inc = outstanding + 1;
+
 	// Input locations
 	if(local_idx < event->data->ws.input.locs.size()) {
 		auto it = std::next(event->data->ws.input.locs.begin(), local_idx);
@@ -78,6 +82,11 @@ void vecflow_t::process(pe_exec_event_t *event) {
 					[loc](mem_ready_event_t *e){
 					return e->data.addr == loc;
 				});
+				retire_event->add_dep<mem_retire_event_t *>(
+					[loc](mem_retire_event_t *e){
+					return e->data.addr == loc;
+				});
+				outstanding = outstanding_inc;
 			}
 			++it;
 		}
@@ -96,6 +105,11 @@ void vecflow_t::process(pe_exec_event_t *event) {
 					[loc](mem_ready_event_t *e){
 					return e->data.addr == loc;
 				});
+				retire_event->add_dep<mem_retire_event_t *>(
+					[loc](mem_retire_event_t *e){
+					return e->data.addr == loc;
+				});
+				outstanding = outstanding_inc;
 			}
 			++it;
 		}
@@ -174,7 +188,9 @@ void vecflow_t::process(pe_exec_event_t *event) {
 		}
 	}
 	register_pending(pending_event);
+	register_pending(retire_event);
 	events->push_back(pending_event);
+	events->push_back(retire_event);
 }
 
 void vecflow_t::process(pe_ready_event_t *event) {
@@ -187,10 +203,15 @@ void vecflow_t::process(pe_ready_event_t *event) {
 	for(auto parent : parents.raw<vector_signal_handler_t *>()) {
 		events->push_back(
 			new vector_ready_event_t(parent.second, event->data, clock.get()));
+		// Also check that all outstanding memory accesses completed
 		if(active_window_size == 0) {
 			empty = true;
-			events->push_back(
-				new vector_retire_event_t(parent.second, event->data, clock.get()));
+			auto vector_retire_event = new vector_retire_event_t(
+				parent.second, event->data, clock.get());
+			if(promote_pending(vector_retire_event, [&](){
+				return outstanding != 0;
+			}) != nullptr); 
+			else events->push_back(vector_retire_event);
 		}
 	}
 }

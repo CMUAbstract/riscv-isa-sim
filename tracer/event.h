@@ -36,7 +36,7 @@ struct event_base_t {
 	bool squashed = false;
 };
 
-#define HANDLER_INFO 2
+#define HANDLER_INFO 0
 #if HANDLER_INFO == 2
 #define HANDLER 																\
 	void handle() { 															\

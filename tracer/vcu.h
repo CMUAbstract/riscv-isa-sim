@@ -37,6 +37,7 @@ protected:
 	reg_t vl;
 	core_t *core;
 	uint16_t lanes;
+	uint32_t outstanding = 0;
 	bool empty = true;
 };
 
