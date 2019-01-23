@@ -43,7 +43,7 @@ protected:
 	void process(pipeline_reg_read_event_t *event);
 	void process(pipeline_reg_write_event_t *event);
 protected:
-	std::set<uint32_t> get_reg_set(uint32_t idx);
+	std::set<uint32_t> get_reg_set(hstd::shared_ptr<timed_insn_t> timed_insn);
 protected:
 	uint16_t window_size;
 	uint32_t idx = 0;

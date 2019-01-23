@@ -103,10 +103,10 @@ void vecflow_t::process(pe_exec_event_t *event) {
 
 	// Input registers
 	uint32_t latency = 0;
-	auto reg_set = get_reg_set(insn_idx);
+	auto reg_set = get_reg_set(event->data);
 	for(auto it : event->data->ws.input.vregs) {
 		for(auto loc = local_idx; loc < local_idx + remaining; loc++) {
-			if(reg_set.size() == 0 || reg_set.find(it) == reg_set.end()) {
+			if(reg_set.size() != 0 && reg_set.find(it) != reg_set.end()) {
 				latency = 1;
 				events->push_back(
 					new vector_reg_read_event_t(
@@ -205,16 +205,16 @@ void vecflow_t::process(pipeline_reg_write_event_t *event) {
 	check_pending(event);
 }
 
-std::set<uint32_t> vecflow_t::get_reg_set(uint32_t idx) {
-	std::set<uint32_t> unaccounted_outputs = outputs[idx];
+std::set<uint32_t> vecflow_t::get_reg_set(hstd::shared_ptr<timed_insn_t> timed_insn) {
+	std::set<uint32_t> unaccounted_inputs = timed_insn->ws.input.vregs;
 	for(uint32_t i = 1; i < active_window_size; i++) {
-		int32_t cur_idx = idx - i;
+		int32_t cur_idx = timed_insn->idx - i;
 		if(cur_idx < 0) cur_idx = window_size + cur_idx;
 		std::set<uint32_t> diff;
-		std::set_difference(unaccounted_outputs.begin(), unaccounted_outputs.end(),
+		std::set_difference(unaccounted_inputs.begin(), unaccounted_inputs.end(),
 			outputs[cur_idx].begin(), outputs[cur_idx].end(), 
 			std::inserter(diff, diff.begin()));
-		unaccounted_outputs = diff;
+		unaccounted_inputs = diff;
 	}
-	return unaccounted_outputs;
+	return unaccounted_inputs;
 }

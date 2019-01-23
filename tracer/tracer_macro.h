@@ -36,16 +36,17 @@
 
 #define READ_VREG(reg) STATE.VPR[ws.log_input_vreg(reg)]
 #define READP_VREG(reg, pos) STATE.VPR.read(ws.log_input_vreg(reg), pos)
+// ERROR HERE EXTRA READS!!
 #define WRITE_VREG(reg, value) ({												\
 		auto wdata = value;														\
 		STATE.VPR.write(														\
-			ws.log_output_vreg(reg, READ_VREG(reg)), wdata);					\
+			ws.log_output_vreg(reg, STATE.VPR[reg]), wdata);					\
 	})
 #define WRITEP_VREG(reg, value, pos) ({											\
 		auto wdata = value;														\
 		auto wpos = pos;														\
 		STATE.VPR.write(														\
-			ws.log_output_vreg(reg, wdata, READP_VREG(reg, pos)), wdata, wpos);	\
+			ws.log_output_vreg(reg, wdata, STATE.VPR.read(reg, pos)), wdata, wpos);	\
 	})
 
 #define load_uint8(addr) load_uint8(ws.log_input_loc<uint8_t>(addr))

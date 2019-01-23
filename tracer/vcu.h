@@ -12,7 +12,7 @@
 
 #define VCU_REG_WRITE 0x0
 #define VCU_FORWARD 0x1
-#define VCU_FORWARD_REG_WRITE 0x1
+#define VCU_FORWARD_REG_WRITE 0x2
 #define VCU_FLUSH 0x3
 
 class vcu_t: public component_t<vcu_t, vector_handler_t, 
