@@ -26,6 +26,7 @@ tracer_hdrs = \
         pending_event.h \
         squash_event.h \
         vector_event.h \
+        cores/si2stage_core.h \
         cores/si3stage_core.h \
         cores/branch_predictor.h \
         cache/main_mem.h \
@@ -48,6 +49,7 @@ tracer_srcs = \
         mem_event.cc \
         intermittent.cc \
         pending_handler.cc \
+        cores/si2stage_core.cc \
         cores/si3stage_core.cc \
         cores/branch_predictor.cc \
         cache/main_mem.cc \

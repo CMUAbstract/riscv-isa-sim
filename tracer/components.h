@@ -2,6 +2,7 @@
 #define COMPONENTS_H
 
 #include "core.h"
+#include "cores/si2stage_core.h"
 #include "cores/si3stage_core.h"
 
 #include "ram.h"
@@ -19,6 +20,7 @@ T* create_component(std::string name, io::json config, event_heap_t *events) {
 
 const std::map<std::string, core_t*(*)(std::string name, io::json, event_heap_t *)> 
 core_type_map = {
+	{"si2stage_core", &create_component<core_t, si2stage_core_t>},
 	{"si3stage_core", &create_component<core_t, si3stage_core_t>}
 };
 
