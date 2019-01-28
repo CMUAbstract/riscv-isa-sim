@@ -57,6 +57,12 @@ const int NCSR = 4096;
 #define FSR_AEXC (FSR_NVA | FSR_OFA | FSR_UFA | FSR_DZA | FSR_NXA)
 
 #define MAXVL 32
+#define VREG_KILL 0x10
+#define VREG_MASK 0xF
+#define VMASK_NOMASK 0x0
+#define VMASK_SCALAR 0x1
+#define VMASK_LSB 0x2
+#define VMASK_ILSB 0x3
 
 #define insn_length(x) \
   (((x) & 0x07) == 0x07 ? 4 : 													\
@@ -91,7 +97,6 @@ public:
 	uint64_t rs2() { return x(20, 5); }
 	uint64_t rs3() { return x(27, 5); }
 	uint64_t rm() { return x(12, 3); }
-	uint64_t m() { return x(12, 1); }
 	uint64_t fr() { return x(25, 2); }
 	uint64_t csr() { return x(20, 12); }
 
@@ -161,9 +166,9 @@ template <class T, size_t N>
 class vregfile_t : public regfile_t<T[MAXVL], N, false> {
 public:
 	void write(size_t reg, T value, size_t pos) {
-		this->data[reg][pos] = value;
+		this->data[reg & VREG_MASK][pos] = value;
 	}
-	T read(size_t reg, size_t pos) { return this->data[reg][pos]; }
+	T read(size_t reg, size_t pos) { return this->data[reg & VREG_MASK][pos]; }
 };
 
 // helpful macros, etc
