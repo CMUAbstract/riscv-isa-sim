@@ -15,7 +15,7 @@ class ram_t: public component_t<ram_t, ram_handler_t, ram_signal_handler_t, pend
 public:
 	ram_t(std::string _name, io::json _config, event_heap_t *_events);
 	virtual ~ram_t() {}
-	virtual void reset();
+	virtual void reset(reset_level_t level);
 	virtual io::json to_json() const;
 	void process(mem_ready_event_t *event);
 	void process(mem_retire_event_t *event);
@@ -43,9 +43,6 @@ protected:
 	uint32_t read_ports_per_bank;
 	uint32_t write_ports_per_bank;
 	uint32_t bank_mask;
-protected:
-	counter_stat_t<uint64_t> reads;
-	counter_stat_t<uint64_t> writes;
 };
 
 #endif

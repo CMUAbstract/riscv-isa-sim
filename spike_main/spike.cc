@@ -27,6 +27,7 @@ static void help()
   fprintf(stderr, "  -h                    Print this help message\n");
   fprintf(stderr, "  -H                    Start halted, allowing a debugger to connect\n");
   fprintf(stderr, "  --inter               Run intermittently\n");
+  fprintf(stderr, "  --segment=<base,size> Segmented memory\n");
   fprintf(stderr, "  --exit-debug          Exit into debug mode\n");
   fprintf(stderr, "  --isa=<name>          RISC-V ISA string [default %s]\n", DEFAULT_ISA);
   fprintf(stderr, "  --pc=<address>        Override ELF entry point\n");
@@ -129,6 +130,20 @@ int main(int argc, char** argv)
     hyperdrive.end_pc = std::stoul(str.substr(comma_posn + 1), nullptr, 16);
   };
 
+  struct {
+    bool enabled = false;
+    uint32_t base = 0;
+    uint32_t size = 0;
+  } segmented;
+
+  auto const segmented_parser = [&](const char *s) {
+    std::string const str(s);
+    size_t comma_posn = str.find(',');
+    segmented.enabled = true;
+    segmented.base = std::stoul(str, nullptr, 16);
+    segmented.size = std::stoul(str.substr(comma_posn + 1), nullptr, 16);
+  };
+
   option_parser_t parser;
   parser.help(&help);
   parser.option('h', 0, 0, [&](const char* s){help();});
@@ -145,6 +160,7 @@ int main(int argc, char** argv)
   parser.option(0, "hyperdrive", 1, hyperdrive_parser);
   parser.option(0, "isa", 1, [&](const char* s){isa = s;});
   parser.option(0, "inter", 0, [&](const char* s){run_intermittent = true;});
+  parser.option(0, "segment", 1, segmented_parser);
   parser.option(0, "trace", 1, [&](const char* s){tconfig = s;});
   parser.option(0, "outdir", 1, [&](const char* s){outdir = s;});
   parser.option(0, "exit-debug", 0, [&](const char* s){exit_debug = true;});
@@ -191,6 +207,7 @@ int main(int argc, char** argv)
   s.set_intermittent(run_intermittent);
   s.set_log(log);
   s.set_histogram(histogram);
+  if(segmented.enabled) s.set_segmented(segmented.base, segmented.size);
   if(hyperdrive.simcall || hyperdrive.start_pc) s.stop_trace();
   if(hyperdrive.start_pc) s.trace_roi(hyperdrive.start_pc, hyperdrive.end_pc);
   return s.run();

@@ -74,6 +74,8 @@ const int NCSR = 4096;
 #define MAX_INSN_LENGTH 8
 #define PC_ALIGN 2
 
+enum reset_level_t {SOFT, HARD};
+
 typedef uint64_t insn_bits_t;
 class insn_t {
 public:

@@ -34,12 +34,7 @@ public:
 	void process(insn_decode_event_t *event) {}
 	void process(insn_exec_event_t *event);
 	void process(insn_retire_event_t *event);
-	void process(reg_read_event_t *event);
-	void process(reg_write_event_t *event);	
 	void process(squash_event_t *event);
-	void process(mem_ready_event_t *event);
-	void process(mem_retire_event_t *event);
-	void process(mem_match_event_t *event);
 	void process(vector_ready_event_t *event);
 	void process(vector_retire_event_t *event);
 private:

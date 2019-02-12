@@ -13,9 +13,7 @@
 #define ACCESS_LIMIT_ENABLE 0
 
 cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
-	: ram_t(_name, _config, _events), accesses("accesses"), inserts("inserts"),
-	read_misses("read_misses"), write_misses("write_misses"),
-	read_hits("read_hits"), write_hits("write_hits") {
+	: ram_t(_name, _config, _events) {
 	JSON_CHECK(int, config["lines"], lines, 64);
 	JSON_CHECK(int, config["line_size"], line_size, 4);
 	JSON_CHECK(int, config["sets"], sets, 8);
@@ -29,6 +27,14 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 		repl_policy = repl_policy_type_map.at(which_repl_policy)(lines); 
 	}
 
+	// Statistics to track
+	track("access");
+	track("insert");
+	track("write_miss");
+	track("write_hit");
+	track("read_miss");
+	track("read_hit");
+
 	offset_mask = line_size - 1; 
 	uint32_t idx = line_size;
 	while (idx >>= 1) ++set_offset;
@@ -39,13 +45,6 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 	data.resize(lines, 0);
 	dirty.resize(lines, false);
 
-	// Stats
-	accesses.reset();
-	inserts.reset();
-	read_misses.reset();
-	write_misses.reset();
-	read_hits.reset();
-	write_hits.reset();
 #if CACHE_LOG
 	std::cerr << name << std::endl;
 	std::cerr << "offset_mask: " << std::bitset<32>(offset_mask) << std::endl;
@@ -57,15 +56,16 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 #endif
 }
 
-void cache_t::reset() {
-	ram_t::reset();
-	dirty.resize(lines, false);
+void cache_t::reset(reset_level_t level) {
+	ram_t::reset(level);
+	repl_policy->reset();
+	if(level == SOFT) return;
+	std::fill(dirty.begin(), dirty.end(), false);
+	std::fill(data.begin(), data.end(), false);
 }
 
 io::json cache_t::to_json() const {
-	return io::json::merge_objects(
-		ram_t::to_json(), accesses, inserts, read_misses, 
-		write_misses, read_hits, write_hits);
+	return ram_t::to_json();
 }
 
 void cache_t::process(mem_read_event_t *event) {
@@ -87,7 +87,7 @@ void cache_t::process(mem_read_event_t *event) {
 		return;
 	}
 
-	reads.inc();
+	model["read"].inc();
 
 	// Increment readers
 	banks[bank].readers++;
@@ -106,7 +106,7 @@ void cache_t::process(mem_read_event_t *event) {
 	std::cerr << ", clock: " << event->cycle << ")" << std::endl;
 #endif
 	if(!access(event)) { // Read Miss
-		read_misses.inc();
+		model["read_miss"].inc();
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_read_event_t(
@@ -127,7 +127,7 @@ void cache_t::process(mem_read_event_t *event) {
 		}
 		return;
 	}
-	read_hits.inc();
+	model["read_hit"].inc();
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
 		events->push_back(
 			new mem_ready_event_t(
@@ -157,7 +157,7 @@ void cache_t::process(mem_write_event_t *event) {
 		return;
 	}
 
-	writes.inc();
+	model["write"].inc();
 
 #if CACHE_LOG
 	uint32_t set = get_set(event->data.addr);
@@ -176,7 +176,7 @@ void cache_t::process(mem_write_event_t *event) {
 	events->push_back(pending_event);
 
 	if(!access(event)) { // Write Miss
-		write_misses.inc();
+		model["write_miss"].inc();
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_write_event_t(
@@ -198,7 +198,7 @@ void cache_t::process(mem_write_event_t *event) {
 		return;
 	}
 
-	write_hits.inc();
+	model["write_hit"].inc();
 	set_dirty(event); // Mark line as dirty
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
@@ -229,7 +229,7 @@ void cache_t::process(mem_insert_event_t *event) {
 		return;
 	}
 
-	inserts.inc();
+	model["insert"].inc();
 
 	// Increment writers
 	banks[bank].writers++;
@@ -267,8 +267,8 @@ void cache_t::process(mem_insert_event_t *event) {
 }
 
 bool cache_t::access(mem_event_t *event) {
-	accesses.inc();
-	if(accesses.get() > ACCESS_LIMIT && ACCESS_LIMIT_ENABLE) exit(1);
+	model["access"].inc();
+	if(model["access"].get() > ACCESS_LIMIT && ACCESS_LIMIT_ENABLE) exit(1);
 	uint32_t set = get_set(event->data.addr);
 	uint32_t tag = get_tag(event->data.addr);
 	for(uint32_t id = set * set_size; id < (set + 1) * set_size; id++) {

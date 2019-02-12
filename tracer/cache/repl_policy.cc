@@ -4,6 +4,11 @@
 
 #include "mem_event.h"
 
+void lru_repl_policy_t::reset() {
+	std::fill(timestamps.begin(), timestamps.end(), 0);
+	timestamp = 0;
+}
+
 void lru_repl_policy_t::update(uint32_t id, mem_event_t *req) {
 	timestamps[id] = timestamp++;
 }

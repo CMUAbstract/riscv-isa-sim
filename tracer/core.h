@@ -32,13 +32,20 @@ public:
 	friend class vcu_t;
 	core_t(std::string _name, io::json _config, event_heap_t *_events);
 	~core_t() {}
-	virtual void reset();
+	uint32_t get_frequency() { return frequency; }
+	virtual void reset(reset_level_t level);
 	virtual io::json to_json() const;
 	virtual void buffer_insn(hstd::shared_ptr<timed_insn_t> insn) = 0;
 	virtual void next_insn() = 0;
-	virtual uint32_t minstret() const { return retired_insns.get(); }
+	virtual uint32_t minstret() const { return retired_insns.running.get(); }
 	virtual void update_pc(reg_t _pc) { pc = _pc; }
+	void process(reg_read_event_t *event);
+	void process(reg_write_event_t *event);
+	void process(mem_ready_event_t *event);
+	void process(mem_retire_event_t *event);
+	void process(mem_match_event_t *event);
 protected:
+	uint32_t frequency = 16000000;
 	std::deque<hstd::shared_ptr<timed_insn_t>> insns;
 	uint32_t insn_idx = 0;
 	uint32_t retired_idx = 0;
@@ -46,8 +53,7 @@ protected:
 	std::map<std::string, bool> stages;
 	bool check_jump(insn_bits_t opc);
 protected: // stats
-	counter_stat_t<uint32_t> retired_insns;
-	counter_stat_t<uint32_t> running_insns;
+	running_stat_t<counter_stat_t<uint32_t>> retired_insns;
 };
 
 #endif

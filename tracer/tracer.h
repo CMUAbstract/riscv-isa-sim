@@ -24,8 +24,8 @@ public:
 	virtual void trace(
 		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) = 0;
 	virtual void tabulate() = 0;
-	virtual void reset(uint32_t minstret) {}
-	virtual void reset() {}
+	virtual void reset(reset_level_t level, uint32_t minstret) {}
+	virtual void reset(reset_level_t level=HARD) {}
 	virtual void set_outdir(const std::string &_outdir) { outdir = _outdir; }
 	virtual void set_hyperdrive(bool _hyperdrive=true) { hyperdrive = _hyperdrive; }
 	virtual void set_intermittent(bool _intermittent=true) {}
@@ -71,11 +71,11 @@ public:
 	io::json to_json() const {
 		return io::json(list);
 	}
-	void reset(uint32_t minstret) {
-		for(auto it : list) it->reset(minstret);
+	void reset(reset_level_t level, uint32_t minstret) {
+		for(auto it : list) it->reset(level, minstret);
 	}
-	void reset() {
-		for(auto it : list) it->reset();
+	void reset(reset_level_t level=HARD) {
+		for(auto it : list) it->reset(level);
 	}
 	virtual void set_outdir(const std::string &_outdir) {
 		tracer_t::set_outdir(_outdir);

@@ -91,8 +91,9 @@ void sim_t::main()
       size_t cycles = INTERMITTENT_MIN + (rand() % static_cast<int>(
         INTERMITTENT_MAX - INTERMITTENT_MIN + 1));
       step(cycles);
-      fprintf(stderr, "Ran %lu cycles, PC: %lx\n", cycles, procs[0]->get_state()->pc);
-      inter_reset();
+      fprintf(stderr, "Ran %lu cycles, PC: %lx\n", 
+        cycles, procs[0]->get_state()->pc);
+      hard_reset();
     } else{
       step(INTERLEAVE);
     }
@@ -159,6 +160,12 @@ void sim_t::set_trace(const char *tconfig, const char *outdir) {
 void sim_t::set_intermittent(bool value)
 {
   intermittent = value;
+}
+
+void sim_t::set_segmented(uint32_t base, uint32_t size) {
+  segmented = true;
+  segment_base = base;
+  segment_size = size;
 }
 
 void sim_t::set_log(bool value)
@@ -241,17 +248,19 @@ void sim_t::reset()
   make_dtb();
 }
 
-void sim_t::inter_reset() {
-  reg_t zero = 0;
-  for(size_t i = 0; i < procs.size(); i++) {
-    for(size_t j = 0; j < RAM_SIZE; j += sizeof(uint64_t)) {
-      addr_t addr = RAM_BASE + j; 
-      procs[i]->get_mmu()->store_uint64(addr, zero);
+void sim_t::hard_reset() {
+  if(segmented) {
+    reg_t zero = 0;
+    for(size_t i = 0; i < procs.size(); i++) {
+      for(size_t j = 0; j < segment_size; j += sizeof(uint64_t)) {
+        addr_t addr = segment_base + j; 
+        procs[i]->get_mmu()->store_uint64(addr, zero);
+      }
+      procs[i]->get_mmu()->flush_tlb();
+      procs[i]->reset();
     }
-    procs[i]->get_mmu()->flush_tlb();
-    procs[i]->reset();
+    debug_mmu->flush_tlb();
   }
-  debug_mmu->flush_tlb();
 }
 
 void sim_t::reverse(size_t n) {

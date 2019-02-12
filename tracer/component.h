@@ -1,6 +1,7 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 
+#include <map>
 #include <string>
 #include <sstream>
 
@@ -19,9 +20,31 @@
 		account(event);															\
 	}
 
+#define PARSE_POWER(handle, key)												\
+	{																			\
+		assert_msg(handle[key].is_array(), "No " key " power provided");		\
+		auto vals = handle[key].array_items();									\
+		assert_msg(vals.size() == 3, "Dynamic, static, leakage not supplied");	\
+		model[key].dynamic = vals[0].double_value();							\
+		model[key].steady = vals[1].double_value();								\
+		model[key].leakage = vals[2].double_value();							\
+	}
+
 struct event_base_t;
 class event_heap_t;
 class component_base_t: public io::serializable {
+public:
+	struct power_t {
+		double dynamic = 0.;
+		double steady = 0.;
+		double leakage = 0.;
+		power_t& operator+=(const power_t& other) {
+			dynamic =+ other.dynamic;
+			steady += other.steady;
+			leakage += other.leakage;
+			return *this;
+		}
+	};
 public:
 	component_base_t(std::string _name, io::json _config, event_heap_t *_events) 
 		: name(_name), config(_config), events(_events), clock("clock", "") {
@@ -29,7 +52,7 @@ public:
 	}
 	virtual ~component_base_t() {}
 	virtual void init() {}
-	virtual void reset() { clock.reset(); }
+	virtual void reset(reset_level_t level=HARD) { clock.reset(); }
 	virtual io::json to_json() const;
 
 	virtual void enqueue(hstd::vector *vec) = 0;
@@ -40,6 +63,7 @@ public:
 	std::string get_name() { return name; }
 	io::json get_config() { return config; }
 	cycle_t get_clock() { return clock.get(); }
+	power_t get_power();
 
 	void account(event_base_t *event);
 protected:
@@ -50,6 +74,27 @@ protected:
 	hstd::map<std::string> parents;
 	counter_stat_t<cycle_t> clock;
 	map_stat_t<std::string, counter_stat_t<uint32_t>> event_counts;
+protected:
+	void track(std::string key);
+	class model_stat_t: running_stat_t<counter_stat_t<uint64_t>> {
+	public:
+		using running_stat_t<counter_stat_t<uint64_t>>::running_stat_t;
+		io::json to_json() const;
+		void inc(uint64_t v) { running.inc(v); }
+		void inc(void) { inc(1); }
+		uint64_t get(void) { return running.get(); }
+		void set_power(double l, double s, double d) {
+			power.leakage = l;
+			power.steady = s;
+			power.dynamic = d;
+		}
+		power_t get_power() {
+			return {power.leakage, power.steady, running.get() * power.dynamic};
+		}
+	private:
+		power_t power;
+	};
+	map_stat_t<std::string, model_stat_t> model;
 };
 
 template <class CHILD, class...EVENT_HANDLERS>

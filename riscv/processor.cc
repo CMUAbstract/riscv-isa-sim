@@ -169,12 +169,17 @@ void processor_t::reset()
 bool processor_t::handle() {
   try {
     throw;
-  } catch(intermittent_except_t& except) {
-    std::cout << "Functional: " << state.minstret << "; Timing: " << except.minstret << std::endl;
-    assert(state.minstret >= except.minstret);
-    tracer->reset(except.minstret);
+  } catch(soft_except_t& except) {
+    fprintf(stderr, "Soft: Functional: %lu; Timing: %lu\n", 
+      state.minstret, except.minstret);
+    tracer->reset(SOFT, except.minstret);
     reverse_step(state.minstret - except.minstret);
-    sim->inter_reset();
+  } catch(hard_except_t& except) {
+    fprintf(stderr, "Hard: Functional: %lu; Timing: %lu\n", 
+      state.minstret, except.minstret);
+    tracer->reset(HARD, except.minstret);
+    reverse_step(state.minstret - except.minstret);
+    sim->hard_reset();
   } catch(...) {
     return false;
   }
@@ -890,5 +895,5 @@ void processor_t::stop_tracer() {
 }
 
 void processor_t::set_intermittent(bool val) {
-  tracer->set_intermittent(val);
+  if(tracer != nullptr) tracer->set_intermittent(val);
 }

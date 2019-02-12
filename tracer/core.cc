@@ -5,21 +5,26 @@
 #include "mem_event.h"
 
 core_t::core_t(std::string _name, io::json _config, event_heap_t *_events)
-	: component_t(_name, _config, _events), retired_insns("retired_insns", ""),
-	running_insns("running_insns", "") {
+	: component_t(_name, _config, _events), retired_insns("retired_insns", "") {
+	JSON_CHECK(int, config["frequency"], frequency);
+	
+	// Statistics to track
+	track("reg_read");
+	track("reg_write");
+	track("alu");
+
 	pending_handler_t::set_ref(events, &clock);
 	squash_handler_t::set_ref(events);
 	retired_insns.reset();
-	running_insns.reset();	
 	stages["fetch"] = false;
 	stages["decode"] = false;
 	stages["exec"] = false;
 }
 
-void core_t::reset() {
+void core_t::reset(reset_level_t level) {
 	component_t::reset();
 	clear_pending();
-	running_insns.inc(retired_insns.get());
+	clear_squash();
 	retired_insns.reset();
 	stages["fetch"] = false;
 	stages["decode"] = false;
@@ -31,7 +36,7 @@ void core_t::reset() {
 
 io::json core_t::to_json() const {
 	return io::json::merge_objects(
-		component_t::to_json(), retired_insns, running_insns);
+		component_t::to_json(), retired_insns);
 }
 
 bool core_t::check_jump(insn_bits_t opc) {
@@ -44,4 +49,31 @@ bool core_t::check_jump(insn_bits_t opc) {
 		case MATCH_C_JALR: return true;
 	};
 	return false;
+}
+
+void core_t::process(reg_read_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
+	model["reg_read"].inc();
+}
+
+void core_t::process(reg_write_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
+	model["reg_writes"].inc();
+}
+
+void core_t::process(mem_ready_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
+}
+
+void core_t::process(mem_retire_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
+}
+
+void core_t::process(mem_match_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
 }

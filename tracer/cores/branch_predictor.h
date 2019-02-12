@@ -10,6 +10,7 @@ public:
 	branch_predictor_t() {}
 	branch_predictor_t(io::json config) {}
 	bool check_branch(insn_bits_t opc);
+	virtual void reset() = 0;
 	virtual bool predict(addr_t cur_pc) = 0;
 	virtual bool check_predict(addr_t cur_pc, addr_t next_pc);
 	virtual void update(addr_t cur_pc, addr_t next_pc) = 0;
@@ -18,6 +19,7 @@ public:
 class local_predictor_t: public branch_predictor_t {
 public:
 	local_predictor_t(io::json config);
+	void reset();
 	bool predict(addr_t cur_pc);
 	void update(addr_t cur_pc, addr_t next_pc);
 protected:
@@ -30,6 +32,7 @@ protected:
 class global_predictor_t: public branch_predictor_t {
 public:
 	using branch_predictor_t::branch_predictor_t;
+	void reset();
 	bool predict(addr_t cur_pc);
 	void update(addr_t cur_pc, addr_t next_pc);
 protected:
@@ -40,6 +43,7 @@ class tournament_predictor_t: public branch_predictor_t {
 public:
 	tournament_predictor_t(io::json config)
 		: localp(config), globalp(config) {}
+	void reset();
 	bool predict(addr_t cur_pc);
 	void update(addr_t cur_pc, addr_t next_pc);
 protected:

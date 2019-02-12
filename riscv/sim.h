@@ -34,6 +34,7 @@ public:
   void set_exit_debug(bool value);
   void set_trace(const char *tconfig, const char *outdir=nullptr);
   void set_intermittent(bool value);
+  void set_segmented(uint32_t base, uint32_t size);
   void set_log(bool value);
   void set_histogram(bool value);
   void set_procs_debug(bool value);
@@ -46,7 +47,7 @@ public:
 
   // Callback for processors to let the simulation know they were reset.
   void proc_reset(unsigned id);
-  void inter_reset();
+  void hard_reset();
 
   // Sim Calls
   void mark(addr_t addr, size_t len, size_t tag);
@@ -82,6 +83,11 @@ private:
   bool histogram_enabled; // provide a histogram of PCs
   bool intermittent;
   remote_bitbang_t* remote_bitbang;
+
+  // Segmented memory support
+  bool segmented = false;
+  uint32_t segment_base = 0;
+  uint32_t segment_size = 0;
 
   // memory-mapped I/O routines
   char* addr_to_mem(reg_t addr);

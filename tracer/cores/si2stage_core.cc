@@ -188,7 +188,7 @@ void si2stage_core_t::process(insn_exec_event_t *event) {
 
 void si2stage_core_t::process(insn_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
-	retired_insns.inc();
+	retired_insns.running.inc();
 }
 
 void si2stage_core_t::process(squash_event_t *event) {
@@ -201,31 +201,6 @@ void si2stage_core_t::process(squash_event_t *event) {
 	insn_idx = event->data.idx - retired_idx + 1;
 	pc = insns[insn_idx]->ws.pc;
 	next_insn();
-}
-
-void si2stage_core_t::process(reg_read_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}
-
-void si2stage_core_t::process(reg_write_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}
-
-void si2stage_core_t::process(mem_ready_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}
-
-void si2stage_core_t::process(mem_retire_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}
-
-void si2stage_core_t::process(mem_match_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
 }
 
 void si2stage_core_t::process(vector_ready_event_t *event) {

@@ -25,6 +25,7 @@ protected:
 		for(auto it : alive_keys) squashed_events[key].insert(it);
 	}
 	void clear_squash(const std::string &key) { squashed_events[key].clear(); }
+	void clear_squash() { squashed_events.clear(); }
 protected:
 	std::map<std::string, std::map<eventref_t, event_base_t *>> squashed_events;
 private:

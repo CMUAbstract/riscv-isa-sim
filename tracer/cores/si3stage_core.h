@@ -18,6 +18,7 @@ public:
 	si3stage_core_t(std::string _name, io::json _config, event_heap_t *_events);
 	void init();
 	io::json to_json() const;
+	void reset(reset_level_t level);
 	virtual void enqueue(hstd::vector *vec) {
 		component_t::enqueue(vec);
 		vec->push_back<vector_signal_handler_t *>(
@@ -34,12 +35,7 @@ public:
 	void process(insn_decode_event_t *event);
 	void process(insn_exec_event_t *event);
 	void process(insn_retire_event_t *event);
-	void process(reg_read_event_t *event);
-	void process(reg_write_event_t *event);	
 	void process(squash_event_t *event);
-	void process(mem_ready_event_t *event);
-	void process(mem_retire_event_t *event);
-	void process(mem_match_event_t *event);
 	void process(vector_ready_event_t *event);
 	void process(vector_retire_event_t *event);
 private:

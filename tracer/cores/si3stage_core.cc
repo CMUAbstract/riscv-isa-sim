@@ -49,6 +49,11 @@ io::json si3stage_core_t::to_json() const {
 	return core_t::to_json();
 }
 
+void si3stage_core_t::reset(reset_level_t level) {
+	core_t::reset(level);
+	predictor->reset();
+}
+
 void si3stage_core_t::buffer_insn(hstd::shared_ptr<timed_insn_t> insn) {
 	insns.push_back(insn);
 	next_insn();
@@ -205,7 +210,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 
 void si3stage_core_t::process(insn_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
-	retired_insns.inc();
+	retired_insns.running.inc();
 }
 
 void si3stage_core_t::process(squash_event_t *event) {
@@ -220,33 +225,9 @@ void si3stage_core_t::process(squash_event_t *event) {
 	next_insn();
 }
 
-void si3stage_core_t::process(reg_read_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}
-
-void si3stage_core_t::process(reg_write_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}
-
-void si3stage_core_t::process(mem_ready_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}
-
-void si3stage_core_t::process(mem_retire_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}
-
-void si3stage_core_t::process(mem_match_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}
-
 void si3stage_core_t::process(vector_ready_event_t *event) {
 	TIME_VIOLATION_CHECK
+	check_pending(event);
 }
 
 void si3stage_core_t::process(vector_retire_event_t *event) {

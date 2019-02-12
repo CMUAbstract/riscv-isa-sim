@@ -3,7 +3,7 @@
 #include "mem_event.h"
 
 ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events) 
-	: component_t(_name, _config, _events), reads("reads"), writes("writes") {
+	: component_t(_name, _config, _events) {
 	JSON_CHECK(int, config["read_latency"], read_latency, 1);
 	JSON_CHECK(int, config["write_latency"], write_latency, 1);
 	JSON_CHECK(int, config["banks"], bank_count, 1);
@@ -12,6 +12,10 @@ ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events)
 	JSON_CHECK(int, config["write_ports"], write_ports, 0);
 	JSON_CHECK(int, config["load_buf_size"], load_buf_size, 0);
 	JSON_CHECK(int, config["store_buf_size"], store_buf_size, 0);
+
+	// Statistics to track
+	track("read");
+	track("write");
 
 	// Calculate number of ports and ports/bank
 	assert_msg(ports > 0 || (read_ports > 0 && write_ports > 0),
@@ -32,17 +36,15 @@ ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events)
 	bank_mask = bank_count - 1;
 
 	pending_handler_t::set_ref(events, &clock);
-	reads.reset();
-	writes.reset();
 }
 
-void ram_t::reset() {
-	component_t::reset();
+void ram_t::reset(reset_level_t level) {
+	component_t::reset(level);
 	clear_pending();	
 }
 
 io::json ram_t::to_json() const {
-	return io::json::merge_objects(component_t::to_json(), reads, writes);
+	return io::json::merge_objects(component_t::to_json());
 }
 
 addr_t ram_t::get_bank(addr_t addr) {

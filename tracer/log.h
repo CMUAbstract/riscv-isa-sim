@@ -21,6 +21,15 @@
 	exit(1);																	\
 	};
 
+#define warn_msg(cond, args...)													\
+	if (unlikely(!(cond))) {													\
+	fprintf(stderr, "%s => Warning @ %d: ",										\
+	__FILE__, __LINE__);														\
+	fprintf(stderr, args);														\
+	fprintf(stderr, "\n");														\
+	fflush(stderr);																\
+	};
+
 #define COMMENT SLASH(/)
 #define SLASH(s) /##s
 

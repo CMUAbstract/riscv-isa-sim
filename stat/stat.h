@@ -34,6 +34,9 @@ public:
 		if(name.size() > 0) return io::json::object{{name, list}};
 		return io::json(list);
 	}
+	void integrate(const list_stat_t<T>& s) {
+		list.insert(list.end(), s.begin(), s.end());
+	}
 protected:
 	std::vector<T> list;
 };
@@ -48,7 +51,7 @@ struct to_string<std::string> {
 	std::string operator()(std::string t) { return t; }
 };
 
-template <typename Key, typename Value = stat_t *>
+template<typename Key, typename Value = stat_t *>
 class map_stat_t : public stat_t {
 public:
 	using stat_t::stat_t;
@@ -65,11 +68,14 @@ public:
 		if(name.size() > 0) return io::json::object{{name, sm}};
 		return io::json(sm);
 	}
+	void integrate(const map_stat_t<Key, Value>& s) {
+		m.insert(s.begin(), s.end());
+	}
 private:
 	std::map<Key, Value> m;
 };
 
-template <typename T>
+template<typename T>
 class scalar_stat_t : public stat_t {
 public:
 	using stat_t::stat_t;
@@ -79,32 +85,62 @@ public:
 		if(name.size() > 0) return io::json::object{{name, val}};
 		return io::json(val);
 	}
+	void integrate(const scalar_stat_t<T>& s) { set(s.get()); }
 protected:
 	T val;
 };
 
-template <typename T>
+template<typename T>
 class vector_stat_t : public stat_t {
 public:
 	using stat_t::stat_t;
 	void push_back(T v) { vals.push_back(v); }
 	T get(size_t idx) const { return vals[idx]; }
-	std::vector<T> get(void) { return vals; }
+	std::vector<T>& get(void) { return vals; }
 	io::json to_json() const {
 		if(name.size() > 0) return io::json::object{{name, vals}};
 		return io::json(vals);
+	}
+	void integrate(const vector_stat_t<T>& s) { 
+		inc(s.get()); 
+		vals.insert(vals.end(), s.get().begin(), s.get().end());
 	}
 protected:
 	std::vector<T> vals;
 };
 
-template <typename T>
+template<typename T>
 class counter_stat_t : public scalar_stat_t<T> {
 public:
 	using scalar_stat_t<T>::scalar_stat_t;
 	void inc(T v) { this->val += v;}
 	void inc(void) { this->val++; }
 	void reset(void) { this->val = 0; }
+	void integrate(const counter_stat_t<T>& s) { inc(s.get()); }
+};
+
+template<typename T>
+class running_stat_t : public stat_t {
+public:
+	running_stat_t() : running_stat_t("", "") {}
+	running_stat_t(std::string _name) : running_stat_t(_name, "") {}
+	running_stat_t(std::string _name, std::string _desc) : stat_t(_name, _desc) {
+		running.reset();
+		total.reset();
+	}
+	io::json to_json() const {
+		T final(name, desc);
+		final.integrate(running);
+		final.integrate(total);
+		return final.to_json();
+	}
+	void reset() {
+		total.integrate(running);
+		running.reset(); 
+	}
+public:
+	T running;
+	T total;
 };
 
 #endif

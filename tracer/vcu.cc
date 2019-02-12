@@ -33,7 +33,8 @@ bool vcu_t::check_vec(insn_bits_t opc) {
 		case MATCH_VLXH:
 		case MATCH_VLSH:
 		case MATCH_VSH: 
-		case MATCH_VSSH: return true;
+		case MATCH_VSSH: 
+		case MATCH_VSXH: return true;
 	};
 	return false;
 }

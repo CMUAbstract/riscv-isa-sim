@@ -28,6 +28,11 @@ local_predictor_t::local_predictor_t(io::json config) {
 	counters.resize(slots);
 }
 
+void local_predictor_t::reset() {
+	std::fill(predictors.begin(), predictors.end(), 0);
+	std::fill(counters.begin(), counters.end(), 0);
+}
+
 bool local_predictor_t::predict(addr_t cur_pc) {
 	uint32_t idx = cur_pc & mask;
 	if(predictors[idx] == cur_pc && counters[idx] > 1) return true;
@@ -44,6 +49,10 @@ void local_predictor_t::update(addr_t cur_pc, addr_t next_pc) {
 	else if(next_pc != cur_pc + 4 && counters[idx] < 3) counters[idx]++;
 }
 
+void global_predictor_t::reset() {
+	predictor = 2;	
+}
+
 bool global_predictor_t::predict(addr_t cur_pc) {
 	if(predictor > 1) return true;
 	return false;
@@ -52,6 +61,14 @@ bool global_predictor_t::predict(addr_t cur_pc) {
 void global_predictor_t::update(addr_t cur_pc, addr_t next_pc) {
 	if(next_pc == cur_pc + 4 && predictor > 0) predictor--;
 	if(next_pc != cur_pc + 4 && predictor < 3) predictor++;
+}
+
+void tournament_predictor_t::reset() {
+	localp.reset();
+	globalp.reset();
+	selector = 2;
+	local = true;
+	global = true;
 }
 
 bool tournament_predictor_t::predict(addr_t cur_pc) {

@@ -25,7 +25,7 @@ public:
 	bool check_flush(insn_t *insn);
 	bool check_empty() { return empty; }
 	void check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn);
-	virtual void reset() {}
+	virtual void reset(reset_level_t level) {}
 	virtual io::json to_json() const;
 	void process(vector_reg_read_event_t *event);
 	void process(vector_reg_write_event_t *event);

@@ -20,7 +20,7 @@ public:
 	}
 	void trace(
 		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn);
-	void reset(uint32_t minstret);
+	void reset(reset_level_t level, uint32_t minstret);
 	void tabulate();
 	io::json to_json() const;
 	void set_hyperdrive(bool _hyperdrive=true) {
@@ -35,6 +35,8 @@ private:
 	core_t *core = nullptr;
 	bool hyperdrive_disabled = false;
 	std::map<std::string, component_base_t *> components;
+	counter_stat_t<uint32_t> soft_failures;
+	counter_stat_t<uint32_t> hard_failures;
 };
 
 #endif

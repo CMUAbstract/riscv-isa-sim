@@ -10,8 +10,9 @@
 #include "cache/main_mem.h"
 
 #include "vcu.h"
-#include "vector/vec1d.h"
-#include "vector/vecflow.h"
+#include "vector/single_vec.h"
+#include "vector/single_q_vec.h"
+#include "vector/single_fixed_vec.h"
 
 template<typename T, typename K> 
 T* create_component(std::string name, io::json config, event_heap_t *events) {
@@ -26,8 +27,9 @@ core_type_map = {
 
 const std::map<std::string, vcu_t*(*)(std::string name, io::json, event_heap_t *)> 
 vcu_type_map = {
-	{"vec1d", &create_component<vcu_t, vec1d_t>},
-	{"vecflow", &create_component<vcu_t, vecflow_t>}
+	{"single_vec", &create_component<vcu_t, single_vec_t>},
+	{"single_q_vec", &create_component<vcu_t, single_q_vec_t>},
+	{"single_fixed_vec", &create_component<vcu_t, single_fixed_vec_t>}
 };
 
 const std::map<std::string, ram_t*(*)(std::string name, io::json, event_heap_t *)> 

@@ -1,11 +1,11 @@
-#ifndef SIMPLE_VEC_H
-#define SIMPLE_VEC_H
+#ifndef SINGLE_VEC_H
+#define SINGLE_VEC_H
 
 #include "vcu.h"
 
-class vec1d_t: public vcu_t {
+class single_vec_t: public vcu_t {
 public:
-	vec1d_t(std::string _name, io::json _config, event_heap_t *_events)
+	single_vec_t(std::string _name, io::json _config, event_heap_t *_events)
 		: vcu_t(_name, _config, _events) {}
 	void process(vector_exec_event_t *event);
 	void process(pe_exec_event_t *event);

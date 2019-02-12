@@ -410,6 +410,6 @@ void sim_t::interactive_count(const std::string& cmd, const std::vector<std::str
 
 void sim_t::interactive_reset(const std::string& cmd, const std::vector<std::string>& args)
 {
-  inter_reset();
+  hard_reset();
   fprintf(stderr, "Reset done\n");
 }
