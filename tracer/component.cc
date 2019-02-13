@@ -24,7 +24,7 @@ void component_base_t::track(std::string key) {
 	warn_msg(config["power"][key][zero_idx] != nullptr, 
 		"No dynamic power provided for %s", key.c_str());
 	warn_msg(config["power"][key][1] != nullptr, 
-		"No steady power provided for %s", key.c_str());
+		"No static power provided for %s", key.c_str());
 	warn_msg(config["power"][key][2] != nullptr, 
 		"No leakage power provided for %s", key.c_str());
 	JSON_CHECK(double, config["power"][key][zero_idx], dynamic);

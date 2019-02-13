@@ -12,7 +12,8 @@
 
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
 	: tracer_impl_t("time_tracer", _config, _elf), 
-	soft_failures("soft_failures"), hard_failures("hard_failures") {
+	soft_failures("soft_failures"), hard_failures("hard_failures"),
+	total_energy("total_energy"), total_power("total_power") {
 	if(config["intermittent"].is_object()) {
 		intermittent = true;
 		JSON_CHECK(int, config["intermittent"]["min"], intermittent_min);
@@ -35,7 +36,7 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 		if(config["intermittent"]["trace"].is_string())
 			set_power_trace(config["intermittent"]["trace"].string_value());	
 	}
-	assert_msg(config["config"].is_array(), "No config provided");
+	assert_msg(config["config"].is_object(), "No config provided");
 	for(auto it : config["config"].object_items()) {
 		assert_msg(it.second.is_object(), "Invalid component config");
 		assert_msg(it.second["type"].is_string(), "No type for component");
@@ -78,6 +79,8 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 		}
 	}
 	for(auto it : components) it.second->init();
+	soft_failures.reset();
+	hard_failures.reset();
 }
 
 time_tracer_t::~time_tracer_t() {
@@ -88,9 +91,15 @@ time_tracer_t::~time_tracer_t() {
 void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 	events.clear();
 	// Reset caches and wait for failure
-	component_base_t::power_t total_power;
-	for(auto c : components) total_power += c.second->get_power();
-	double total_energy = 0;
+	component_base_t::power_t power;
+	for(auto c : components) power += c.second->get_power();
+	total_power.set(power.leakage, power.steady, power.dynamic);
+	double time = (double)core->get_clock() / (double)core->get_frequency();
+	double leakage_energy = power.leakage * time;
+	double static_energy = power.steady * time;
+	double dynamic_energy = power.dynamic * 1. / (double)core->get_frequency();
+	double energy = leakage_energy + static_energy + dynamic_energy;
+	total_energy.set(leakage_energy, static_energy, dynamic_energy);
 	if(level == SOFT) {
 		soft_failures.inc();
 		for(auto c : components) c.second->reset(SOFT);
@@ -99,7 +108,8 @@ void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 				reset_should_fail();
 				return;
 			}
-			if(should_fail(core->get_clock(), total_energy, core->get_frequency())) {
+			if(should_fail(
+				core->get_clock(), energy, core->get_frequency())) {
 				hard_except_t except;
 				except.minstret = core->minstret();
 				throw except;
@@ -130,8 +140,8 @@ void time_tracer_t::tabulate() {
 
 io::json time_tracer_t::to_json() const {
 	auto trace = tracer_impl_t::to_json();
-	trace[name] = io::json::merge_objects(
-		soft_failures, hard_failures, io::json(components));
+	trace[name] = io::json::merge_objects(soft_failures, hard_failures, 
+		total_power, total_energy, io::json(components));
 	return trace;
 }
 
@@ -156,10 +166,17 @@ void time_tracer_t::trace(
 #if TICK_LIMIT_ENABLE
 	if(TICK_LIMIT <= core->get_clock()) exit(0);
 #endif
-	component_base_t::power_t total_power;
-	for(auto c : components) total_power += c.second->get_power();
-	double total_energy = 0;
-	if(intermittent && should_fail(core->get_clock(), total_energy, core->get_frequency())) {
+	component_base_t::power_t power;
+	for(auto c : components) power += c.second->get_power();
+	total_power.set(power.leakage, power.steady, power.dynamic);
+	double time = (double)core->get_clock() / (double)core->get_frequency();
+	double leakage_energy = power.leakage * time;
+	double static_energy = power.steady * time;
+	double dynamic_energy = power.dynamic * 1. / (double)core->get_frequency();
+	double energy = leakage_energy + static_energy + dynamic_energy;
+	total_energy.set(leakage_energy, static_energy, dynamic_energy);
+	if(intermittent && should_fail(
+		core->get_clock(), energy, core->get_frequency())) {
 #if 0
 		fprintf(stderr, "Triggering intermittent failure\n");
 #endif
@@ -168,4 +185,17 @@ void time_tracer_t::trace(
 		except.minstret = core->minstret();
 		throw except;
 	}
+}
+
+io::json time_tracer_t::efficiency_stat_t::to_json() const {
+	std::map<std::string, io::json> p = {
+		{name, io::json::merge_objects(leakage, steady, dynamic)}
+	};
+	return io::json::object(p);
+}
+
+void time_tracer_t::efficiency_stat_t::set(double l, double s, double d) {
+	leakage.running.set(l);
+	steady.running.set(s);
+	dynamic.running.set(d);
 }
