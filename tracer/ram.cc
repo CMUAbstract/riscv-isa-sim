@@ -14,8 +14,9 @@ ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events)
 	JSON_CHECK(int, config["store_buf_size"], store_buf_size, 0);
 
 	// Statistics to track
-	track("read");
-	track("write");
+	track_power("array");
+	track_energy("read");
+	track_energy("write");
 
 	// Calculate number of ports and ports/bank
 	assert_msg(ports > 0 || (read_ports > 0 && write_ports > 0),
@@ -59,8 +60,4 @@ void ram_t::process(mem_ready_event_t *event) {
 void ram_t::process(mem_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
-}
-
-void ram_t::process(mem_match_event_t *event) {
-	TIME_VIOLATION_CHECK
 }

@@ -19,7 +19,6 @@ public:
 	virtual io::json to_json() const;
 	void process(mem_ready_event_t *event);
 	void process(mem_retire_event_t *event);
-	void process(mem_match_event_t *event);
 protected:
 	uint32_t read_latency;
 	uint32_t write_latency;

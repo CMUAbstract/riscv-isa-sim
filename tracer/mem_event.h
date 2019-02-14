@@ -125,15 +125,4 @@ struct mem_retire_event_t: public mem_signal_event_t{
 	HANDLER;
 };
 
-struct mem_match_event_t: public mem_signal_event_t{
-	using mem_signal_event_t::mem_signal_event_t;
-	std::string to_string() {
-		std::ostringstream os;
-		os << "mem_match_event (" << cycle << ", 0x" << std::hex << this->data.addr << ")"; 
-		return os.str();
-	}
-	std::string get_name() { return "mem_ready_event"; }
-	HANDLER;
-};
-
 #endif

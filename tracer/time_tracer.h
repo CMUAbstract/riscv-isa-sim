@@ -38,22 +38,8 @@ private:
 private: // Stats
 	counter_stat_t<uint32_t> soft_failures;
 	counter_stat_t<uint32_t> hard_failures;
-	class efficiency_stat_t: stat_t {
-	public:
-		efficiency_stat_t() : efficiency_stat_t("", "") {}
-		efficiency_stat_t(std::string _name) : efficiency_stat_t(_name, "") {}
-		efficiency_stat_t(std::string _name, std::string _desc)
-			: stat_t(_name, _desc), leakage("leakage"), 
-			steady("static"), dynamic("dynamic") {}
-		io::json to_json() const;
-		void set(double l, double s, double d);
-	public:
-		running_stat_t<counter_stat_t<double>> leakage;
-		running_stat_t<counter_stat_t<double>> steady;
-		running_stat_t<counter_stat_t<double>> dynamic;
-	};
-	efficiency_stat_t total_energy;
-	efficiency_stat_t total_power;
+	running_stat_t<counter_stat_t<double>> total_energy;
+	running_stat_t<counter_stat_t<double>> total_power;
 };
 
 #endif

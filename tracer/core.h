@@ -43,7 +43,6 @@ public:
 	void process(reg_write_event_t *event);
 	void process(mem_ready_event_t *event);
 	void process(mem_retire_event_t *event);
-	void process(mem_match_event_t *event);
 protected:
 	uint32_t frequency = 16000000;
 	std::deque<hstd::shared_ptr<timed_insn_t>> insns;

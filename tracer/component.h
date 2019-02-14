@@ -1,7 +1,7 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 
-#include <map>
+#include <array>
 #include <string>
 #include <sstream>
 
@@ -34,25 +34,16 @@ struct event_base_t;
 class event_heap_t;
 class component_base_t: public io::serializable {
 public:
-	struct power_t {
-		double dynamic = 0.;
-		double steady = 0.;
-		double leakage = 0.;
-		power_t& operator+=(const power_t& other) {
-			dynamic =+ other.dynamic;
-			steady += other.steady;
-			leakage += other.leakage;
-			return *this;
-		}
-	};
+	enum power_state_t {ON, BROWN};
 public:
 	component_base_t(std::string _name, io::json _config, event_heap_t *_events) 
-		: name(_name), config(_config), events(_events), clock("clock", "") {
+		: name(_name), config(_config), events(_events), clock("clock", ""),
+		power("power"), energy("energy"), count("count") {
 		clock.reset();		
 	}
 	virtual ~component_base_t() {}
 	virtual void init() {}
-	virtual void reset(reset_level_t level=HARD) { clock.reset(); }
+	virtual void reset(reset_level_t level=HARD);
 	virtual io::json to_json() const;
 
 	virtual void enqueue(hstd::vector *vec) = 0;
@@ -63,7 +54,8 @@ public:
 	std::string get_name() { return name; }
 	io::json get_config() { return config; }
 	cycle_t get_clock() { return clock.get(); }
-	power_t get_power();
+	double get_power(power_state_t state=ON);
+	double get_energy();
 
 	void account(event_base_t *event);
 protected:
@@ -73,28 +65,31 @@ protected:
 	hstd::map<std::string> children;
 	hstd::map<std::string> parents;
 	counter_stat_t<cycle_t> clock;
-	map_stat_t<std::string, counter_stat_t<uint32_t>> event_counts;
 protected:
-	void track(std::string key);
-	class model_stat_t: running_stat_t<counter_stat_t<uint64_t>> {
+	void track_power(std::string key);
+	void track_energy(std::string key);
+	class duple_stat_t: public stat_t {
 	public:
-		using running_stat_t<counter_stat_t<uint64_t>>::running_stat_t;
+		duple_stat_t() {}
+		duple_stat_t(std::string _key1, std::string _key2)
+			: duple_stat_t("", "", _key1, _key2) {}
+		duple_stat_t(std::string _name, std::string _key1, std::string _key2)
+			: duple_stat_t(_name, "", _key1, _key2) {}
+		duple_stat_t(std::string _name, std::string _desc, std::string _key1, 
+			std::string _key2) : stat_t(_name, _desc), key1(_key1), key2(_key2) {}
 		io::json to_json() const;
-		void inc(uint64_t v) { running.inc(v); }
-		void inc(void) { inc(1); }
-		uint64_t get(void) { return running.get(); }
-		void set_power(double l, double s, double d) {
-			power.leakage = l;
-			power.steady = s;
-			power.dynamic = d;
-		}
-		power_t get_power() {
-			return {power.leakage, power.steady, running.get() * power.dynamic};
-		}
+		void set(double _v1, double _v2);
+		std::array<double, 2> get();
 	private:
-		power_t power;
+		double v1 = 0.;
+		double v2 = 0.;
+		std::string key1;
+		std::string key2;
 	};
-	map_stat_t<std::string, model_stat_t> model;
+	map_stat_t<std::string, duple_stat_t> power;
+	map_stat_t<std::string, duple_stat_t> energy;
+	map_stat_t<std::string, running_stat_t<counter_stat_t<uint64_t>>> count;
+	map_stat_t<std::string, counter_stat_t<uint32_t>> event_counts;
 };
 
 template <class CHILD, class...EVENT_HANDLERS>

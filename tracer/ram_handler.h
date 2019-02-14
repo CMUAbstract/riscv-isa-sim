@@ -19,7 +19,6 @@ class ram_signal_handler_t {
 public:
 	virtual void process(mem_ready_event_t *) = 0;
 	virtual void process(mem_retire_event_t *) = 0;
-	virtual void process(mem_match_event_t *) = 0;
 };
 
 #endif

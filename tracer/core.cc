@@ -9,9 +9,11 @@ core_t::core_t(std::string _name, io::json _config, event_heap_t *_events)
 	JSON_CHECK(int, config["frequency"], frequency);
 	
 	// Statistics to track
-	track("reg_read");
-	track("reg_write");
-	track("alu");
+	track_power("rf");
+	track_power("alu");
+	track_energy("reg_read");
+	track_energy("reg_write");
+	track_energy("alu");
 
 	pending_handler_t::set_ref(events, &clock);
 	squash_handler_t::set_ref(events);
@@ -54,13 +56,13 @@ bool core_t::check_jump(insn_bits_t opc) {
 void core_t::process(reg_read_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
-	model["reg_read"].inc();
+	count["reg_read"].running.inc();
 }
 
 void core_t::process(reg_write_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
-	model["reg_writes"].inc();
+	count["reg_write"].running.inc();
 }
 
 void core_t::process(mem_ready_event_t *event) {
@@ -69,11 +71,6 @@ void core_t::process(mem_ready_event_t *event) {
 }
 
 void core_t::process(mem_retire_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}
-
-void core_t::process(mem_match_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
 }

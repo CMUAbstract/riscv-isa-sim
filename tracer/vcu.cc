@@ -72,8 +72,3 @@ void vcu_t::process(mem_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
 }
-
-void vcu_t::process(mem_match_event_t *event) {
-	TIME_VIOLATION_CHECK
-	check_pending(event);
-}

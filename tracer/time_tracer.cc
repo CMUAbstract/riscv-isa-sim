@@ -91,15 +91,13 @@ time_tracer_t::~time_tracer_t() {
 void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 	events.clear();
 	// Reset caches and wait for failure
-	component_base_t::power_t power;
+	double power = 0., energy = 0.;
 	for(auto c : components) power += c.second->get_power();
-	total_power.set(power.leakage, power.steady, power.dynamic);
+	total_power.running.set(power);
+	for(auto c : components) energy += c.second->get_energy();
 	double time = (double)core->get_clock() / (double)core->get_frequency();
-	double leakage_energy = power.leakage * time;
-	double static_energy = power.steady * time;
-	double dynamic_energy = power.dynamic * 1. / (double)core->get_frequency();
-	double energy = leakage_energy + static_energy + dynamic_energy;
-	total_energy.set(leakage_energy, static_energy, dynamic_energy);
+	energy += power * time;
+	total_energy.running.set(energy);
 	if(level == SOFT) {
 		soft_failures.inc();
 		for(auto c : components) c.second->reset(SOFT);
@@ -166,15 +164,13 @@ void time_tracer_t::trace(
 #if TICK_LIMIT_ENABLE
 	if(TICK_LIMIT <= core->get_clock()) exit(0);
 #endif
-	component_base_t::power_t power;
+	double power = 0., energy = 0.;
 	for(auto c : components) power += c.second->get_power();
-	total_power.set(power.leakage, power.steady, power.dynamic);
+	total_power.running.set(power);
+	for(auto c : components) energy += c.second->get_energy();
 	double time = (double)core->get_clock() / (double)core->get_frequency();
-	double leakage_energy = power.leakage * time;
-	double static_energy = power.steady * time;
-	double dynamic_energy = power.dynamic * 1. / (double)core->get_frequency();
-	double energy = leakage_energy + static_energy + dynamic_energy;
-	total_energy.set(leakage_energy, static_energy, dynamic_energy);
+	energy += power * time;
+	total_energy.running.set(energy);
 	if(intermittent && should_fail(
 		core->get_clock(), energy, core->get_frequency())) {
 #if 0
@@ -185,17 +181,4 @@ void time_tracer_t::trace(
 		except.minstret = core->minstret();
 		throw except;
 	}
-}
-
-io::json time_tracer_t::efficiency_stat_t::to_json() const {
-	std::map<std::string, io::json> p = {
-		{name, io::json::merge_objects(leakage, steady, dynamic)}
-	};
-	return io::json::object(p);
-}
-
-void time_tracer_t::efficiency_stat_t::set(double l, double s, double d) {
-	leakage.running.set(l);
-	steady.running.set(s);
-	dynamic.running.set(d);
 }

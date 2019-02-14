@@ -28,12 +28,12 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 	}
 
 	// Statistics to track
-	track("access");
-	track("insert");
-	track("write_miss");
-	track("write_hit");
-	track("read_miss");
-	track("read_hit");
+	track_energy("access");
+	track_energy("insert");
+	track_energy("write_miss");
+	track_energy("write_hit");
+	track_energy("read_miss");
+	track_energy("read_hit");
 
 	offset_mask = line_size - 1; 
 	uint32_t idx = line_size;
@@ -87,7 +87,7 @@ void cache_t::process(mem_read_event_t *event) {
 		return;
 	}
 
-	model["read"].inc();
+	count["read"].running.inc();
 
 	// Increment readers
 	banks[bank].readers++;
@@ -106,7 +106,7 @@ void cache_t::process(mem_read_event_t *event) {
 	std::cerr << ", clock: " << event->cycle << ")" << std::endl;
 #endif
 	if(!access(event)) { // Read Miss
-		model["read_miss"].inc();
+		count["read_miss"].running.inc();
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_read_event_t(
@@ -127,7 +127,7 @@ void cache_t::process(mem_read_event_t *event) {
 		}
 		return;
 	}
-	model["read_hit"].inc();
+	count["read_hit"].running.inc();
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
 		events->push_back(
 			new mem_ready_event_t(
@@ -157,7 +157,7 @@ void cache_t::process(mem_write_event_t *event) {
 		return;
 	}
 
-	model["write"].inc();
+	count["write"].running.inc();
 
 #if CACHE_LOG
 	uint32_t set = get_set(event->data.addr);
@@ -176,7 +176,7 @@ void cache_t::process(mem_write_event_t *event) {
 	events->push_back(pending_event);
 
 	if(!access(event)) { // Write Miss
-		model["write_miss"].inc();
+		count["write_miss"].running.inc();
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_write_event_t(
@@ -198,7 +198,7 @@ void cache_t::process(mem_write_event_t *event) {
 		return;
 	}
 
-	model["write_hit"].inc();
+	count["write_hit"].running.inc();
 	set_dirty(event); // Mark line as dirty
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
@@ -229,7 +229,7 @@ void cache_t::process(mem_insert_event_t *event) {
 		return;
 	}
 
-	model["insert"].inc();
+	count["insert"].running.inc();
 
 	// Increment writers
 	banks[bank].writers++;
@@ -267,8 +267,8 @@ void cache_t::process(mem_insert_event_t *event) {
 }
 
 bool cache_t::access(mem_event_t *event) {
-	model["access"].inc();
-	if(model["access"].get() > ACCESS_LIMIT && ACCESS_LIMIT_ENABLE) exit(1);
+	count["access"].running.inc();
+	if(count["access"].running.get() > ACCESS_LIMIT && ACCESS_LIMIT_ENABLE) exit(1);
 	uint32_t set = get_set(event->data.addr);
 	uint32_t tag = get_tag(event->data.addr);
 	for(uint32_t id = set * set_size; id < (set + 1) * set_size; id++) {

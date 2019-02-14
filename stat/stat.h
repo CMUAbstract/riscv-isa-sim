@@ -126,21 +126,29 @@ public:
 	running_stat_t(std::string _name) : running_stat_t(_name, "") {}
 	running_stat_t(std::string _name, std::string _desc) : stat_t(_name, _desc) {
 		running.reset();
-		total.reset();
+		overall.reset();
+	}
+	T total() {
+		T f;
+		f.reset();
+		f.integrate(running);
+		f.integrate(overall);
+		return f;
 	}
 	io::json to_json() const {
-		T final(name, desc);
-		final.integrate(running);
-		final.integrate(total);
-		return final.to_json();
+		T f(name, desc);
+		f.reset();
+		f.integrate(running);
+		f.integrate(overall);
+		return f.to_json();
 	}
 	void reset() {
-		total.integrate(running);
+		overall.integrate(running);
 		running.reset(); 
 	}
 public:
 	T running;
-	T total;
+	T overall;
 };
 
 #endif

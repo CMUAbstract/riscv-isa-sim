@@ -31,7 +31,6 @@ public:
 	void process(vector_reg_write_event_t *event);
 	void process(mem_ready_event_t *event);
 	void process(mem_retire_event_t *event);
-	void process(mem_match_event_t *event);
 protected:
 	void set_core_stage(std::string stage, bool val) { core->stages[stage] = val; }
 	reg_t vl;

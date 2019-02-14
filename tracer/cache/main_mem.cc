@@ -27,7 +27,7 @@ void main_mem_t::process(mem_read_event_t *event){
 		return;
 	}
 
-	model["read"].inc();
+	count["read"].running.inc();
 
 	// Increment readers
 	banks[bank].readers++;
@@ -67,7 +67,7 @@ void main_mem_t::process(mem_write_event_t *event){
 		return;
 	}
 
-	model["write"].inc();
+	count["write"].running.inc();
 
 	// Increment writers
 	banks[bank].writers++;
