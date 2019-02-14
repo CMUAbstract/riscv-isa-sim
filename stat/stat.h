@@ -1,6 +1,7 @@
 #ifndef STAT_H
 #define STAT_H
 
+#include <array>
 #include <string>
 #include <vector>
 #include <map>
@@ -88,6 +89,21 @@ public:
 	void integrate(const scalar_stat_t<T>& s) { set(s.get()); }
 protected:
 	T val;
+};
+
+template<typename T, size_t size>
+class array_stat_t : public stat_t {
+public:
+	using stat_t::stat_t;
+	T get(size_t idx) const { return vals[idx]; }
+	void set(T val, size_t idx) { vals[idx] = val; }
+	void set(std::array<T, size>& _vals) { vals = _vals; }
+	io::json to_json() const {
+		if(name.size() > 0) return io::json::object{{name, vals}};
+		return io::json(vals);
+	}
+protected:
+	std::array<T, size> vals;
 };
 
 template<typename T>

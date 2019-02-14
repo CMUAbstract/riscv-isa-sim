@@ -172,13 +172,18 @@ bool processor_t::handle() {
   } catch(soft_except_t& except) {
     fprintf(stderr, "Soft: Functional: %lu; Timing: %lu\n", 
       state.minstret, except.minstret);
-    tracer->reset(SOFT, except.minstret);
     reverse_step(state.minstret - except.minstret);
+    try {
+      tracer->reset(SOFT, except.minstret);
+    } catch(...) {
+      bool handled = handle();
+      if(!handled) return false;
+    }
   } catch(hard_except_t& except) {
     fprintf(stderr, "Hard: Functional: %lu; Timing: %lu\n", 
       state.minstret, except.minstret);
-    tracer->reset(HARD, except.minstret);
     reverse_step(state.minstret - except.minstret);
+    tracer->reset(HARD, except.minstret);
     sim->hard_reset();
   } catch(...) {
     return false;

@@ -92,7 +92,7 @@ void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 	events.clear();
 	// Reset caches and wait for failure
 	double power = 0., energy = 0.;
-	for(auto c : components) power += c.second->get_power();
+	for(auto c : components) power += c.second->get_power(component_base_t::BROWN);
 	total_power.running.set(power);
 	for(auto c : components) energy += c.second->get_energy();
 	double time = (double)core->get_clock() / (double)core->get_frequency();
@@ -108,6 +108,10 @@ void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 			}
 			if(should_fail(
 				core->get_clock(), energy, core->get_frequency())) {
+#ifdef INTERMITTENT_LOG
+				fprintf(stderr, "Triggering hard failure: Used: %f Stored: %f\n",
+					energy, primary_energy + secondary_energy);
+#endif
 				hard_except_t except;
 				except.minstret = core->minstret();
 				throw except;
@@ -173,8 +177,9 @@ void time_tracer_t::trace(
 	total_energy.running.set(energy);
 	if(intermittent && should_fail(
 		core->get_clock(), energy, core->get_frequency())) {
-#if 0
-		fprintf(stderr, "Triggering intermittent failure\n");
+#ifdef INTERMITTENT_LOG
+		fprintf(stderr, "Triggering soft failure: Used: %f Stored: %f\n",
+			energy, primary_energy);
 #endif
 		// Throw intermittent exception here
 		soft_except_t except;

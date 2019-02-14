@@ -6,7 +6,7 @@
 
 void component_base_t::reset(reset_level_t level) {
 	clock.reset();
-	for(auto c : count) c.second.reset();
+	for(auto &c : count) c.second.reset();
 }
 
 io::json component_base_t::to_json() const {
@@ -30,8 +30,9 @@ void component_base_t::track_power(std::string key) {
 	double on_power = 0., brown_power = 0.;
 	JSON_CHECK(double, config["power"][key]["on"], on_power);
 	JSON_CHECK(double, config["power"][key]["brown"], brown_power);
-	power[key] = duple_stat_t(key, "on", "brown");
-	power[key].set(on_power, brown_power);
+	power[key] = power_stat_t();
+	std::array<double, 2> p = {on_power, brown_power};
+	power[key].set(p);
 }
 
 void component_base_t::track_energy(std::string key) {
@@ -40,8 +41,8 @@ void component_base_t::track_energy(std::string key) {
 	double stat_energy = 0.;
 	JSON_CHECK(double, config["energy"][key], stat_energy);
 
-	energy[key] = duple_stat_t(key, "per", "total");
-	energy[key].set(stat_energy, 0);
+	energy[key] = energy_stat_t();
+	energy[key].set(stat_energy, 0.);
 	count[key] = running_stat_t<counter_stat_t<uint64_t>>();
 }
 
@@ -49,33 +50,33 @@ double component_base_t::get_power(component_base_t::power_state_t state) {
 	double total = 0.;
 	uint16_t which = 0;
 	if(state == BROWN) which = 1;
-	for(auto p : power) total += p.second.get()[which];
+	for(auto p : power) total += p.second.get(which);
 	return total;
 }
 
 double component_base_t::get_energy() {
 	double total = 0.;
 	for(auto &e : energy) {
-		double dynamic = e.second.get()[0] * count[e.first].running.get();
+		double dynamic = e.second.get(0) * count[e.first].running.get();
 		total += dynamic;
-		e.second.set(e.second.get()[0], dynamic);
+		e.second.set(dynamic);
 	}
 	return total;
 }
 
-io::json component_base_t::duple_stat_t::to_json() const {
+io::json component_base_t::power_stat_t::to_json() const {
 	std::map<std::string, double> p = {
-		{key1, v1},
-		{key2, v2}
+		{"on", vals[0]},
+		{"brown", vals[1]}
 	};
 	return io::json{name : p};
 }
 
-void component_base_t::duple_stat_t::set(double _v1, double _v2) {
-	v1 = _v1;
-	v2 = _v2;
+io::json component_base_t::energy_stat_t::to_json() const {
+	return io::json{name : io::json::merge_objects(per, total)};
 }
 
-std::array<double, 2> component_base_t::duple_stat_t::get() {
-	return std::experimental::make_array(v1, v2);
+double component_base_t::energy_stat_t::get(size_t idx) {
+	if(idx == 0) return per.get();
+	return total.running.get();
 }

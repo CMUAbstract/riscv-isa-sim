@@ -68,26 +68,25 @@ protected:
 protected:
 	void track_power(std::string key);
 	void track_energy(std::string key);
-	class duple_stat_t: public stat_t {
+	class power_stat_t: public array_stat_t<double, 2> {
 	public:
-		duple_stat_t() {}
-		duple_stat_t(std::string _key1, std::string _key2)
-			: duple_stat_t("", "", _key1, _key2) {}
-		duple_stat_t(std::string _name, std::string _key1, std::string _key2)
-			: duple_stat_t(_name, "", _key1, _key2) {}
-		duple_stat_t(std::string _name, std::string _desc, std::string _key1, 
-			std::string _key2) : stat_t(_name, _desc), key1(_key1), key2(_key2) {}
+		using array_stat_t<double, 2>::array_stat_t;
 		io::json to_json() const;
-		void set(double _v1, double _v2);
-		std::array<double, 2> get();
-	private:
-		double v1 = 0.;
-		double v2 = 0.;
-		std::string key1;
-		std::string key2;
 	};
-	map_stat_t<std::string, duple_stat_t> power;
-	map_stat_t<std::string, duple_stat_t> energy;
+	class energy_stat_t: public stat_t {
+	public:
+		energy_stat_t() : stat_t(), per("per"), total("total") {}
+		io::json to_json() const;
+		double get(size_t idx);
+		void set(double p, double t) { per.set(p); total.running.set(t); }
+		void set(double t) { total.running.set(t); }
+		void reset() { total.reset(); }
+	private:
+		scalar_stat_t<double> per;
+		running_stat_t<counter_stat_t<double>> total; 
+	};
+	map_stat_t<std::string, power_stat_t> power;
+	map_stat_t<std::string, energy_stat_t> energy;
 	map_stat_t<std::string, running_stat_t<counter_stat_t<uint64_t>>> count;
 	map_stat_t<std::string, counter_stat_t<uint32_t>> event_counts;
 };

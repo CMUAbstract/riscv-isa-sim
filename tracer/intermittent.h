@@ -6,12 +6,14 @@
 
 #include <common/decode.h>
 
+#define INTERMITTENT_LOG 1
+
 class intermittent_t {
 protected:
 	intermittent_t() { reset_should_fail(); }
 	void set_power_trace(std::string power_trace);
 	void reset_should_fail();
-	void recharge_tick(uint32_t frequenc);
+	void recharge_tick(uint32_t frequency);
 	bool should_fail(cycle_t cycle, double energy, uint32_t frequency);
 	bool recovered() { return recover; }
 	void calc_total_esr();
@@ -29,21 +31,22 @@ protected:
 		cap_info_t reserve;
 		double total_esr = 1;
 	} trace_info;
-private:
-	bool use_trace = false;
-	bool soft_fail = false;
-	struct {
-		std::vector<double> time;
-		std::vector<double> voltage;
-		uint64_t idx = 0;
-	} trace;
-	bool recover = false;
-	cycle_t fail_cycle = 0;
+protected:
 	double primary_energy = 0.;
 	double secondary_energy = 0.;
 	double reserve_energy = 0.;
 	double charged_energy = 0.;
-	uint64_t cycle = 0;
+private:
+	bool use_trace = false;
+	bool soft_fail = false;
+	bool recover = false;
+	struct {
+		std::vector<uint64_t> time;
+		std::vector<double> voltage;
+		uint64_t idx = 0;
+	} trace;
+	cycle_t fail_cycle = 0;
+	double avg_voltage = 1.0;
 };
 
 #endif
