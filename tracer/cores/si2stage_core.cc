@@ -88,23 +88,30 @@ void si2stage_core_t::process(insn_fetch_event_t *event) {
 
 	// Determine if vector instruction
 	event_base_t *exec_event;
-	bool is_vec = vcu->check_vec(event->data->opc);
-	bool is_flush = vcu->check_flush(&event->data->insn);
-	bool is_empty = vcu->check_empty();
-	if(vcu != nullptr && is_vec) {
+	bool has_vcu = vcu != nullptr;
+	bool is_vec = false, is_empty = false, is_split = false;
+	if(has_vcu) {
+		is_vec = vcu->check_vec(event->data->opc);
+		is_empty = vcu->check_empty();
+		is_split = vcu->check_split(event->data->opc);
+	}
+	if(is_vec) {
 		exec_event = new vector_exec_event_t(vcu, event->data);
 		last_vec = true;
 	} else {
 		exec_event = new insn_exec_event_t(this, event->data);
 	}
 
-	// Register exec_event as pending
 	auto pending_event = new pending_event_t(this, exec_event, clock.get() + 1);
-
 	pending_event->add_fini([&, is_vec](){ 
 		stages["fetch"] = false;
 		last_vec = is_vec;
 	});
+	if(has_vcu && !is_empty && ((last_vec && !is_vec) || is_split)) {
+		pending_event->add_dep<vector_retire_event_t *>([](vector_retire_event_t *e) { 
+			return true; 
+		});
+	}
 
 	for(auto it : event->data->ws.input.regs) {
 		events->push_back(new reg_read_event_t(this, it, clock.get()));
@@ -114,12 +121,6 @@ void si2stage_core_t::process(insn_fetch_event_t *event) {
 	}
 
 	pending_event->add_dep([&]() { return !stages["exec"]; });
-
-	if((!is_empty && last_vec && !is_vec) || (is_flush && is_vec)) {
-		pending_event->add_dep<vector_retire_event_t *>([](vector_retire_event_t *e) { 
-			return true; 
-		});
-	}
 	register_pending(pending_event);
 	register_squashed("fetch", pending_event);
 	register_squashed("fetch", pending_event->data);

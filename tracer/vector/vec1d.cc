@@ -1,17 +1,23 @@
-#include "single_vec.h"
+#include "vec1d.h"
 
 #include "mem_event.h"
 #include "vector_event.h"
 #include "pending_event.h"
 
-void single_vec_t::process(vector_exec_event_t *event) {
+void vec1d_t::reset(reset_level_t level) {
+	vcu_t::reset(level);
+	idx = 0;
+	active_lanes = 0;
+}
+
+void vec1d_t::process(vector_exec_event_t *event) {
 	TIME_VIOLATION_CHECK
 	events->push_back(new pe_exec_event_t(this, event->data, clock.get()));
 	vcu_t::set_core_stage("exec", true);
 	empty = false;
 }
 
-void single_vec_t::process(pe_exec_event_t *event) {
+void vec1d_t::process(pe_exec_event_t *event) {
 	TIME_VIOLATION_CHECK
 
 	if(promote_pending(event, [&](){
@@ -118,7 +124,7 @@ void single_vec_t::process(pe_exec_event_t *event) {
 	events->push_back(retire_event);
 }
 
-void single_vec_t::process(pe_ready_event_t *event) {
+void vec1d_t::process(pe_ready_event_t *event) {
 	TIME_VIOLATION_CHECK
 	idx = 0;
 	for(auto parent : parents.raw<vector_signal_handler_t *>()) {

@@ -115,11 +115,11 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 
 	event_base_t *exec_event;
 	bool has_vcu = vcu != nullptr;
-	bool is_vec = false, is_flush = false, is_empty = false;
+	bool is_vec = false, is_empty = false, is_split = false;
 	if(has_vcu) {
 		is_vec = vcu->check_vec(event->data->opc);
-		is_flush = vcu->check_flush(&event->data->insn);
 		is_empty = vcu->check_empty();
+		is_split = vcu->check_split(event->data->opc);
 	}
 	if(is_vec) {
 		exec_event = new vector_exec_event_t(vcu, event->data);
@@ -134,7 +134,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		stages["decode"] = false;
 		last_vec = is_vec;
 	});
-	if(has_vcu && ((!is_empty && last_vec && !is_vec) || (is_flush && is_vec))) {
+	if(has_vcu && !is_empty && ((last_vec && !is_vec) || is_split)) {
 		pending_event->add_dep<vector_retire_event_t *>([](vector_retire_event_t *e) { 
 			return true; 
 		});

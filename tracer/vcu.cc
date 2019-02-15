@@ -7,6 +7,12 @@ vcu_t::vcu_t(std::string _name, io::json _config, event_heap_t *_events)
 	: component_t(_name, _config, _events) {
 	pending_handler_t::set_ref(events, &clock);
 	JSON_CHECK(int, config["lanes"], lanes, 1);
+	JSON_CHECK(int, config["reg_count"], reg_count, 0x10);
+}
+
+void vcu_t::reset(reset_level_t level) {
+	outstanding = 0;
+	empty = true;
 }
 
 io::json vcu_t::to_json() const {
@@ -39,8 +45,15 @@ bool vcu_t::check_vec(insn_bits_t opc) {
 	return false;
 }
 
-bool vcu_t::check_flush(insn_t *insn) {
-	return insn->fr() == VCU_FLUSH;
+bool vcu_t::check_split(insn_bits_t opc) {
+	switch(opc) {
+		case MATCH_VREDSUM:
+		case MATCH_VPERMUTE:
+		case MATCH_VSH: 
+		case MATCH_VSSH: 
+		case MATCH_VSXH: return true;
+	}
+	return false;
 }
 
 void vcu_t::check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn) {
