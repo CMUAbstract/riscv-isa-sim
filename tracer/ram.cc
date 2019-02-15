@@ -42,6 +42,12 @@ ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events)
 void ram_t::reset(reset_level_t level) {
 	component_t::reset(level);
 	clear_pending();	
+	for(uint16_t i = 0; i < bank_count; i++) {
+		banks[i].readers = 0;
+		banks[i].readerq = 0;
+		banks[i].writers = 0;
+		banks[i].writerq = 0;	
+	}
 }
 
 io::json ram_t::to_json() const {

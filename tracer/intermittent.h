@@ -6,7 +6,7 @@
 
 #include <common/decode.h>
 
-#define INTERMITTENT_LOG 1
+// #define INTERMITTENT_LOG 1
 
 class intermittent_t {
 protected:

@@ -91,13 +91,11 @@ time_tracer_t::~time_tracer_t() {
 void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 	events.clear();
 	// Reset caches and wait for failure
-	double power = 0., energy = 0.;
+	double power = 0.;
 	for(auto c : components) power += c.second->get_power(component_base_t::BROWN);
-	total_power.running.set(power);
-	for(auto c : components) energy += c.second->get_energy();
 	double time = (double)core->get_clock() / (double)core->get_frequency();
-	energy += power * time;
-	total_energy.running.set(energy);
+	double energy = power * time;
+	total_energy.running.inc(energy);
 	if(level == SOFT) {
 		soft_failures.inc();
 		for(auto c : components) c.second->reset(SOFT);
@@ -151,6 +149,7 @@ void time_tracer_t::trace(
 	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 	auto shared_timed_insn = hstd::shared_ptr<timed_insn_t>(
 		new timed_insn_t(ws, opc, insn));
+	// std::cerr << "0x" << std::hex << ws.pc << std::endl;
 	core->buffer_insn(shared_timed_insn);
 	if(hyperdrive_disabled) {
 		core->update_pc(ws.pc);
@@ -174,7 +173,7 @@ void time_tracer_t::trace(
 	for(auto c : components) energy += c.second->get_energy();
 	double time = (double)core->get_clock() / (double)core->get_frequency();
 	energy += power * time;
-	total_energy.running.set(energy);
+	total_energy.running.inc(energy);
 	if(intermittent && should_fail(
 		core->get_clock(), energy, core->get_frequency())) {
 #ifdef INTERMITTENT_LOG

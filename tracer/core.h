@@ -37,7 +37,7 @@ public:
 	virtual io::json to_json() const;
 	virtual void buffer_insn(hstd::shared_ptr<timed_insn_t> insn) = 0;
 	virtual void next_insn() = 0;
-	virtual uint32_t minstret() const { return retired_insns.running.get(); }
+	virtual uint32_t minstret() { return retired_insns.total().get(); }
 	virtual void update_pc(reg_t _pc) { pc = _pc; }
 	void process(reg_read_event_t *event);
 	void process(reg_write_event_t *event);

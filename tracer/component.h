@@ -79,7 +79,7 @@ protected:
 		io::json to_json() const;
 		double get(size_t idx);
 		void set(double p, double t) { per.set(p); total.running.set(t); }
-		void set(double t) { total.running.set(t); }
+		void inc(double t) { total.running.inc(t); }
 		void reset() { total.reset(); }
 	private:
 		scalar_stat_t<double> per;

@@ -59,7 +59,7 @@ double component_base_t::get_energy() {
 	for(auto &e : energy) {
 		double dynamic = e.second.get(0) * count[e.first].running.get();
 		total += dynamic;
-		e.second.set(dynamic);
+		e.second.inc(dynamic);
 	}
 	return total;
 }

@@ -27,8 +27,9 @@ template <typename T = stat_t *>
 class list_stat_t : public stat_t {
 public:
 	using stat_t::stat_t;
-	void push_back(T s){ list.push_back(s); }
+	void push_back(T s) { list.push_back(s); }
 	T get(size_t idx) const { return list[idx]; }
+	void update(T s) { push_back(s); }
 	typename std::vector<T>::iterator begin() { return list.begin(); }
 	typename std::vector<T>::iterator end() { return list.end(); }
 	io::json to_json() const {
@@ -58,6 +59,7 @@ public:
 	using stat_t::stat_t;
 	stat_t* get(Key key) const { return m[key]; }
 	void insert(Key key, Value s) { m.insert(std::pair<Key, Value>(key, s)); }
+	void update(std::pair<Key, Value> s) { m.insert(s); }
 	typename std::map<Key, Value>::iterator find(Key key) { return m.find(key); }
 	typename std::map<Key, Value>::iterator begin() { return m.begin(); }
 	typename std::map<Key, Value>::iterator end() { return m.end(); }
@@ -81,7 +83,8 @@ class scalar_stat_t : public stat_t {
 public:
 	using stat_t::stat_t;
 	T get(void) const { return val; }
-	void set(T v) { val = v;}
+	void set(T v) { val = v; }
+	void update(T v) { set(v); }
 	io::json to_json() const {
 		if(name.size() > 0) return io::json::object{{name, val}};
 		return io::json(val);
@@ -98,6 +101,7 @@ public:
 	T get(size_t idx) const { return vals[idx]; }
 	void set(T val, size_t idx) { vals[idx] = val; }
 	void set(std::array<T, size>& _vals) { vals = _vals; }
+	void update(std::array<T, size>& _vals) { set(_vals); }
 	io::json to_json() const {
 		if(name.size() > 0) return io::json::object{{name, vals}};
 		return io::json(vals);
@@ -111,6 +115,7 @@ class vector_stat_t : public stat_t {
 public:
 	using stat_t::stat_t;
 	void push_back(T v) { vals.push_back(v); }
+	void update(T v) { push_back(v); }
 	T get(size_t idx) const { return vals[idx]; }
 	std::vector<T>& get(void) { return vals; }
 	io::json to_json() const {
@@ -131,6 +136,7 @@ public:
 	using scalar_stat_t<T>::scalar_stat_t;
 	void inc(T v) { this->val += v;}
 	void inc(void) { this->val++; }
+	void update(T v) { inc(v); }
 	void reset(void) { this->val = 0; }
 	void integrate(const counter_stat_t<T>& s) { inc(s.get()); }
 };
@@ -144,6 +150,14 @@ public:
 		running.reset();
 		overall.reset();
 	}
+
+	template<class K, class V>
+	K get(V idx) { return running.get(idx); }
+	template<class K>
+	K get() { return running.get(); }
+	template<class K>
+	void update(K& v) { running.update(v); }
+	
 	T total() {
 		T f;
 		f.reset();

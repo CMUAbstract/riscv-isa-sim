@@ -275,4 +275,5 @@ void processor_t::reverse_step(size_t n) {
     last_pc = 0;
     executions = 1;
   }
+  state.minstret -= n;
 }

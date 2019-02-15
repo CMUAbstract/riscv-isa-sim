@@ -170,8 +170,10 @@ bool processor_t::handle() {
   try {
     throw;
   } catch(soft_except_t& except) {
+#if 0
     fprintf(stderr, "Soft: Functional: %lu; Timing: %lu\n", 
       state.minstret, except.minstret);
+#endif
     reverse_step(state.minstret - except.minstret);
     try {
       tracer->reset(SOFT, except.minstret);
