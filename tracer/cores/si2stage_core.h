@@ -18,6 +18,7 @@ public:
 	si2stage_core_t(std::string _name, io::json _config, event_heap_t *_events);
 	void init();
 	io::json to_json() const;
+	void reset(reset_level_t level);
 	virtual void enqueue(hstd::vector *vec) {
 		component_t::enqueue(vec);
 		vec->push_back<vector_signal_handler_t *>(

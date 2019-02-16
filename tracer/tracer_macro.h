@@ -15,28 +15,27 @@
 # define WRITE_REG(reg, value) ({												\
 		auto wdata = value;														\
 		STATE.XPR.write(														\
-			ws.log_output_reg(reg, READ_REG(reg)), wdata);						\
+			ws.log_output_reg(reg, STATE.XPR[reg]), wdata);						\
 	})
 # define WRITE_FREG(reg, value) ({												\
 		freg_t wdata = freg(value);												\
-		DO_WRITE_FREG(ws.log_output_freg(reg, READ_FREG(reg)), wdata);			\
+		DO_WRITE_FREG(ws.log_output_freg(reg, STATE.FPR[reg]), wdata);			\
 	})
 #else
 # define WRITE_REG(reg, value) ({ 												\
     reg_t wdata = (value); /* value may have side effects */ 					\
     STATE.log_reg_write = (commit_log_reg_t){(reg) << 1, {wdata, 0}}; 			\
-    STATE.XPR.write(ws.log_output_reg(reg, READ_REG(reg)), wdata); 				\
+    STATE.XPR.write(ws.log_output_reg(reg, STATE.XPR[reg]), wdata); 			\
   })
 # define WRITE_FREG(reg, value) ({ 												\
     freg_t wdata = freg(value); /* value may have side effects */ 				\
     STATE.log_reg_write = (commit_log_reg_t){((reg) << 1) | 1, wdata}; 			\
-    DO_WRITE_FREG(ws.log_output_freg(reg, READ_FREG(reg)), wdata); 				\
+    DO_WRITE_FREG(ws.log_output_freg(reg, STATE.FPR[reg]), wdata); 				\
   })
 #endif
 
 #define READ_VREG(reg) STATE.VPR[ws.log_input_vreg(reg)]
 #define READP_VREG(reg, pos) STATE.VPR.read(ws.log_input_vreg(reg), pos)
-// ERROR HERE EXTRA READS!!
 #define WRITE_VREG(reg, value) ({												\
 		auto wdata = value;														\
 		STATE.VPR.write(														\
@@ -46,7 +45,7 @@
 		auto wdata = value;														\
 		auto wpos = pos;														\
 		STATE.VPR.write(														\
-			ws.log_output_vreg(reg, wdata, STATE.VPR.read(reg, pos)), wdata, wpos);	\
+			ws.log_output_vreg(reg, STATE.VPR.read(reg, pos), pos), wdata, wpos);\
 	})
 
 #define load_uint8(addr) load_uint8(ws.log_input_loc<uint8_t>(addr))

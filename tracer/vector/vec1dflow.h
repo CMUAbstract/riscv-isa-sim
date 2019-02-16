@@ -18,15 +18,16 @@ public:
 protected:
 	uint32_t window_size = 1;
 	bool src_forwarding = false;
-	// Data
+
 	uint16_t idx = 0;
 	uint16_t window_start = 0;
 	uint16_t active_insn_offset = 0;
 	uint16_t active_window_size = 0;
-	bool active_running = false;
-	std::vector<uint16_t> progress_map;
+
 	std::vector<bool> reg_map; // true buffer, false vrf 
 	std::vector<bool> kill_map; // true if killed
+	std::vector<bool> src_map; // true if source forwarded
+	std::vector<uint16_t> progress_map;
 };
 
 #endif

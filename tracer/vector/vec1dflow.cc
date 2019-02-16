@@ -7,10 +7,11 @@
 vec1dflow_t::vec1dflow_t(std::string _name, io::json _config, 
 	event_heap_t *_events) : vcu_t(_name, _config, _events) {
 	JSON_CHECK(int, config["window_size"], window_size);
-	assert_msg(window_size > 0, "Window size must be greater than one");
+	assert_msg(window_size > 0, "Window size must be greater than zero");
 	JSON_CHECK(bool, config["src_forwarding"], src_forwarding);
 	reg_map.resize(reg_count, false);
 	kill_map.resize(reg_count, false);
+	src_map.resize(reg_count, false);
 	progress_map.resize(window_size, 0);
 }
 
@@ -20,12 +21,15 @@ io::json vec1dflow_t::to_json() const {
 
 void vec1dflow_t::reset(reset_level_t level) {
 	vcu_t::reset(level);
+
 	idx = 0;
 	window_start = 0;
 	active_insn_offset = 0;
+	active_window_size = 0;
 
 	std::fill(reg_map.begin(), reg_map.end(), false);
 	std::fill(kill_map.begin(), kill_map.end(), false);
+	std::fill(src_map.begin(), src_map.end(), false);
 	std::fill(progress_map.begin(), progress_map.end(), 0);
 }
 
@@ -44,12 +48,12 @@ void vec1dflow_t::process(vector_exec_event_t *event) {
 
 void vec1dflow_t::process(pe_exec_event_t *event) {
 	TIME_VIOLATION_CHECK;
-	if(promote_pending(event, [&]() {
-		bool cur_idx = (window_start + active_insn_offset) % window_size;
-		return !(event->data->idx == cur_idx && outstanding == 0);
+	uint16_t insn_idx = event->data->idx;
+	if(promote_pending(event, [&, insn_idx]() {
+		uint16_t cur_idx = (window_start + active_insn_offset) % window_size;
+		return !(cur_idx == insn_idx && outstanding == 0);
 	}) != nullptr) return;
 
-	uint16_t insn_idx = event->data->idx;
 	uint16_t work = vl - progress_map[insn_idx];
 	uint16_t cur_progress = progress_map[insn_idx];
 	pending_event_t *pending_event;
@@ -129,7 +133,10 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 				[reg](vector_reg_read_event_t *e){
 					return e->data.reg == reg;
 			});
-			if(src_forwarding) reg_map[reg] = true;
+			if(src_forwarding) {
+				reg_map[reg] = true;
+				src_map[reg] = true;
+			}
 		} else {
 			kill_map[reg] = check_killed(it);
 		}
@@ -145,14 +152,15 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 				return e->data.reg == reg;
 		});
 		reg_map[reg] = true;
+		src_map[reg] = false;
 	}
 
-	if((window_start + active_insn_offset + 1) % window_size == 0) {
+	if(active_insn_offset + 1 == active_window_size) {
 		active_insn_offset = 0;
 		// Issue writes for alive registers
 		uint16_t reg = 0;
 		for(auto reg_state : reg_map) {
-			if(reg_state && !kill_map[reg]) {
+			if(reg_state && !kill_map[reg] && !src_map[reg]) {
 				events->push_back(new vector_reg_write_event_t(
 				this, {.reg=reg, .idx=0}, clock.get()));
 				pending_event->add_dep<vector_reg_write_event_t *>(

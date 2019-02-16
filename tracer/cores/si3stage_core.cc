@@ -52,6 +52,7 @@ io::json si3stage_core_t::to_json() const {
 void si3stage_core_t::reset(reset_level_t level) {
 	core_t::reset(level);
 	predictor->reset();
+	last_vec = false;
 }
 
 void si3stage_core_t::buffer_insn(hstd::shared_ptr<timed_insn_t> insn) {

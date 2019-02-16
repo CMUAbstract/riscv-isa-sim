@@ -266,7 +266,7 @@ void processor_t::reverse_step(size_t n) {
     for(auto freg : (*it)->diff.fregs)
       state.FPR.write(std::get<0>(freg), std::get<1>(freg)); 
     for(auto vreg : (*it)->diff.vregs)
-      state.VPR.write(std::get<0>(vreg), std::get<1>(vreg), std::get<2>(vreg)); 
+      state.VPR.write(std::get<0>(vreg), std::get<2>(vreg), std::get<1>(vreg)); 
     for(auto csr : (*it)->diff.csrs)
       set_csr(std::get<0>(csr), std::get<1>(csr)); 
     for(auto loc : (*it)->diff.locs)

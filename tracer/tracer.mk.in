@@ -34,6 +34,7 @@ tracer_hdrs = \
         cache/repl_policy.h \
         vector/vec1d.h \
         vector/vec1dflow.h \
+        vector/vec1dmulti.h \
 
 tracer_srcs = \
         tracer.cc \
@@ -57,6 +58,7 @@ tracer_srcs = \
         cache/repl_policy.cc \
         vector/vec1d.cc \
         vector/vec1dflow.cc \
+        vector/vec1dmulti.cc \
 
 tracer_test_srcs =
 

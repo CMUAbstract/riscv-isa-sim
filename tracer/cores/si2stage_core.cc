@@ -48,6 +48,12 @@ io::json si2stage_core_t::to_json() const {
 	return core_t::to_json();
 }
 
+void si2stage_core_t::reset(reset_level_t level) {
+	core_t::reset(level);
+	predictor->reset();
+	last_vec = false;
+}
+
 void si2stage_core_t::buffer_insn(hstd::shared_ptr<timed_insn_t> insn) {
 	insns.push_back(insn);
 	next_insn();
