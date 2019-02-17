@@ -21,6 +21,7 @@ io::json vec1dflow_t::to_json() const {
 
 void vec1dflow_t::reset(reset_level_t level) {
 	vcu_t::reset(level);
+	start = false;
 
 	idx = 0;
 	window_start = 0;
@@ -42,8 +43,17 @@ void vec1dflow_t::process(vector_exec_event_t *event) {
 	idx = (idx + 1) % window_size;
 	empty = false;
 	active_window_size++;
-	if(active_window_size == window_size) vcu_t::set_core_stage("exec", true);
+	if(active_window_size == window_size) {
+		vcu_t::set_core_stage("exec", true);
+		events->push_back(new vector_start_event_t(this, false, clock.get()));
+	}
 	events->push_back(new pe_exec_event_t(this, event->data, clock.get()));
+}
+
+void vec1dflow_t::process(vector_start_event_t *event) {
+	vcu_t::process(event);
+	start = true;
+	if(active_insn_offset == active_window_size) active_insn_offset = 0;
 }
 
 void vec1dflow_t::process(pe_exec_event_t *event) {
@@ -64,6 +74,10 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 		pending_event->add_fini([&, insn_idx, work](){ 
 			progress_map[insn_idx] += work;
 		});
+		if(!start) {
+			pending_event->add_dep<vector_start_event_t *>(
+				[](vector_start_event_t *e) { return true; });
+		}
 	} else {
 		pending_event = new pending_event_t(this, 
 			new pe_ready_event_t(this, event->data), clock.get() + 1);
@@ -125,7 +139,7 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 
 	// Input registers
 	for(auto it : event->data->ws.input.vregs) {
-		uint8_t reg= strip_killed(it);
+		uint8_t reg = strip_killed(it);
 		if(!reg_map[reg]) {
 			events->push_back(new vector_reg_read_event_t(
 				this, {.reg=reg, .idx=0}, clock.get()));
@@ -155,7 +169,7 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 		src_map[reg] = false;
 	}
 
-	if(active_insn_offset + 1 == active_window_size) {
+	if(active_insn_offset + 1 == active_window_size && start) {
 		active_insn_offset = 0;
 		// Issue writes for alive registers
 		uint16_t reg = 0;
@@ -191,6 +205,7 @@ void vec1dflow_t::process(pe_ready_event_t *event) {
 		// Also check that all outstanding memory accesses completed
 		if(active_window_size == 0) {
 			empty = true;
+			start = false;
 			auto vector_retire_event = new vector_retire_event_t(
 				parent.second, event->data, clock.get());
 			if(promote_pending(vector_retire_event, [&](){

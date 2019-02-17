@@ -39,14 +39,14 @@ public:
 		std::set<uint32_t> regs;
 		std::set<uint32_t> fregs;
 		std::set<uint32_t> vregs;
-		std::set<addr_t> locs; 
+		std::vector<addr_t> locs; 
 		std::set<uint32_t> csrs;
 	} input;
 	struct {
 		std::set<uint32_t> regs;
 		std::set<uint32_t> fregs;
 		std::set<uint32_t> vregs;
-		std::set<addr_t> locs;
+		std::vector<addr_t> locs;
 		std::set<std::tuple<uint32_t, reg_t>> csrs;
 	} output;
 	struct {
@@ -92,14 +92,14 @@ public:
 	}
 	template <typename T>
 	addr_t log_input_loc(addr_t addr) {
-		input.locs.insert(addr);
-		if(sizeof(T) == 8) input.locs.insert(addr + sizeof(uint32_t));
+		input.locs.push_back(addr);
+		if(sizeof(T) == 8) input.locs.push_back(addr + sizeof(uint32_t));
 		return addr;
 	}
 	template <typename T>
 	addr_t log_output_loc(addr_t addr, T value) {
-		output.locs.insert(addr);
-		if(sizeof(T) == 8) output.locs.insert(addr + sizeof(uint32_t));
+		output.locs.push_back(addr);
+		if(sizeof(T) == 8) output.locs.push_back(addr + sizeof(uint32_t));
 		uint8_t *bytes = (uint8_t *)&value;
 		for(uint32_t i = 0; i < sizeof(T); i++) {
 			diff.locs.push_back(std::make_tuple(addr + i, bytes[i]));

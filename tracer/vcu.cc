@@ -67,6 +67,11 @@ void vcu_t::check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn) {
 	}
 }
 
+void vcu_t::process(vector_start_event_t *event) {
+	TIME_VIOLATION_CHECK
+	check_pending(event);
+}
+
 void vcu_t::process(vector_reg_read_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);

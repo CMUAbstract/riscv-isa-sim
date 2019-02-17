@@ -136,9 +136,9 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		last_vec = is_vec;
 	});
 	if(has_vcu && !is_empty && ((last_vec && !is_vec) || is_split)) {
-		pending_event->add_dep<vector_retire_event_t *>([](vector_retire_event_t *e) { 
-			return true; 
-		});
+		pending_event->add_dep<vector_retire_event_t *>(
+			[](vector_retire_event_t *e) { return true; });
+		events->push_back(new vector_start_event_t(vcu, false, clock.get() + 1));
 	}
 
 	for(auto it : event->data->ws.input.regs) {

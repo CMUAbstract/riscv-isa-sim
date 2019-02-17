@@ -1,11 +1,10 @@
 #ifndef VEC1D_MULTI_H
 #define VEC1D_MULTI_H
 
+#include <set>
 #include <vector>
 
 #include "vcu.h"
-
-#define VREG_COUNT 0x10
 
 class vec1dmulti_t: public vcu_t {
 public:
@@ -18,7 +17,19 @@ public:
 protected:
 	uint32_t window_size = 1;
 	uint32_t rf_ports = 1;
-	bool src_forwarding = false;
+	uint16_t mem_ports = 1;
+
+	uint16_t idx = 0;
+	bool start = false;
+	uint16_t active_window_size = 0;
+	uint16_t active_insn_offset = 0;
+	uint16_t active_reg_reads = 0;
+	uint16_t active_reg_writes = 0;
+	uint16_t progress = 0;
+
+	std::set<uint8_t> write_set;
+	std::set<uint8_t> read_set;
+
 };
 
 #endif

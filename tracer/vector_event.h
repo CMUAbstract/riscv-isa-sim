@@ -36,6 +36,13 @@ struct vector_exec_event_t: public insn_event_t<vector_handler_t> {
 	HANDLER;
 };
 
+struct vector_start_event_t: public event_t<vector_handler_t, bool> {
+	using event_t<vector_handler_t, bool>::event_t;
+	std::string to_string() { return "vector_start_event"; }
+	std::string get_name() { return to_string(); }
+	HANDLER;
+};
+
 struct pe_exec_event_t: public insn_event_t<vector_handler_t> {
 	using insn_event_t<vector_handler_t>::insn_event_t;
 	std::string to_string() {
