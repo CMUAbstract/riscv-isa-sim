@@ -17,7 +17,6 @@ public:
 protected:
 	uint32_t window_size = 1;
 	uint32_t rf_ports = 1;
-	uint16_t mem_ports = 1;
 
 	uint16_t idx = 0;
 	bool start = false;

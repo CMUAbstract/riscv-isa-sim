@@ -80,6 +80,7 @@ void vec1dmulti_t::process(vector_exec_event_t *event) {
 void vec1dmulti_t::process(pe_exec_event_t *event) {
 	TIME_VIOLATION_CHECK
 	if(active_reg_reads < read_set.size()) { // Issue register reads
+		std::cerr << "reading registers" << std::endl;
 		uint16_t work = read_set.size();
 		if(work > rf_ports) work = rf_ports;
 		auto pending_event = new pending_event_t(this, 
@@ -103,19 +104,27 @@ void vec1dmulti_t::process(pe_exec_event_t *event) {
 		events->push_back(pending_event);
 	} else if(progress < vl) { // Compute
 		// Promote to pending
+		std::cerr << "computing" << std::endl;
 		uint16_t insn_idx = event->data->idx;
 		if(promote_pending(event, [&, insn_idx]() {
 			return !(active_insn_offset == insn_idx && outstanding == 0);
 		}) != nullptr) return;
 		uint16_t work = vl - progress;
 		if(work > lanes) work = lanes;
-		auto pending_event = new pending_event_t(this, 
-			new pe_exec_event_t(this, event->data), clock.get() + 1);
+		pending_event_t *pending_event;
+
+		if(progress + work < vl || insn_idx == 0){
+			pending_event = new pending_event_t(this, 
+				new pe_exec_event_t(this, event->data), clock.get() + 1);
+		} else {
+			pending_event = new pending_event_t(this, nullptr, clock.get() + 1);
+		}
+
 		pending_event->add_fini([&, insn_idx, work](){
 			outstanding = 0;
-			if(insn_idx == active_window_size) progress += work;
+			if(insn_idx == active_window_size - 1) progress += work;
 			active_insn_offset++;
-			if(active_insn_offset + 1 == active_window_size) 
+			if(active_insn_offset == active_window_size) 
 				active_insn_offset = 0;
 		});
 
@@ -158,10 +167,12 @@ void vec1dmulti_t::process(pe_exec_event_t *event) {
 				++it;
 			}
 		}
+
 		register_pending(pending_event);
 		events->push_back(pending_event);
 	} else { // Issue register writes
-		uint16_t work = write_set.size();
+		std::cerr << "writing registers" << std::endl;
+		uint16_t work = write_set.size() - active_reg_writes;
 		pending_event_t *pending_event;
 		if(work > rf_ports) {
 			work = rf_ports;
@@ -177,11 +188,11 @@ void vec1dmulti_t::process(pe_exec_event_t *event) {
 				vcu_t::set_core_stage("exec", false);
 			});
 		}
-		auto it = std::next(read_set.begin(), active_reg_writes);
-		auto end = std::next(read_set.begin(), active_reg_writes + work);
+		auto it = std::next(write_set.begin(), active_reg_writes);
+		auto end = std::next(write_set.begin(), active_reg_writes + work);
 		while(it != end) {
 			auto reg = *it;
-			events->push_back(new vector_reg_read_event_t(
+			events->push_back(new vector_reg_write_event_t(
 				this, {.reg=reg, .idx=0}, clock.get()));
 			pending_event->add_dep<vector_reg_write_event_t *>(
 				[reg](vector_reg_write_event_t *e){
