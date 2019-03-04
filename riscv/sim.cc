@@ -18,6 +18,8 @@
 
 #include <tracer/tracer.h>
 
+#include <iostream>
+
 volatile bool ctrlc_pressed = false;
 static void handle_signal(int sig)
 {

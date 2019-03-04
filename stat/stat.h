@@ -56,7 +56,13 @@ struct to_string<std::string> {
 template<typename Key, typename Value = stat_t *>
 class map_stat_t : public stat_t {
 public:
-	using stat_t::stat_t;
+	map_stat_t(): map_stat_t("", "") {}
+	map_stat_t(std::string _name) : map_stat_t(_name, "") {}
+	map_stat_t(std::string _name, std::string _desc) : stat_t(_name, _desc) {}
+	map_stat_t(std::string _name, const std::map<Key, Value>&_m)
+		: stat_t(_name), m(_m) {} 
+	map_stat_t(std::string _name, std::string _desc, const std::map<Key, Value>&_m)
+		: stat_t(_name, _desc), m(_m) {} 
 	stat_t* get(Key key) const { return m[key]; }
 	void insert(Key key, Value s) { m.insert(std::pair<Key, Value>(key, s)); }
 	void update(std::pair<Key, Value> s) { m.insert(s); }

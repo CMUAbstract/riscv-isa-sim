@@ -4,6 +4,8 @@
 #include "simif.h"
 #include "processor.h"
 
+#include <iostream>
+
 mmu_t::mmu_t(simif_t* sim, processor_t* proc)
  : sim(sim), proc(proc),
   check_triggers_fetch(false),
@@ -96,8 +98,7 @@ void mmu_t::load_slow_path(reg_t addr, reg_t len, uint8_t* bytes)
     memcpy(bytes, host_addr, len);
     if (tracer.interested_in_range(paddr, paddr + PGSIZE, LOAD))
       tracer.trace(paddr, len, LOAD);
-    else
-      refill_tlb(addr, paddr, host_addr, LOAD);
+    refill_tlb(addr, paddr, host_addr, LOAD);
   } else if (!sim->mmio_load(paddr, len, bytes)) {
     throw trap_load_access_fault(addr);
   }
@@ -125,8 +126,7 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes)
     memcpy(host_addr, bytes, len);
     if (tracer.interested_in_range(paddr, paddr + PGSIZE, STORE))
       tracer.trace(paddr, len, STORE);
-    else
-      refill_tlb(addr, paddr, host_addr, STORE);
+    refill_tlb(addr, paddr, host_addr, STORE);
   } else if (!sim->mmio_store(paddr, len, bytes)) {
     throw trap_store_access_fault(addr);
   }
