@@ -6,6 +6,7 @@ tracer_hdrs = \
         curve_tracer.h \
         insn_tracer.h \
         time_tracer.h \
+        vector_tracer.h \
         intermittent.h \
         except.h \
         event.h \
@@ -19,7 +20,6 @@ tracer_hdrs = \
         squash_handler.h \
         vector_handler.h \
         log.h \
-        smartptr.h \
         components.h \
         core_event.h \
         mem_event.h \
@@ -47,6 +47,7 @@ tracer_srcs = \
         curve_tracer.cc \
         insn_tracer.cc \
         time_tracer.cc \
+        vector_tracer.cc \
         mem_event.cc \
         intermittent.cc \
         pending_handler.cc \

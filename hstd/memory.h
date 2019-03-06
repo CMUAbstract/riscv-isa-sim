@@ -10,11 +10,12 @@ namespace hstd {
 	class shared_ptr {
 	public:
 		// Explicit constructor
+		explicit shared_ptr() : data(nullptr), count(new uint32_t(1)) {}
 		explicit shared_ptr(T* data) : data(data), count(new uint32_t(1)) {}
 		~shared_ptr() {
 			--(*count);
 			if (*count == 0) {
-				delete data;
+				if(data != nullptr) delete data;
 				delete count;
 			}
 		}

@@ -4,6 +4,7 @@
 
 #include <fesvr/elfloader.h>
 
+#include "log.h"
 #include "working_set.h"
 
 #define SIGN_EXTEND(v) (0xFFFFFFFF00000000 | v)
@@ -25,6 +26,7 @@ insn_curve_tracer_t::insn_curve_tracer_t(io::json _config, elfloader_t *_elf)
 
 void insn_curve_tracer_t::trace(
 	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
+	return;
 	auto insn_count = minstret.get();
 	minstret.inc();
 	for(auto loc : ws.output.locs) {
@@ -107,13 +109,14 @@ void miss_curve_tracer_t::trace(
 			auto it = tracked_locations.find(loc);
 			if(it != tracked_locations.end()) {
 				tracked_locations[loc] = 1;
+				assert_msg(*indices[loc] == loc, "Iterator correct");
 				uint32_t dist = std::distance(dq.begin(), indices[loc]);
 				if(dist > max_dist) max_dist = dist;
 				auto hit = histogram.find(dist);
 				if(hit == histogram.end()) {
 					counter_stat_t<uint32_t> *counter_stat = 
 						new counter_stat_t<uint32_t>();
-					counter_stat->inc();
+					counter_stat->reset();
 					histogram.insert(dist, counter_stat);
 				}
 				histogram[dist]->inc();
@@ -130,13 +133,14 @@ void miss_curve_tracer_t::trace(
 			auto it = tracked_locations.find(loc);
 			if(it != tracked_locations.end()) {
 				tracked_locations[loc] = 1;
+				assert_msg(*indices[loc] == loc, "Iterator correct");
 				uint32_t dist = std::distance(dq.begin(), indices[loc]);
 				if(dist > max_dist) max_dist = dist;
 				auto hit = histogram.find(dist);
 				if(hit == histogram.end()) {
 					counter_stat_t<uint32_t> *counter_stat = 
 						new counter_stat_t<uint32_t>();
-					counter_stat->inc();
+					counter_stat->reset();
 					histogram.insert(dist, counter_stat);
 				}
 				histogram[dist]->inc();

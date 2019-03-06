@@ -5,6 +5,7 @@
 #include <cassert>
 
 #include <tracer/tracer.h>
+#include <hstd/memory.h>
 
 static void commit_log_stash_privilege(processor_t* p)
 {
@@ -259,7 +260,7 @@ void processor_t::step(size_t n)
 }
 
 void processor_t::reverse_step(size_t n) {
-  shared_ptr_t<core_tracer_t::diff_list_t> diff = tracer->get_diff(n);
+  hstd::shared_ptr<core_tracer_t::diff_list_t> diff = tracer->get_diff(n);
   for(auto it = diff->rbegin(); it < diff->rend(); ++it) {
     for(auto reg : (*it)->diff.regs)
       state.XPR.write(std::get<0>(reg), std::get<1>(reg)); 

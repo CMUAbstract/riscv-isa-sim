@@ -11,9 +11,9 @@
 #include <fesvr/memif.h>
 #include <common/decode.h>
 #include <io/io.h>
+#include <hstd/memory.h>
 
 #include "working_set.h"
-#include "smartptr.h"
 
 class tracer_t: public io::serializable {
 public:
@@ -36,8 +36,8 @@ public:
 protected:
 	std::string outdir;
 	bool hyperdrive = false;
-	addr_t roi_start;
-	addr_t roi_end;
+	addr_t roi_start = 0;
+	addr_t roi_end = 0;
 };
 
 class elfloader_t;
@@ -100,34 +100,35 @@ protected:
 	std::vector<tracer_t *> list;
 };
 
+#define DIFF_LIST_SIZE 0x100
+
+// TODO: custom reverse iterator
 class core_tracer_t: public tracer_list_t {
 public:
-	typedef std::vector<shared_ptr_t<working_set_t>> vec_ws_t;
+	typedef std::vector<hstd::shared_ptr<working_set_t>> vec_ws_t;
 	class diff_list_t {
 	public:
 		diff_list_t() {}
-		diff_list_t(const diff_list_t &d, uint32_t offset) 
-			: diffs(d.begin() + offset, d.end()) {}
-		void push_back(shared_ptr_t<working_set_t> ws) { diffs.push_back(ws); }
+		diff_list_t(diff_list_t &d, uint32_t offset); 
+		void push_back(hstd::shared_ptr<working_set_t> ws);
 		uint32_t size(void) const { return diffs.size(); }
-		vec_ws_t::iterator begin() { return diffs.begin(); }
-		vec_ws_t::const_iterator begin() const { return diffs.begin(); }
+		uint32_t head(void) const { return head_ptr; }
+		hstd::shared_ptr<working_set_t> get(uint32_t idx) { return diffs[idx]; }
 		vec_ws_t::reverse_iterator rbegin() { return diffs.rbegin(); }
-		vec_ws_t::iterator end() { return diffs.end(); }
-		vec_ws_t::const_iterator end() const { return diffs.end(); }
 		vec_ws_t::reverse_iterator rend() { return diffs.rend(); }
 	private:
-		std::vector<shared_ptr_t<working_set_t>> diffs;
+		vec_ws_t diffs;
+		uint32_t head_ptr = 0;
 	};
 public:
 	core_tracer_t(std::string _config, elfloader_t *_elf);
 	~core_tracer_t() {}
 	void trace(const working_set_t &ws, insn_bits_t opc, insn_t insn){
-		diffs.push_back(shared_ptr_t<working_set_t>(new working_set_t(ws)));
+		diffs.push_back(hstd::shared_ptr<working_set_t>(new working_set_t(ws)));
 		tracer_list_t::trace(ws, opc, insn);
 	}
-	shared_ptr_t<diff_list_t> get_diff(uint32_t minstret_delta) {
-		return shared_ptr_t<diff_list_t>(
+	hstd::shared_ptr<diff_list_t> get_diff(uint32_t minstret_delta) {
+		return hstd::shared_ptr<diff_list_t>(
 			new diff_list_t(diffs, diffs.size() - minstret_delta));
 	}
 private:

@@ -13,6 +13,7 @@
 #include "curve_tracer.h"
 #include "insn_tracer.h"
 #include "time_tracer.h"
+#include "vector_tracer.h"
 
 tracer_impl_t::tracer_impl_t(std::string _name, io::json _config, elfloader_t *_elf) 
 	: tracer_t(), name(_name), config(_config), elf(_elf) {
@@ -58,7 +59,24 @@ std::map<std::string, tracer_t*(*)(io::json, elfloader_t *)> tracer_type_map = {
 	{"perf_tracer", &create_tracer<perf_tracer_t>},
 	{"energy_tracer", &create_tracer<energy_tracer_t>},
 	{"time_tracer", &create_tracer<time_tracer_t>},
+	{"mask_tracer", &create_tracer<mask_tracer_t>},
 };
+
+core_tracer_t::diff_list_t::diff_list_t(diff_list_t &d, uint32_t offset) {
+	assert_msg(offset <= DIFF_LIST_SIZE, "offset > DIFF_LIST_SIZE");
+	uint32_t head_ptr = d.head();
+	uint32_t start = head_ptr - offset;
+	if(head_ptr < offset) start = DIFF_LIST_SIZE - (offset - head_ptr);
+	for(uint32_t i = start, j = 0; j < offset; i = (i + 1) % DIFF_LIST_SIZE, j++) {
+		diffs.push_back(d.get(i));
+	}
+}
+
+void core_tracer_t::diff_list_t::push_back(hstd::shared_ptr<working_set_t> ws) {
+	if(diffs.size() < DIFF_LIST_SIZE) diffs.push_back(ws);
+	else diffs[head_ptr] = ws;
+	head_ptr = (head_ptr + 1) % DIFF_LIST_SIZE;
+}
 
 core_tracer_t::core_tracer_t(std::string _config, elfloader_t *_elf)
 	: tracer_list_t(nullptr, _elf) {
