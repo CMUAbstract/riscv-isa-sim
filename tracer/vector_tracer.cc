@@ -46,10 +46,16 @@ void mask_tracer_t::trace(
 	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 	insn_count.inc();
 	total_lanes.inc(vl);
-	if(!insn.vm()) return;
-	mask_count.inc();
-	for(uint16_t i = 0; i < vl; i++)
-		if((vregs[0][i] & 0x1) == 0) masked_lanes.inc();
+	if(insn.vm()) {
+		mask_count.inc();
+		for(uint16_t i = 0; i < vl; i++)
+			if((vregs[0][i] & 0x1) == 0) masked_lanes.inc();
+	} else if(opc == MATCH_VMV_V) {
+		mask_count.inc();
+		uint16_t mvreg = insn.rs2() & 0xF;
+		for(uint16_t i = 0; i < vl; i++)
+			if((vregs[mvreg][i] & 0x1) == 0) masked_lanes.inc();	
+	}
 }
 
 io::json mask_tracer_t::to_json() const {
