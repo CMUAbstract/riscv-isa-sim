@@ -103,17 +103,30 @@ public:
       return res; \
     }
 
+  #define load_func_(type) \
+    inline type##_t load_##type##_(reg_t addr) { return load_##type(addr); }
+
   // load value from memory at aligned address; zero extend to register width
   load_func(uint8)
   load_func(uint16)
   load_func(uint32)
   load_func(uint64)
 
+  load_func_(uint8)
+  load_func_(uint16)
+  load_func_(uint32)
+  load_func_(uint64)
+
   // load value from memory at aligned address; sign extend to register width
   load_func(int8)
   load_func(int16)
   load_func(int32)
   load_func(int64)
+
+  load_func_(int8)
+  load_func_(int16)
+  load_func_(int32)
+  load_func_(int64)
 
   // template for functions that store an aligned value to memory
   #define store_func(type) \

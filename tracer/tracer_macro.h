@@ -2,18 +2,16 @@
 #undef READ_FREG
 #undef READ_VREG
 #undef READP_VREG
-#undef WRITE_RD
 #undef WRITE_REG
 #undef WRITE_FREG
 #undef WRITE_VREG
 #undef WRITEP_VREG
 #define READ_REG(reg) STATE.XPR[ws.log_input_reg(reg)]
 #define READ_FREG(reg) STATE.FPR[ws.log_input_freg(reg)]
-#define WRITE_RD(value) WRITE_REG(ws.log_output_reg(insn.rd(), value), value)
 
 #ifndef RISCV_ENABLE_COMMITLOG
 # define WRITE_REG(reg, value) ({												\
-		auto wdata = value;														\
+		reg_t wdata = value;													\
 		STATE.XPR.write(														\
 			ws.log_output_reg(reg, STATE.XPR[reg]), wdata);						\
 	})
@@ -58,21 +56,21 @@
 #define load_int64(addr) load_int64(ws.log_input_loc<int64_t>(addr))
 
 #define store_uint8(addr, val) store_uint8(										\
-	ws.log_output_loc<uint8_t>(addr, MMU.load_uint8(addr)), val);
+	ws.log_output_loc<uint8_t>(addr, MMU.load_uint8_(addr)), val);
 #define store_uint16(addr, val) store_uint16(									\
-	ws.log_output_loc<uint16_t>(addr, MMU.load_uint16(addr)), val);
+	ws.log_output_loc<uint16_t>(addr, MMU.load_uint16_(addr)), val);
 #define store_uint32(addr, val) store_uint32(									\
-	ws.log_output_loc<uint32_t>(addr, MMU.load_uint32(addr)), val);
+	ws.log_output_loc<uint32_t>(addr, MMU.load_uint32_(addr)), val);
 #define store_uint64(addr, val) store_uint64(									\
-	ws.log_output_loc<uint64_t>(addr, MMU.load_uint64(addr)), val);
+	ws.log_output_loc<uint64_t>(addr, MMU.load_uint64_(addr)), val);
 #define store_int8(addr, val) store_int8(										\
-	ws.log_output_loc<int8_t>(addr, MMU.load_int8(addr)), val);
+	ws.log_output_loc<int8_t>(addr, MMU.load_int8_(addr)), val);
 #define store_int16(addr, val) store_int16(										\
-	ws.log_output_loc<int16_t>(addr, MMU.load_int16(addr)), val);
+	ws.log_output_loc<int16_t>(addr, MMU.load_int16_(addr)), val);
 #define store_int32(addr, val) store_int32(										\
-	ws.log_output_loc<int32_t>(addr, MMU.load_int32(addr)), val);
+	ws.log_output_loc<int32_t>(addr, MMU.load_int32_(addr)), val);
 #define store_int64(addr, val) store_int64(										\
-	ws.log_output_loc<int64_t>(addr, MMU.load_int64(addr)), val);
+	ws.log_output_loc<int64_t>(addr, MMU.load_int64_(addr)), val);
 
 #define get_csr(reg) get_csr(ws.log_input_csr(reg))
 #define set_csr(reg, value) set_csr(ws.log_output_csr(reg, p->get_csr(reg), value), value)

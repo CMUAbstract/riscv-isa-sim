@@ -13,22 +13,26 @@ insn_curve_tracer_t::insn_curve_tracer_t(io::json _config, elfloader_t *_elf)
 	: tracer_impl_t("insn_curve_tracer", _config, _elf), histogram("histogram"), 
 	minstret("minstret") {
 	minstret.reset();
-	bool elf32 = elf->check_elf32();
-	auto text_section = elf->get_sections()[".text"];
-	if(elf32) {
-		text_base = SIGN_EXTEND(text_section.e32.sh_addr);
-		text_size = text_section.e32.sh_size;
-	} else {
-		text_base = SIGN_EXTEND(text_section.e64.sh_addr);
-		text_size = text_section.e64.sh_size;
-	}
 }
 
 void insn_curve_tracer_t::trace(
 	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
-	return;
+	if(!text_calc) {
+		bool elf32 = elf->check_elf32();
+		auto text_section = elf->get_sections()[".text"];
+		if(elf32) {
+			text_base = SIGN_EXTEND(text_section.e32.sh_addr);
+			text_size = text_section.e32.sh_size;
+		} else {
+			text_base = SIGN_EXTEND(text_section.e64.sh_addr);
+			text_size = text_section.e64.sh_size;
+		}
+		text_calc = true;
+	}
+	
 	auto insn_count = minstret.get();
 	minstret.inc();
+
 	for(auto loc : ws.output.locs) {
 		if(loc >= text_base && loc <= text_base + text_size) continue;
 		auto it = tracked_locations.find(loc);
@@ -47,8 +51,9 @@ void insn_curve_tracer_t::trace(
 		}
 		hit->second->inc();
 	}
+
 	for(auto loc : ws.input.locs) {
-		if(loc >= text_base && loc <= text_base+ text_size) continue;
+		if(loc >= text_base && loc <= text_base + text_size) continue;
 		auto it = tracked_locations.find(loc);
 		if(it == tracked_locations.end()) {
 			tracked_locations.insert(std::make_pair(loc, insn_count));
@@ -89,8 +94,6 @@ miss_curve_tracer_t::miss_curve_tracer_t(io::json _config, elfloader_t *_elf)
 }
 
 miss_curve_tracer_t::~miss_curve_tracer_t() {
-	cold_misses.reset();
-	for(auto it : tracked_locations) if(it.second == 0) cold_misses.inc();
 	counter_stat_t<uint32_t> *counter_stat = new counter_stat_t<uint32_t>();
 	counter_stat->set(cold_misses.get());
 	histogram.insert(max_dist + 1, counter_stat);
@@ -100,16 +103,30 @@ miss_curve_tracer_t::~miss_curve_tracer_t() {
 
 void miss_curve_tracer_t::trace(
 	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
+	if(!text_calc) {
+		bool elf32 = elf->check_elf32();
+		auto text_section = elf->get_sections()[".text"];
+		if(elf32) {
+			text_base = SIGN_EXTEND(text_section.e32.sh_addr);
+			text_size = text_section.e32.sh_size;
+		} else {
+			text_base = SIGN_EXTEND(text_section.e64.sh_addr);
+			text_size = text_section.e64.sh_size;
+		}
+		text_calc = true;
+	}
+
 	minstret.inc();
 	if(lru) {
 		for(auto loc : ws.output.locs) {
-			if(exclude_text && 
-				loc >= text_base && loc <= text_base + text_size) continue;
+			if(exclude_text && SIGN_EXTEND(loc) >= text_base && 
+				SIGN_EXTEND(loc) <= text_base + text_size) {
+				continue;
+			} else if(exclude_text && SIGN_EXTEND(loc) < text_base) continue;
 			loc = loc & line_mask;
 			auto it = tracked_locations.find(loc);
 			if(it != tracked_locations.end()) {
-				tracked_locations[loc] = 1;
-				assert_msg(*indices[loc] == loc, "Iterator correct");
+				assert_msg(*indices[loc] == loc, "Iterator incorrect");
 				uint32_t dist = std::distance(dq.begin(), indices[loc]);
 				if(dist > max_dist) max_dist = dist;
 				auto hit = histogram.find(dist);
@@ -120,20 +137,25 @@ void miss_curve_tracer_t::trace(
 					histogram.insert(dist, counter_stat);
 				}
 				histogram[dist]->inc();
-			} else tracked_locations[loc] = 0;
+			} else {
+				tracked_locations[loc] = 0;
+				cold_misses.inc();
+			}
 			if(indices.find(loc) != indices.end()) dq.erase(indices[loc]); 
 			dq.push_front(loc);
 			indices[loc] = dq.begin();
 			maccess.inc();
 		}
+
 		for(auto loc : ws.input.locs) {
-			if(exclude_text && 
-				loc >= text_base && loc <= text_base + text_size) continue;
+			if(exclude_text && SIGN_EXTEND(loc) >= text_base && 
+				SIGN_EXTEND(loc) <= text_base + text_size) {
+				continue;
+			} else if(exclude_text && SIGN_EXTEND(loc) < text_base) continue;
 			loc = loc & line_mask;
 			auto it = tracked_locations.find(loc);
 			if(it != tracked_locations.end()) {
-				tracked_locations[loc] = 1;
-				assert_msg(*indices[loc] == loc, "Iterator correct");
+				assert_msg(*indices[loc] == loc, "Iterator incorrect");
 				uint32_t dist = std::distance(dq.begin(), indices[loc]);
 				if(dist > max_dist) max_dist = dist;
 				auto hit = histogram.find(dist);
@@ -144,7 +166,10 @@ void miss_curve_tracer_t::trace(
 					histogram.insert(dist, counter_stat);
 				}
 				histogram[dist]->inc();
-			} else tracked_locations[loc] = 0;
+			} else {
+				tracked_locations[loc] = 0;
+				cold_misses.inc();
+			}
 			if(indices.find(loc) != indices.end()) dq.erase(indices[loc]); 
 			dq.push_front(loc);
 			indices[loc] = dq.begin();
@@ -152,11 +177,12 @@ void miss_curve_tracer_t::trace(
 		}
 		return;
 	}
+
 	maccess.inc(ws.output.locs.size() + ws.input.locs.size());
 	auto access_count = maccess.get();
 	for(auto loc : ws.output.locs) {
-		if(exclude_text && 
-			loc >= text_base && loc <= text_base + text_size) continue;
+		if(exclude_text && SIGN_EXTEND(loc) >= text_base && 
+			SIGN_EXTEND(loc) <= text_base + text_size) continue;
 		auto it = tracked_locations.find(loc);
 		if(it == tracked_locations.end()) {
 			tracked_locations.insert(std::make_pair(loc, access_count));
@@ -174,9 +200,10 @@ void miss_curve_tracer_t::trace(
 		}
 		hit->second->inc();
 	}
+
 	for(auto loc : ws.input.locs) {
-		if(exclude_text && 
-			loc >= text_base && loc <= text_base+ text_size) continue;
+		if(exclude_text && SIGN_EXTEND(loc) >= text_base && 
+			SIGN_EXTEND(loc) <= text_base + text_size) continue;
 		auto it = tracked_locations.find(loc);
 		if(it == tracked_locations.end()) {
 			tracked_locations.insert(std::make_pair(loc, access_count));

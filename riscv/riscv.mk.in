@@ -287,30 +287,41 @@ riscv_insn_list = \
 	wfi \
 	xor \
 	xori \
-	vadd \
 	vsetvl \
-	vconfig \
+	vadd_v \
+	vadd_x \
+	vsub_v \
+	vsub_x \
+	vmul_v \
+	vmul_x \
+	vand_v \
+	vand_x \
+	vor_v \
+	vor_x \
+	vxor_v \
+	vxor_x \
+	vseq_v \
+	vseq_x \
+	vsne_v \
+	vsne_x \
+	vslt_v \
+	vslt_x \
+	vsle_v \
+	vsle_x \
+	vsgt_v \
+	vsgt_x \
+	vsge_v \
+	vsge_x \
+	vredsum_v \
+	vpermute_v \
+	vmv_v \
+	vclip_x \
 	vlh \
-	vlxh \
 	vlsh \
+	vlxh \
 	vsh \
 	vssh \
-	vmul \
-	vredsum \
-	vpermute \
-	vcliph \
-	vsub \
-	vand \
-	vor \
-	vnot \
-	vmove \
-	vslt \
-	vsle \
-	vsgt \
-	vsge \
 	vsxh \
-	vseq \
-	vsneq \
 
 riscv_gen_srcs = \
 	$(addsuffix .cc,$(riscv_insn_list))

@@ -23,6 +23,7 @@ public:
 	io::json to_json() const;
 protected:
 	std::map<addr_t, reg_t> tracked_locations;
+	bool text_calc = false;
 	addr_t text_base = 0;
 	uint32_t text_size = 0;
 	bool serialized = false;

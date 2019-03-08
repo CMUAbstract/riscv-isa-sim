@@ -21,50 +21,35 @@ bool mask_tracer_t::interested(
 		}
 		return false;
 	}
+	bool is_vec = false;
+	if((opc & 0x7F) == 0x57) is_vec = true;
 	switch(opc) {
-		case MATCH_VADD:
-		case MATCH_VSUB:
-		case MATCH_VMUL:
-		case MATCH_VAND:
-		case MATCH_VOR:
-		case MATCH_VNOT:
-		case MATCH_VCLIPH:
-		case MATCH_VREDSUM:
-		case MATCH_VPERMUTE:
-		case MATCH_VMOVE:
-		case MATCH_VSLT:
-		case MATCH_VSLE:
-		case MATCH_VSGT:
-		case MATCH_VSGE:
 		case MATCH_VLH:
 		case MATCH_VLXH:
 		case MATCH_VLSH:
 		case MATCH_VSH: 
 		case MATCH_VSSH: 
-		case MATCH_VSXH: {
-			for(auto it : ws.diff.vregs) {
-				uint8_t reg = std::get<0>(it);
-				uint8_t pos = std::get<1>(it);
-				uint16_t val = std::get<2>(it);
-				vregs[reg][pos] = val;	
-			}
-			return true;
+		case MATCH_VSXH: is_vec = true;
+	}
+	if(is_vec) {
+		for(auto it : ws.diff.vregs) {
+			uint8_t reg = std::get<0>(it);
+			uint8_t pos = std::get<1>(it);
+			uint16_t val = std::get<2>(it);
+			vregs[reg][pos] = val;	
 		}
-	};
-	return false;
+	}
+	return is_vec;
 }
 
 void mask_tracer_t::trace(
 	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 	insn_count.inc();
 	total_lanes.inc(vl);
-	if(insn.fr() == VMASK_NOMASK || insn.fr() == VMASK_SCALAR) return;
+	if(!insn.vm()) return;
 	mask_count.inc();
-	for(uint16_t i = 0; i < vl; i++) {
-		uint16_t m = vregs[(insn.rs3() & 0xf)][i] & 0x1;
-		if(insn.fr() == VMASK_LSB && m == 0) masked_lanes.inc();
-		else if (insn.fr() == VMASK_ILSB && m == 1) masked_lanes.inc();
-	}
+	for(uint16_t i = 0; i < vl; i++)
+		if((vregs[0][i] & 0x1) == 0) masked_lanes.inc();
 }
 
 io::json mask_tracer_t::to_json() const {

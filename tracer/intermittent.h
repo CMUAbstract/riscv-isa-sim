@@ -41,7 +41,7 @@ private:
 	bool soft_fail = false;
 	bool recover = false;
 	struct {
-		std::vector<uint64_t> time;
+		std::vector<double> time;
 		std::vector<double> voltage;
 		uint64_t idx = 0;
 	} trace;

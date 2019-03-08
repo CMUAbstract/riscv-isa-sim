@@ -21,21 +21,8 @@ io::json vcu_t::to_json() const {
 }
 
 bool vcu_t::check_vec(insn_bits_t opc) {
+	if((opc & 0x7F) == 0x57) return true;
 	switch(opc) {
-		case MATCH_VADD:
-		case MATCH_VSUB:
-		case MATCH_VMUL:
-		case MATCH_VAND:
-		case MATCH_VOR:
-		case MATCH_VNOT:
-		case MATCH_VCLIPH:
-		case MATCH_VREDSUM:
-		case MATCH_VPERMUTE:
-		case MATCH_VMOVE:
-		case MATCH_VSLT:
-		case MATCH_VSLE:
-		case MATCH_VSGT:
-		case MATCH_VSGE:
 		case MATCH_VLH:
 		case MATCH_VLXH:
 		case MATCH_VLSH:
@@ -48,8 +35,8 @@ bool vcu_t::check_vec(insn_bits_t opc) {
 
 bool vcu_t::check_split(insn_bits_t opc) {
 	switch(opc) {
-		case MATCH_VREDSUM:
-		case MATCH_VPERMUTE:
+		case MATCH_VREDSUM_V:
+		case MATCH_VPERMUTE_V:
 		case MATCH_VSH: 
 		case MATCH_VSSH: 
 		case MATCH_VSXH: return true;

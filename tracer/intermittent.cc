@@ -11,9 +11,9 @@ void intermittent_t::set_power_trace(std::string power_trace) {
 	std::ifstream in(power_trace, std::ios::in | std::ios::binary);
 	if(in) {
 		std::ostringstream contents;
-		uint64_t time = 0;
+		double time = 0;
 		double voltage = 0;
-		uint64_t total_time = 0;
+		double total_time = 0;
 		while (in >> time >> voltage) {
 			trace.time.push_back(total_time);
 			trace.voltage.push_back(voltage);
@@ -43,7 +43,7 @@ void intermittent_t::reset_should_fail() {
 
 void intermittent_t::recharge_tick(uint32_t frequency) {
 	assert_msg(trace.idx < trace.time.size(), "Power trace exhausted");
-	double deltaT = (trace.time[trace.idx] - trace.time[trace.idx + 1]) * 1e-3;
+	double deltaT = (trace.time[trace.idx] - trace.time[trace.idx + 1]);
 	double charge = trace.voltage[trace.idx] * trace.voltage[trace.idx];
 	charged_energy += (charge / trace_info.total_esr) * deltaT;
 	trace.idx++;

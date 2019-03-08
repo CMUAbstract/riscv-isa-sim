@@ -56,13 +56,9 @@ const int NCSR = 4096;
 #define FSR_NXA (FPEXC_NX << FSR_AEXC_SHIFT)
 #define FSR_AEXC (FSR_NVA | FSR_OFA | FSR_UFA | FSR_DZA | FSR_NXA)
 
-#define MAXVL 32
+#define MAXVL 16
 #define VREG_KILL 0x10
 #define VREG_MASK 0xF
-#define VMASK_NOMASK 0x0
-#define VMASK_SCALAR 0x1
-#define VMASK_LSB 0x2
-#define VMASK_ILSB 0x3
 
 #define insn_length(x) \
   (((x) & 0x07) == 0x07 ? 4 : 													\
@@ -140,6 +136,10 @@ public:
 	uint64_t rvc_rs1s() const { return 8 + x(7, 3); }
 	uint64_t rvc_rs2s() const { return 8 + x(2, 3); }
 
+	uint64_t vm() const { return x(25, 1); }
+	uint64_t vmop() const { return x(26, 3); }
+	uint64_t vwidth() const { return x(12, 3); }
+
 private:
 	insn_bits_t b;
 	uint64_t x(int lo, int len) const {
@@ -208,10 +208,12 @@ public:
 #define WRITEP_VREG(reg, value, pos) STATE.VPR.write(reg, value, pos)
 #define VS1 READ_VREG(insn.rs1())
 #define VS2 READ_VREG(insn.rs2())
-#define VM READ_VREG(insn.rs3())
+#define VM READ_VREG(0)
+#define VD READ_VREG(insn.rd())
 #define VS1P(pos) READP_VREG(insn.rs1(), pos)
 #define VS2P(pos) READP_VREG(insn.rs2(), pos)
-#define VMP(pos) READP_VREG(insn.rs3(), pos)
+#define VRDP(pos) READP_VREG(insn.rd(), pos)
+#define VMP(pos) READP_VREG(0, pos)
 #define WRITE_VRD(value) WRITE_VREG(insn.rd(), value)
 #define WRITEP_VRD(value, pos) WRITEP_VREG(insn.rd(), value, pos)
 
