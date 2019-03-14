@@ -156,6 +156,14 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 		}
 	}
 
+	// Scalar register reads
+	for(auto it : event->data->ws.input.regs) {
+		events->push_back(new reg_read_event_t(core, it, clock.get()));
+		pending_event->add_dep<reg_read_event_t *>([it](reg_read_event_t *e){
+			return e->data == it;
+		});
+	}
+
 	// Output registers
 	for(auto it : event->data->ws.output.vregs) {
 		uint8_t reg = strip_killed(it);

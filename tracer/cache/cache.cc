@@ -13,7 +13,9 @@
 #define ACCESS_LIMIT_ENABLE 0
 
 cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
-	: ram_t(_name, _config, _events) {
+	: ram_t(_name, _config, _events), read_misses("read_misses"),
+	read_hits("read_hits"), write_misses("write_misses"), 
+	write_hits("write_hits"), inserts("inserts") {
 	JSON_CHECK(int, config["lines"], lines, 64);
 	JSON_CHECK(int, config["line_size"], line_size, 4);
 	JSON_CHECK(int, config["sets"], sets, 8);
@@ -29,11 +31,11 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 
 	// Statistics to track
 	track_energy("access");
-	track_energy("insert");
-	track_energy("write_miss");
-	track_energy("write_hit");
-	track_energy("read_miss");
-	track_energy("read_hit");
+	read_hits.reset();
+	read_misses.reset();
+	write_misses.reset();
+	write_hits.reset();
+	inserts.reset();
 
 	offset_mask = line_size - 1; 
 	uint32_t idx = line_size;
@@ -65,7 +67,8 @@ void cache_t::reset(reset_level_t level) {
 }
 
 io::json cache_t::to_json() const {
-	return ram_t::to_json();
+	return io::json::merge_objects(ram_t::to_json(), read_hits, read_misses, 
+		write_hits, write_misses, inserts);
 }
 
 void cache_t::process(mem_read_event_t *event) {
@@ -106,7 +109,7 @@ void cache_t::process(mem_read_event_t *event) {
 	std::cerr << ", clock: " << event->cycle << ")" << std::endl;
 #endif
 	if(!access(event)) { // Read Miss
-		count["read_miss"].running.inc();
+		read_misses.inc();
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_read_event_t(
@@ -127,7 +130,7 @@ void cache_t::process(mem_read_event_t *event) {
 		}
 		return;
 	}
-	count["read_hit"].running.inc();
+	read_hits.inc();
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
 		events->push_back(
 			new mem_ready_event_t(
@@ -176,7 +179,7 @@ void cache_t::process(mem_write_event_t *event) {
 	events->push_back(pending_event);
 
 	if(!access(event)) { // Write Miss
-		count["write_miss"].running.inc();
+		write_misses.inc();
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_write_event_t(
@@ -198,7 +201,7 @@ void cache_t::process(mem_write_event_t *event) {
 		return;
 	}
 
-	count["write_hit"].running.inc();
+	write_hits.inc();
 	set_dirty(event); // Mark line as dirty
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
@@ -229,7 +232,7 @@ void cache_t::process(mem_insert_event_t *event) {
 		return;
 	}
 
-	count["insert"].running.inc();
+	inserts.inc();
 
 	// Increment writers
 	banks[bank].writers++;

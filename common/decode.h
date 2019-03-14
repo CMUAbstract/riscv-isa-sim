@@ -139,6 +139,7 @@ public:
 	uint64_t vm() const { return x(25, 1); }
 	uint64_t vmop() const { return x(26, 3); }
 	uint64_t vwidth() const { return x(12, 3); }
+	int64_t vsimm5() const { return xs(20, 5); }
 
 private:
 	insn_bits_t b;

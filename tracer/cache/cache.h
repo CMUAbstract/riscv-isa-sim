@@ -20,6 +20,7 @@ public:
 	void process(mem_read_event_t *event);
 	void process(mem_write_event_t *event);
 	void process(mem_insert_event_t *event);
+	
 protected:
 	bool access(mem_event_t *event);
 	void set_dirty(mem_event_t *event);
@@ -46,6 +47,13 @@ protected:
 	repl_policy_t *repl_policy;
 	std::vector<uint32_t> data;
 	std::vector<bool> dirty;
+
+protected:
+	counter_stat_t<uint32_t> read_misses;
+	counter_stat_t<uint32_t> read_hits;
+	counter_stat_t<uint32_t> write_misses;
+	counter_stat_t<uint32_t> write_hits;
+	counter_stat_t<uint32_t> inserts;
 };
 
 #endif

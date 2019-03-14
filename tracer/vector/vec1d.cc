@@ -71,6 +71,7 @@ void vec1d_t::process(pe_exec_event_t *event) {
 		}
 	}
 
+	// Issue vector register file reads
 	for(auto it : event->data->ws.input.vregs) {
 		for(auto loc = idx; loc < idx + remaining; loc++) {
 			events->push_back(
@@ -78,6 +79,16 @@ void vec1d_t::process(pe_exec_event_t *event) {
 			pending_event->add_dep<vector_reg_read_event_t *>(
 				[it, loc](vector_reg_read_event_t *e){
 					return e->data.reg == it && e->data.idx == loc;
+			});
+		}
+	}
+
+	// Issue scalar reads
+	if(idx == 0) {
+		for(auto it : event->data->ws.input.regs) {
+			events->push_back(new reg_read_event_t(core, it, clock.get()));
+			pending_event->add_dep<reg_read_event_t *>([it](reg_read_event_t *e){
+				return e->data == it;
 			});
 		}
 	}
@@ -104,6 +115,7 @@ void vec1d_t::process(pe_exec_event_t *event) {
 		}
 	}
 
+	// Issue vector register file writes
 	uint32_t latency = 0;
 	if(event->data->ws.input.vregs.size() > 0) latency = 1;
 	for(auto it : event->data->ws.output.vregs) {

@@ -95,6 +95,7 @@ void si3stage_core_t::process(insn_fetch_event_t *event) {
 void si3stage_core_t::process(insn_decode_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
+	count["decode"].running.inc();
 	// Make a branch prediction
 	bool take_branch = predictor->check_branch(event->data->opc) && 
 		predictor->predict(event->data->ws.pc) && !event->data->resolved;
@@ -181,6 +182,8 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 	stages["exec"] = true;
 
 	if(vcu != nullptr) vcu->check_and_set_vl(event->data);
+
+	count["alu"].running.inc();
 
 	auto pending_event = new pending_event_t(this, 
 		new insn_retire_event_t(this, event->data), clock.get() + 1);

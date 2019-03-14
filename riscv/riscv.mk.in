@@ -288,30 +288,43 @@ riscv_insn_list = \
 	xor \
 	xori \
 	vsetvl \
+	vfence \
 	vadd_v \
 	vadd_x \
+	vadd_i \
 	vsub_v \
 	vsub_x \
+	vsub_i \
 	vmul_v \
 	vmul_x \
+	vmul_i \
 	vand_v \
 	vand_x \
+	vand_i \
 	vor_v \
 	vor_x \
+	vor_i \
 	vxor_v \
 	vxor_x \
+	vxor_i \
 	vseq_v \
 	vseq_x \
+	vseq_i \
 	vsne_v \
 	vsne_x \
+	vsne_i \
 	vslt_v \
 	vslt_x \
+	vslt_i \
 	vsle_v \
 	vsle_x \
+	vsle_i \
 	vsgt_v \
 	vsgt_x \
+	vsgt_i \
 	vsge_v \
 	vsge_x \
+	vsge_i \
 	vredsum_v \
 	vpermute_v \
 	vmv_v \
