@@ -8,7 +8,7 @@ public:
 	vec1d_t(std::string _name, io::json _config, event_heap_t *_events)
 		: vcu_t(_name, _config, _events) {}
 	void reset(reset_level_t level);
-	void process(vector_exec_event_t *event);
+	void process(vec_issue_event_t *event);
 	void process(pe_exec_event_t *event);
 	void process(pe_ready_event_t *event);
 protected:

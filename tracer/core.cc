@@ -15,6 +15,7 @@ core_t::core_t(std::string _name, io::json _config, event_heap_t *_events)
 	track_energy("reg_read");
 	track_energy("reg_write");
 	track_energy("alu");
+	track_energy("fetch");
 	track_energy("decode");
 
 	pending_handler_t::set_ref(events, &clock);

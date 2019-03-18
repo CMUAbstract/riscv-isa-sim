@@ -329,6 +329,7 @@ riscv_insn_list = \
 	vpermute_v \
 	vmv_v \
 	vclip_x \
+	vclip_i \
 	vlh \
 	vlsh \
 	vlxh \

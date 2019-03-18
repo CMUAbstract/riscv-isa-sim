@@ -3,7 +3,8 @@
 #include "mem_event.h"
 
 ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events) 
-	: component_t(_name, _config, _events) {
+	: component_t(_name, _config, _events), bank_conflicts("bank_conflicts") {
+	JSON_CHECK(int, config["line_size"], line_size, 4);
 	JSON_CHECK(int, config["read_latency"], read_latency, 1);
 	JSON_CHECK(int, config["write_latency"], write_latency, 1);
 	JSON_CHECK(int, config["banks"], bank_count, 1);
@@ -15,12 +16,11 @@ ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events)
 
 	// Statistics to track
 	track_power("array");
-	track_energy("read");
-	track_energy("write");
+	bank_conflicts.reset();
 
 	// Calculate number of ports and ports/bank
 	assert_msg(ports > 0 || (read_ports > 0 && write_ports > 0),
-		"either ports > 0 or (read_ports > = and write_ports > 0)");
+		"either ports > 0 or (read_ports > 1 and write_ports > 0)");
 	assert_msg(ports % bank_count == 0 || 
 		(read_ports % bank_count == 0 && write_ports % bank_count == 0),
 		"port - bank mismatch");
@@ -51,7 +51,7 @@ void ram_t::reset(reset_level_t level) {
 }
 
 io::json ram_t::to_json() const {
-	return io::json::merge_objects(component_t::to_json());
+	return io::json::merge_objects(component_t::to_json(), bank_conflicts);
 }
 
 addr_t ram_t::get_bank(addr_t addr) {

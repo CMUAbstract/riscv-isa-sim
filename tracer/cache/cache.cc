@@ -17,7 +17,6 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 	read_hits("read_hits"), write_misses("write_misses"), 
 	write_hits("write_hits"), inserts("inserts") {
 	JSON_CHECK(int, config["lines"], lines, 64);
-	JSON_CHECK(int, config["line_size"], line_size, 4);
 	JSON_CHECK(int, config["sets"], sets, 8);
 	JSON_CHECK(int, config["invalid_latency"], invalid_latency, 1);
 
@@ -30,7 +29,6 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 	}
 
 	// Statistics to track
-	track_energy("access");
 	read_hits.reset();
 	read_misses.reset();
 	write_misses.reset();
@@ -79,6 +77,7 @@ void cache_t::process(mem_read_event_t *event) {
 		return !(banks[bank].readers < read_ports_per_bank &&
 			banks[bank].total() < ports_per_bank);
 	}) != nullptr) {
+		bank_conflicts.inc();
 		banks[bank].readerq++;
 		if(banks[bank].readerq <= load_buf_size) {
 			for(auto parent : parents.raw<ram_signal_handler_t *>()) {
@@ -89,8 +88,6 @@ void cache_t::process(mem_read_event_t *event) {
 		}
 		return;
 	}
-
-	count["read"].running.inc();
 
 	// Increment readers
 	banks[bank].readers++;
@@ -149,6 +146,7 @@ void cache_t::process(mem_write_event_t *event) {
 		return !(banks[bank].writers < write_ports_per_bank &&
 			banks[bank].total() < ports_per_bank);
 	}) != nullptr) {
+		bank_conflicts.inc();
 		banks[bank].writerq++;
 		if(banks[bank].writerq <= store_buf_size) {
 			for(auto parent : parents.raw<ram_signal_handler_t *>()) {
@@ -159,8 +157,6 @@ void cache_t::process(mem_write_event_t *event) {
 		}
 		return;
 	}
-
-	count["write"].running.inc();
 
 #if CACHE_LOG
 	uint32_t set = get_set(event->data.addr);

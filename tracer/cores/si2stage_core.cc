@@ -102,7 +102,7 @@ void si2stage_core_t::process(insn_fetch_event_t *event) {
 		is_split = vcu->check_split(event->data->opc);
 	}
 	if(is_vec) {
-		exec_event = new vector_exec_event_t(vcu, event->data);
+		exec_event = new vec_issue_event_t(vcu, event->data);
 		last_vec = true;
 	} else {
 		exec_event = new insn_exec_event_t(this, event->data);
@@ -114,7 +114,7 @@ void si2stage_core_t::process(insn_fetch_event_t *event) {
 		last_vec = is_vec;
 	});
 	if(has_vcu && !is_empty && ((last_vec && !is_vec) || is_split)) {
-		pending_event->add_dep<vector_retire_event_t *>([](vector_retire_event_t *e) { 
+		pending_event->add_dep<vec_retire_event_t *>([](vec_retire_event_t *e) { 
 			return true; 
 		});
 	}
@@ -210,11 +210,11 @@ void si2stage_core_t::process(squash_event_t *event) {
 	next_insn();
 }
 
-void si2stage_core_t::process(vector_ready_event_t *event) {
+void si2stage_core_t::process(vec_ready_event_t *event) {
 	TIME_VIOLATION_CHECK
 }
 
-void si2stage_core_t::process(vector_retire_event_t *event) {
+void si2stage_core_t::process(vec_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
 }

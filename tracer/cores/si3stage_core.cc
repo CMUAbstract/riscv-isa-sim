@@ -16,7 +16,8 @@
 #define SQUASH_LOG 0
 
 si3stage_core_t::si3stage_core_t(std::string _name, io::json _config, 
-	event_heap_t *_events) : core_t(_name, _config, _events) {
+	event_heap_t *_events) : core_t(_name, _config, _events), squashes("squashes") {
+	squashes.reset();
 	io::json branch_config;
 	std::string branch_type = "tournament";
 	if(config["branch_predictor"].is_object()) {
@@ -46,13 +47,13 @@ void si3stage_core_t::init() {
 }
 
 io::json si3stage_core_t::to_json() const {
-	return core_t::to_json();
+	return io::json::merge_objects(core_t::to_json(), squashes);
 }
 
 void si3stage_core_t::reset(reset_level_t level) {
 	core_t::reset(level);
 	predictor->reset();
-	last_vec = false;
+	last_split = false;
 }
 
 void si3stage_core_t::buffer_insn(hstd::shared_ptr<timed_insn_t> insn) {
@@ -110,6 +111,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		std::cerr << ")" << std::dec << std::endl;
 		std::cerr << "================================================" << std::endl;
 #endif
+		squashes.inc();
 		events->push_back(
 			new squash_event_t(this, 
 				{.idx=event->data->idx, .stages={"fetch"}}, clock.get()));
@@ -117,29 +119,33 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 
 	event_base_t *exec_event;
 	bool has_vcu = vcu != nullptr;
-	bool is_vec = false, is_empty = false, is_split = false;
+	bool is_vec = false, is_empty = false, is_split = false, is_vfence = false;
 	if(has_vcu) {
 		is_vec = vcu->check_vec(event->data->opc);
 		is_empty = vcu->check_empty();
 		is_split = vcu->check_split(event->data->opc);
+		is_vfence = vcu->check_fence(event->data->opc);
 	}
+
 	if(is_vec) {
-		exec_event = new vector_exec_event_t(vcu, event->data);
-		last_vec = true;
+		exec_event = new vec_issue_event_t(vcu, event->data);
 	} else {
 		exec_event = new insn_exec_event_t(this, event->data);
 	}
 
 	stages["decode"] = true;
 	auto pending_event = new pending_event_t(this, exec_event, clock.get() + 1);
-	pending_event->add_fini([&, is_vec](){ 
-		stages["decode"] = false;
-		last_vec = is_vec;
+	pending_event->add_fini([&, is_split](){
+		if(is_split) last_split = true;
+		stages["decode"] = false; 
 	});
-	if(has_vcu && !is_empty && ((last_vec && !is_vec) || is_split)) {
-		pending_event->add_dep<vector_retire_event_t *>(
-			[](vector_retire_event_t *e) { return true; });
-		events->push_back(new vector_start_event_t(vcu, false, clock.get() + 1));
+
+	if(has_vcu && !is_empty && (is_vfence || (is_vec && last_split))) {
+		pending_event->add_dep<vec_retire_event_t *>(
+			[&](vec_retire_event_t *e) {
+				last_split = false;
+				return true; 
+		});
 	}
 
 	for(auto it : event->data->ws.input.regs) {
@@ -164,6 +170,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 		!predictor->check_predict(event->data->ws.pc, event->data->ws.next_pc)) {
 		predictor->update(event->data->ws.pc, event->data->ws.next_pc);
 		event->data->resolved = true;
+		squashes.inc();
 		// ADD 2x BUBBLE
 #if SQUASH_LOG
 		std::cerr << "================================================" << std::endl;
@@ -235,12 +242,17 @@ void si3stage_core_t::process(squash_event_t *event) {
 	next_insn();
 }
 
-void si3stage_core_t::process(vector_ready_event_t *event) {
+void si3stage_core_t::process(vec_ready_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
 }
 
-void si3stage_core_t::process(vector_retire_event_t *event) {
+void si3stage_core_t::process(vec_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
+}
+
+void si3stage_core_t::process(reg_read_event_t *event) {
+	core_t::process(event);
+	vcu->check_pending(event);	
 }

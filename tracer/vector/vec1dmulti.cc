@@ -30,7 +30,7 @@ void vec1dmulti_t::reset(reset_level_t level) {
 	read_set.clear();
 }
 
-void vec1dmulti_t::process(vector_exec_event_t *event) {
+void vec1dmulti_t::process(vec_issue_event_t *event) {
 	TIME_VIOLATION_CHECK;
 	if(promote_pending(event, [&](){
 		return !(active_window_size < window_size);
@@ -56,12 +56,12 @@ void vec1dmulti_t::process(vector_exec_event_t *event) {
 
 	if(active_window_size == window_size) {
 		vcu_t::set_core_stage("exec", true);
-		events->push_back(new vector_start_event_t(this, false, clock.get()));
+		events->push_back(new vec_start_event_t(this, false, clock.get()));
 	}
 
 	auto pending_event = new pending_event_t(this, 
 		new pe_exec_event_t(this, event->data, clock.get()), clock.get() + 1);
-	pending_event->add_dep<vector_start_event_t *>([](vector_start_event_t *e) {
+	pending_event->add_dep<vec_start_event_t *>([](vec_start_event_t *e) {
 		return true;
 	});
 	pending_event->add_dep([&](){ return pe_state == EXEC; });
@@ -71,15 +71,15 @@ void vec1dmulti_t::process(vector_exec_event_t *event) {
 	if(active_window_size == 1) {
 		auto pending_read_event = new pending_event_t(this, 
 			new pe_read_event_t(this, &read_set, clock.get()), clock.get() + 1);
-		pending_read_event->add_dep<vector_start_event_t *>(
-			[](vector_start_event_t *e) { return true; });
+		pending_read_event->add_dep<vec_start_event_t *>(
+			[](vec_start_event_t *e) { return true; });
 		register_pending(pending_read_event);
 		events->push_back(pending_read_event);
 
 		auto pending_write_event = new pending_event_t(this, 
 			new pe_write_event_t(this, &write_set, clock.get()), clock.get() + 1);
-		pending_write_event->add_dep<vector_start_event_t *>(
-			[](vector_start_event_t *e) { return true; });
+		pending_write_event->add_dep<vec_start_event_t *>(
+			[](vec_start_event_t *e) { return true; });
 		pending_write_event->add_dep([&](){ return pe_state == WRITE; });
 		register_pending(pending_write_event);
 		events->push_back(pending_write_event);
@@ -113,10 +113,10 @@ void vec1dmulti_t::process(pe_read_event_t *event) {
 	auto end = std::next(read_set.begin(), active_reg_reads + work);
 	while(it != end) {
 		auto reg = *it;
-		events->push_back(new vector_reg_read_event_t(
+		events->push_back(new vec_reg_read_event_t(
 			this, {.reg=reg, .idx=0}, clock.get()));
-		pending_event->add_dep<vector_reg_read_event_t *>(
-			[reg](vector_reg_read_event_t *e){
+		pending_event->add_dep<vec_reg_read_event_t *>(
+			[reg](vec_reg_read_event_t *e){
 				return e->data.reg == reg;
 		});
 		++it;
@@ -225,10 +225,10 @@ void vec1dmulti_t::process(pe_write_event_t *event) {
 	auto end = std::next(write_set.begin(), active_reg_writes + work);
 	while(it != end) {
 		auto reg = *it;
-		events->push_back(new vector_reg_write_event_t(
+		events->push_back(new vec_reg_write_event_t(
 			this, {.reg=reg, .idx=0}, clock.get()));
-		pending_event->add_dep<vector_reg_write_event_t *>(
-			[reg](vector_reg_write_event_t *e){
+		pending_event->add_dep<vec_reg_write_event_t *>(
+			[reg](vec_reg_write_event_t *e){
 				return e->data.reg == reg;
 		});
 		++it;
@@ -249,10 +249,10 @@ void vec1dmulti_t::process(pe_ready_event_t *event) {
 	write_set.clear();
 	read_set.clear();
 	empty = true;
-	for(auto parent : parents.raw<vector_signal_handler_t *>()) {
+	for(auto parent : parents.raw<vec_signal_handler_t *>()) {
 		events->push_back(
-			new vector_ready_event_t(parent.second, retire_insn, clock.get()));
+			new vec_ready_event_t(parent.second, retire_insn, clock.get()));
 		events->push_back(
-			new vector_retire_event_t(parent.second, retire_insn, clock.get()));
+			new vec_retire_event_t(parent.second, retire_insn, clock.get()));
 	}
 }

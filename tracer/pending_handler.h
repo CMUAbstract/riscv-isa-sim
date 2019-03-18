@@ -15,13 +15,13 @@ public:
 		ref_clock = _ref_clock;
 	}
 	virtual void process(pending_event_t *event);
+	template<class T>
+	void check_pending(T event);
 protected:
 	void register_pending(pending_event_t *event) {
 		pending_events.insert({event, event});
 	}
 	pending_event_t *promote_pending(event_base_t *event, std::function<bool()> cond);
-	template<class T>
-	void check_pending(T event);
 	void clear_pending() { pending_events.clear(); }
 protected:
 	std::map<eventref_t, pending_event_t *> pending_events;

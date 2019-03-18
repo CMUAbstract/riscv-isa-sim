@@ -47,7 +47,7 @@ public:
 	vec1dmulti_t(std::string _name, io::json _config, event_heap_t *_events);
 	io::json to_json() const;
 	void reset(reset_level_t level);
-	void process(vector_exec_event_t *event);
+	void process(vec_issue_event_t *event);
 	void process(pe_read_event_t *event);
 	void process(pe_exec_event_t *event);
 	void process(pe_write_event_t *event);

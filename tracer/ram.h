@@ -17,9 +17,12 @@ public:
 	virtual ~ram_t() {}
 	virtual void reset(reset_level_t level);
 	virtual io::json to_json() const;
+	addr_t get_bank(addr_t addr);
+	uint32_t get_line_size() { return line_size; }
 	void process(mem_ready_event_t *event);
 	void process(mem_retire_event_t *event);
 protected:
+	uint32_t line_size;
 	uint32_t read_latency;
 	uint32_t write_latency;
 	uint32_t ports;
@@ -37,11 +40,12 @@ protected:
 	};
 	std::vector<bank_info_t> banks;
 protected:
-	addr_t get_bank(addr_t addr);
 	uint32_t ports_per_bank;
 	uint32_t read_ports_per_bank;
 	uint32_t write_ports_per_bank;
 	uint32_t bank_mask;
+protected:
+	counter_stat_t<uint32_t> bank_conflicts;
 };
 
 #endif

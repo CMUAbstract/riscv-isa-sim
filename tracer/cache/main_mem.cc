@@ -4,7 +4,10 @@
 #include "pending_event.h"
 
 main_mem_t::main_mem_t(std::string _name, io::json _config, event_heap_t *_events)
-	: ram_t(_name, _config, _events) {}
+	: ram_t(_name, _config, _events) {
+	track_energy("read");
+	track_energy("write");
+}
 
 void main_mem_t::process(mem_read_event_t *event){
 	TIME_VIOLATION_CHECK
@@ -16,6 +19,7 @@ void main_mem_t::process(mem_read_event_t *event){
 	}) != nullptr) {
 		// assert_msg(banks[bank].readerq <= load_buf_size, 
 			// "%s (%lu): Reader queue overflow", name.c_str(), clock.get());
+		bank_conflicts.inc();
 		banks[bank].readerq++;
 		if(banks[bank].readerq <= load_buf_size) {
 			for(auto parent : parents.raw<ram_signal_handler_t *>()) {
@@ -56,6 +60,7 @@ void main_mem_t::process(mem_write_event_t *event){
 		return !(banks[bank].writers < write_ports_per_bank &&
 			banks[bank].total() < ports_per_bank);
 	}) != nullptr) {
+		bank_conflicts.inc();
 		banks[bank].writerq++;
 		if(banks[bank].writerq <= store_buf_size) {
 			for(auto parent : parents.raw<ram_signal_handler_t *>()) {

@@ -10,8 +10,9 @@
 #include "ram.h"
 #include "core.h"
 
-class vcu_t: public component_t<vcu_t, vector_handler_t, 
+class vcu_t: public component_t<vcu_t, vec_handler_t, 
 	pending_handler_t, ram_signal_handler_t> {
+	friend class core_t;
 public:
 	vcu_t(std::string _name, io::json _config, event_heap_t *_events);
 	~vcu_t() {}
@@ -19,12 +20,13 @@ public:
 	bool check_vec(insn_bits_t opc);
 	bool check_empty() { return empty; }
 	bool check_split(insn_bits_t opc);
+	bool check_fence(insn_bits_t opc) { return opc == MATCH_VFENCE; }
 	void check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn);
 	virtual void reset(reset_level_t level);
 	virtual io::json to_json() const;
-	void process(vector_start_event_t *event);
-	void process(vector_reg_read_event_t *event);
-	void process(vector_reg_write_event_t *event);
+	void process(vec_start_event_t *event);
+	void process(vec_reg_read_event_t *event);
+	void process(vec_reg_write_event_t *event);
 	void process(mem_ready_event_t *event);
 	void process(mem_retire_event_t *event);
 protected:

@@ -34,7 +34,7 @@ void vec1dflow_t::reset(reset_level_t level) {
 	std::fill(progress_map.begin(), progress_map.end(), 0);
 }
 
-void vec1dflow_t::process(vector_exec_event_t *event) {
+void vec1dflow_t::process(vec_issue_event_t *event) {
 	TIME_VIOLATION_CHECK;
 	if(promote_pending(event, [&](){
 		return !(active_window_size < window_size);
@@ -43,14 +43,26 @@ void vec1dflow_t::process(vector_exec_event_t *event) {
 	idx = (idx + 1) % window_size;
 	empty = false;
 	active_window_size++;
-	if(active_window_size == window_size) {
-		vcu_t::set_core_stage("exec", true);
-		events->push_back(new vector_start_event_t(this, false, clock.get()));
+	if(active_window_size == window_size || check_split(event->data->opc)) {
+		events->push_back(new vec_start_event_t(this, false, clock.get()));
+	} else { // Issue ready signals
+		for(auto parent : parents.raw<vec_signal_handler_t *>()) {
+			events->push_back(
+				new vec_ready_event_t(parent.second, event->data, clock.get()));
+		}
 	}
-	events->push_back(new pe_exec_event_t(this, event->data, clock.get()));
+
+	auto pending_event = new pending_event_t(this,
+		new pe_exec_event_t(this, event->data), clock.get());
+	pending_event->add_dep<vec_start_event_t *>([](vec_start_event_t *event) {
+		return true;
+	});
+	
+	register_pending(pending_event);
+	events->push_back(pending_event);
 }
 
-void vec1dflow_t::process(vector_start_event_t *event) {
+void vec1dflow_t::process(vec_start_event_t *event) {
 	vcu_t::process(event);
 	start = true;
 	if(active_insn_offset == active_window_size) active_insn_offset = 0;
@@ -75,15 +87,14 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 			progress_map[insn_idx] += work;
 		});
 		if(!start) {
-			pending_event->add_dep<vector_start_event_t *>(
-				[](vector_start_event_t *e) { return true; });
+			pending_event->add_dep<vec_start_event_t *>(
+				[](vec_start_event_t *e) { return true; });
 		}
 	} else {
 		pending_event = new pending_event_t(this, 
 			new pe_ready_event_t(this, event->data), clock.get() + 1);
 		pending_event->add_fini([&, insn_idx](){ 
 			progress_map[insn_idx] = 0; 
-			vcu_t::set_core_stage("exec", false);
 		});
 	}
 
@@ -94,11 +105,14 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 	// Input locations
 	if(cur_progress < event->data->ws.input.locs.size()) {
 		auto it = std::next(event->data->ws.input.locs.begin(), cur_progress);
-		auto end = std::next(
-			event->data->ws.input.locs.begin(), cur_progress + work);
-		while(it != end) {
-			for(auto child : children.raw<ram_handler_t *>()) {
-				auto loc = *it;
+		auto end = std::next(event->data->ws.input.locs.begin(), cur_progress + work);
+		std::vector<addr_t> locs(it, end);
+		for(auto child : children.raw<ram_t *>()) {
+			addr_t last_bank = 0;
+			addr_t last_addr = 0;
+			for(auto loc : locs) {
+				if(last_bank == child.second->get_bank(loc) &&
+					loc < last_addr + child.second->get_line_size()) continue;
 				events->push_back(
 					new mem_read_event_t(child.second, loc, clock.get()));
 				pending_event->add_dep<mem_ready_event_t *>(
@@ -109,21 +123,25 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 					[loc](mem_retire_event_t *e){
 					return e->data.addr == loc;
 				});
+				last_addr = loc;
+				last_bank = child.second->get_bank(loc);
 			}
-			++it;
 		}
 	}
 
 	// Output locations
 	if(cur_progress < event->data->ws.output.locs.size()) {
 		auto it = std::next(event->data->ws.output.locs.begin(), cur_progress);
-		auto end = std::next(
-			event->data->ws.output.locs.begin(), cur_progress + work);
-		while(it != end) {
-			for(auto child : children.raw<ram_handler_t *>()) {
-				auto loc = *it;
+		auto end = std::next(event->data->ws.output.locs.begin(), cur_progress + work);
+		std::vector<addr_t> locs(it, end);
+		for(auto child : children.raw<ram_t *>()) {
+			addr_t last_bank = 0;
+			addr_t last_addr = 0;
+			for(auto loc : locs) {
+				if(last_bank == child.second->get_bank(loc) &&
+					loc < last_addr + child.second->get_line_size()) continue;
 				events->push_back(
-					new mem_read_event_t(child.second, loc, clock.get()));
+					new mem_write_event_t(child.second, loc, clock.get()));
 				pending_event->add_dep<mem_ready_event_t *>(
 					[loc](mem_ready_event_t *e){
 					return e->data.addr == loc;
@@ -132,8 +150,9 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 					[loc](mem_retire_event_t *e){
 					return e->data.addr == loc;
 				});
+				last_addr = loc;
+				last_bank = child.second->get_bank(loc);
 			}
-			++it;
 		}
 	}
 
@@ -141,10 +160,10 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 	for(auto it : event->data->ws.input.vregs) {
 		uint8_t reg = strip_killed(it);
 		if(!reg_map[reg]) {
-			events->push_back(new vector_reg_read_event_t(
+			events->push_back(new vec_reg_read_event_t(
 				this, {.reg=reg, .idx=0}, clock.get()));
-			pending_event->add_dep<vector_reg_read_event_t *>(
-				[reg](vector_reg_read_event_t *e){
+			pending_event->add_dep<vec_reg_read_event_t *>(
+				[reg](vec_reg_read_event_t *e){
 					return e->data.reg == reg;
 			});
 			if(src_forwarding) {
@@ -156,21 +175,13 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 		}
 	}
 
-	// Scalar register reads
-	for(auto it : event->data->ws.input.regs) {
-		events->push_back(new reg_read_event_t(core, it, clock.get()));
-		pending_event->add_dep<reg_read_event_t *>([it](reg_read_event_t *e){
-			return e->data == it;
-		});
-	}
-
 	// Output registers
 	for(auto it : event->data->ws.output.vregs) {
 		uint8_t reg = strip_killed(it);
-		events->push_back(new vector_reg_write_event_t(
+		events->push_back(new vec_reg_write_event_t(
 			this, {.reg=reg, .idx=0}, clock.get()));
-		pending_event->add_dep<vector_reg_write_event_t *>(
-			[reg](vector_reg_write_event_t *e){
+		pending_event->add_dep<vec_reg_write_event_t *>(
+			[reg](vec_reg_write_event_t *e){
 				return e->data.reg == reg;
 		});
 		reg_map[reg] = true;
@@ -183,10 +194,10 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 		uint16_t reg = 0;
 		for(auto reg_state : reg_map) {
 			if(reg_state && !kill_map[reg] && !src_map[reg]) {
-				events->push_back(new vector_reg_write_event_t(
+				events->push_back(new vec_reg_write_event_t(
 				this, {.reg=reg, .idx=0}, clock.get()));
-				pending_event->add_dep<vector_reg_write_event_t *>(
-					[reg](vector_reg_write_event_t *e){
+				pending_event->add_dep<vec_reg_write_event_t *>(
+					[reg](vec_reg_write_event_t *e){
 						return e->data.reg == reg;
 				});
 			}
@@ -207,19 +218,19 @@ void vec1dflow_t::process(pe_ready_event_t *event) {
 	window_start = (window_start + 1) % window_size;
 	if(active_insn_offset > 0) active_insn_offset--;
 	if(active_window_size > 0) active_window_size--;
-	for(auto parent : parents.raw<vector_signal_handler_t *>()) {
+	for(auto parent : parents.raw<vec_signal_handler_t *>()) {
 		events->push_back(
-			new vector_ready_event_t(parent.second, event->data, clock.get()));
+			new vec_ready_event_t(parent.second, event->data, clock.get()));
 		// Also check that all outstanding memory accesses completed
 		if(active_window_size == 0) {
 			empty = true;
 			start = false;
-			auto vector_retire_event = new vector_retire_event_t(
+			auto vec_retire_event = new vec_retire_event_t(
 				parent.second, event->data, clock.get());
-			if(promote_pending(vector_retire_event, [&](){
+			if(promote_pending(vec_retire_event, [&](){
 				return outstanding != 0;
 			}) != nullptr); 
-			else events->push_back(vector_retire_event);
+			else events->push_back(vec_retire_event);
 		}
 	}
 }

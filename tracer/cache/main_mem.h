@@ -4,6 +4,8 @@
 #include <vector>
 #include <tuple>
 
+#include <stat/stat.h>
+
 #include "ram.h"
 
 class main_mem_t: public ram_t {
