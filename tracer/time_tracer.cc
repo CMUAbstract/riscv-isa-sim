@@ -13,7 +13,11 @@
 time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf) 
 	: tracer_impl_t("time_tracer", _config, _elf), 
 	soft_failures("soft_failures"), hard_failures("hard_failures"),
-	total_energy("total_energy"), total_power("total_power") {
+	total_energy("total_energy"), total_power("total_power"),
+	total_dynamic_energy("total_dynamic_energy"), 
+	total_static_energy("total_static_energy"),
+	total_dynamic_power("total_dynamic_power"), 
+	total_static_power("total_static_power"){
 	if(config["intermittent"].is_object()) {
 		intermittent = true;
 		JSON_CHECK(int, config["intermittent"]["min"], intermittent_min);
@@ -90,6 +94,7 @@ time_tracer_t::~time_tracer_t() {
 
 void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 	events.clear();
+#if 0
 	// Reset caches and wait for failure
 	double power = 0.;
 	for(auto c : components) power += c.second->get_power(component_base_t::BROWN);
@@ -123,6 +128,7 @@ void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 	while(!recovered()) recharge_tick(core->get_frequency());
 	for(auto c : components) c.second->reset();
 	reset_should_fail();
+#endif
 }
 
 void time_tracer_t::tabulate() {
@@ -136,12 +142,16 @@ void time_tracer_t::tabulate() {
 			delete e;
 		}
 	}
+	
+	update_power_energy();
 }
 
 io::json time_tracer_t::to_json() const {
 	auto trace = tracer_impl_t::to_json();
 	trace[name] = io::json::merge_objects(soft_failures, hard_failures, 
-		total_power, total_energy, io::json(components));
+		total_power, total_dynamic_power, total_static_power,
+		total_energy, total_dynamic_energy, total_static_energy,
+		io::json(components));
 	return trace;
 }
 
@@ -149,12 +159,13 @@ void time_tracer_t::trace(
 	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 	auto shared_timed_insn = hstd::shared_ptr<timed_insn_t>(
 		new timed_insn_t(ws, opc, insn));
-	// std::cerr << "0x" << std::hex << ws.pc << std::endl;
+	
 	core->buffer_insn(shared_timed_insn);
 	if(hyperdrive_disabled) {
 		core->update_pc(ws.pc);
 		hyperdrive_disabled = false;
 	}
+
 	while(!events.ready() && !events.empty() && 
 		(core->get_clock() != TICK_LIMIT || !TICK_LIMIT_ENABLE)) {
 		event_base_t *e = events.pop_back();
@@ -164,16 +175,13 @@ void time_tracer_t::trace(
 			delete e;
 		}
 	}
+
 #if TICK_LIMIT_ENABLE
 	if(TICK_LIMIT <= core->get_clock()) exit(0);
 #endif
-	double power = 0., energy = 0.;
-	for(auto c : components) power += c.second->get_power();
-	total_power.running.set(power);
-	for(auto c : components) energy += c.second->get_energy();
-	double time = (double)core->get_clock() / (double)core->get_frequency();
-	energy += power * time;
-	total_energy.running.inc(energy);
+
+	double energy = update_power_energy();
+
 	if(intermittent && should_fail(
 		core->get_clock(), energy, core->get_frequency())) {
 #ifdef INTERMITTENT_LOG
@@ -185,4 +193,28 @@ void time_tracer_t::trace(
 		except.minstret = core->minstret();
 		throw except;
 	}
+}
+
+double time_tracer_t::update_power_energy() {
+	double static_power = 0., static_energy = 0.;
+	double dynamic_power = 0., dynamic_energy = 0.;
+	for(auto c : components) {
+		static_power += c.second->get_static_power();
+		static_energy += c.second->get_static_energy(
+			core->get_frequency()) * 1e6; // Convert to nW from mW
+	}
+	total_static_power.running.set(static_power);
+	total_static_energy.running.set(static_energy);
+
+	for(auto c : components) {
+		dynamic_energy += c.second->get_dynamic_energy();
+		dynamic_power += c.second->get_dynamic_power(core->get_frequency());
+	}
+	total_dynamic_power.running.set(dynamic_power);
+	total_dynamic_energy.running.set(dynamic_energy);
+
+	total_power.running.set(static_power + dynamic_power);
+	total_energy.running.set(static_energy + dynamic_energy);
+
+	return static_energy + dynamic_energy;
 }

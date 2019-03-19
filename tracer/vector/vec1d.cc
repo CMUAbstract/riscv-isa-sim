@@ -4,6 +4,9 @@
 #include "vector_event.h"
 #include "pending_event.h"
 
+vec1d_t::vec1d_t(std::string _name, io::json _config, event_heap_t *_events)
+		: vcu_t(_name, _config, _events) {}
+
 void vec1d_t::reset(reset_level_t level) {
 	vcu_t::reset(level);
 	idx = 0;
@@ -23,6 +26,8 @@ void vec1d_t::process(pe_exec_event_t *event) {
 	if(promote_pending(event, [&](){
 		return !(active_lanes < lanes);
 	}) != nullptr) return;
+
+	count["alu"].running.inc();
 
 	uint32_t remaining = vl - idx;
 	if(remaining > lanes) remaining = lanes;

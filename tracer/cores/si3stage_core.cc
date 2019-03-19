@@ -76,6 +76,7 @@ void si3stage_core_t::next_insn() {
 
 void si3stage_core_t::process(insn_fetch_event_t *event) {
 	TIME_VIOLATION_CHECK
+	count["fetch"].running.inc();
 	auto pending_event = new pending_event_t(
 		this, new insn_decode_event_t(this, event->data), clock.get() + 1);
 	pending_event->add_dep<mem_retire_event_t *>([pc_val=pc](mem_retire_event_t *e) {

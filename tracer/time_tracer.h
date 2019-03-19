@@ -35,11 +35,16 @@ private:
 	core_t *core = nullptr;
 	bool hyperdrive_disabled = false;
 	std::map<std::string, component_base_t *> components;
+	double update_power_energy();
 private: // Stats
 	counter_stat_t<uint32_t> soft_failures;
 	counter_stat_t<uint32_t> hard_failures;
 	running_stat_t<counter_stat_t<double>> total_energy;
 	running_stat_t<counter_stat_t<double>> total_power;
+	running_stat_t<counter_stat_t<double>> total_dynamic_energy;
+	running_stat_t<counter_stat_t<double>> total_static_energy;
+	running_stat_t<counter_stat_t<double>> total_dynamic_power;
+	running_stat_t<counter_stat_t<double>> total_static_power;
 };
 
 #endif

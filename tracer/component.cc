@@ -46,7 +46,17 @@ void component_base_t::track_energy(std::string key) {
 	count[key] = running_stat_t<counter_stat_t<uint64_t>>();
 }
 
-double component_base_t::get_power(component_base_t::power_state_t state) {
+double component_base_t::get_dynamic_power(uint64_t freq) {
+	double total = 0.;
+	for(auto &e : energy) {
+		double dynamic = e.second.get(0) * count[e.first].running.get();
+		total += e.second.get(1);
+	}
+	return total / ((double)get_clock() / (double)freq);
+}
+
+double component_base_t::get_static_power(
+	component_base_t::power_state_t state) {
 	double total = 0.;
 	uint16_t which = 0;
 	if(state == BROWN) which = 1;
@@ -54,14 +64,18 @@ double component_base_t::get_power(component_base_t::power_state_t state) {
 	return total;
 }
 
-double component_base_t::get_energy() {
+double component_base_t::get_dynamic_energy() {
 	double total = 0.;
 	for(auto &e : energy) {
 		double dynamic = e.second.get(0) * count[e.first].running.get();
-		total += dynamic;
 		e.second.inc(dynamic);
+		total += e.second.get(1);
 	}
 	return total;
+}
+
+double component_base_t::get_static_energy(uint64_t freq) {
+	return ((double)get_clock() / (double)freq) * get_static_power();
 }
 
 io::json component_base_t::power_stat_t::to_json() const {

@@ -32,7 +32,6 @@ protected:
 	// Cache characteristics
 	uint32_t invalid_latency;
 	uint32_t lines;
-	uint32_t line_size; 
 	uint32_t sets;
 
 	// Computed variables
@@ -53,7 +52,6 @@ protected:
 	counter_stat_t<uint32_t> read_hits;
 	counter_stat_t<uint32_t> write_misses;
 	counter_stat_t<uint32_t> write_hits;
-	counter_stat_t<uint32_t> inserts;
 };
 
 #endif

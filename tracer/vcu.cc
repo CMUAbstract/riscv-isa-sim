@@ -8,6 +8,11 @@ vcu_t::vcu_t(std::string _name, io::json _config, event_heap_t *_events)
 	pending_handler_t::set_ref(events, &clock);
 	JSON_CHECK(int, config["lanes"], lanes, 1);
 	JSON_CHECK(int, config["reg_count"], reg_count, 0x10);
+	track_power("unit");
+	track_power("vrf");
+	track_energy("alu");
+	track_energy("reg_read");
+	track_energy("reg_write");
 }
 
 void vcu_t::reset(reset_level_t level) {
@@ -62,11 +67,13 @@ void vcu_t::process(vec_start_event_t *event) {
 void vcu_t::process(vec_reg_read_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
+	count["reg_read"].running.inc();
 }
 
 void vcu_t::process(vec_reg_write_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
+	count["reg_write"].running.inc();
 }
 
 void vcu_t::process(mem_ready_event_t *event) {

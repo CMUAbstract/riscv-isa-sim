@@ -54,8 +54,10 @@ public:
 	std::string get_name() { return name; }
 	io::json get_config() { return config; }
 	cycle_t get_clock() { return clock.get(); }
-	double get_power(power_state_t state=ON);
-	double get_energy();
+	double get_static_power(power_state_t state=ON);
+	double get_dynamic_power(uint64_t freq);
+	double get_dynamic_energy();
+	double get_static_energy(uint64_t freq);
 
 	void account(event_base_t *event);
 protected:
