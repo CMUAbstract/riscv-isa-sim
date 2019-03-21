@@ -13,7 +13,7 @@ protected:
 	intermittent_t() { reset_should_fail(); }
 	void set_power_trace(std::string power_trace);
 	void reset_should_fail();
-	void recharge_tick(uint32_t frequency);
+	void recharge_tick();
 	bool should_fail(cycle_t cycle, double energy, uint32_t frequency);
 	bool recovered() { return recover; }
 	void calc_total_esr();
@@ -46,7 +46,8 @@ private:
 		uint64_t idx = 0;
 	} trace;
 	cycle_t fail_cycle = 0;
-	double avg_voltage = 1.0;
+	double max_voltage = 0.;
+	double min_voltage = 10.;
 };
 
 #endif

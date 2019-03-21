@@ -100,7 +100,7 @@ protected:
 	std::vector<tracer_t *> list;
 };
 
-#define DIFF_LIST_SIZE 0x100
+#define DIFF_LIST_SIZE 0x1000
 
 // TODO: custom reverse iterator
 class core_tracer_t: public tracer_list_t {
@@ -129,7 +129,7 @@ public:
 	}
 	hstd::shared_ptr<diff_list_t> get_diff(uint32_t minstret_delta) {
 		return hstd::shared_ptr<diff_list_t>(
-			new diff_list_t(diffs, diffs.size() - minstret_delta));
+			new diff_list_t(diffs, minstret_delta));
 	}
 private:
 	void init();

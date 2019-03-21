@@ -17,33 +17,39 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 	total_dynamic_energy("total_dynamic_energy"), 
 	total_static_energy("total_static_energy"),
 	total_dynamic_power("total_dynamic_power"), 
-	total_static_power("total_static_power"){
+	total_static_power("total_static_power") {
+
 	if(config["intermittent"].is_object()) {
 		intermittent = true;
 		JSON_CHECK(int, config["intermittent"]["min"], intermittent_min);
 		JSON_CHECK(int, config["intermittent"]["max"], intermittent_max);
-		if(config["cap_size"].is_array()) {
-			auto cap_sizes = config["cap_size"].array_items();
+		
+		if(config["intermittent"]["cap_size"].is_array()) {
+			auto cap_sizes = config["intermittent"]["cap_size"].array_items();
 			assert_msg(cap_sizes.size() == 3, "Must have three cap sizes");
 			trace_info.primary.size = cap_sizes[0].double_value();
 			trace_info.secondary.size = cap_sizes[1].double_value();
 			trace_info.reserve.size = cap_sizes[2].double_value();
 		}
-		if(config["esr"].is_array()) {
-			auto esrs = config["esr"].array_items();
+
+		if(config["intermittent"]["esr"].is_array()) {
+			auto esrs = config["intermittent"]["esr"].array_items();
 			assert_msg(esrs.size() == 3, "Must have three esr values");
-			trace_info.primary.size = esrs[0].double_value();
-			trace_info.secondary.size = esrs[1].double_value();
-			trace_info.reserve.size = esrs[2].double_value();
+			trace_info.primary.esr = esrs[0].double_value();
+			trace_info.secondary.esr = esrs[1].double_value();
+			trace_info.reserve.esr = esrs[2].double_value();
 			calc_total_esr();
 		}
+
 		if(config["intermittent"]["trace"].is_string())
 			set_power_trace(config["intermittent"]["trace"].string_value());	
 	}
+
 	assert_msg(config["config"].is_object(), "No config provided");
 	for(auto it : config["config"].object_items()) {
 		assert_msg(it.second.is_object(), "Invalid component config");
 		assert_msg(it.second["type"].is_string(), "No type for component");
+		
 		if(it.second["type"].string_value().compare("core") == 0) {
 			assert_msg(it.second["model"].is_string(), "No core model");
 			assert_msg(core_type_map.find(it.second["model"].string_value()) 
@@ -70,6 +76,7 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 			components.insert({it.first, vcu});
 		}
 	}
+
 	for(auto it : config["config"].object_items()) {
 		if(it.second["children"].is_array()) {
 			auto parent_str = it.first;
@@ -82,7 +89,9 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 			}
 		}
 	}
+
 	for(auto it : components) it.second->init();
+	
 	soft_failures.reset();
 	hard_failures.reset();
 }
@@ -94,13 +103,16 @@ time_tracer_t::~time_tracer_t() {
 
 void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 	events.clear();
-#if 0
+	total_energy.reset();
+	total_dynamic_energy.reset();
+	total_static_energy.reset();
+	total_power.reset();
+	total_dynamic_power.reset();
+	total_static_power.reset();
+
+	double energy = update_power_energy();
+
 	// Reset caches and wait for failure
-	double power = 0.;
-	for(auto c : components) power += c.second->get_power(component_base_t::BROWN);
-	double time = (double)core->get_clock() / (double)core->get_frequency();
-	double energy = power * time;
-	total_energy.running.inc(energy);
 	if(level == SOFT) {
 		soft_failures.inc();
 		for(auto c : components) c.second->reset(SOFT);
@@ -119,16 +131,15 @@ void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 				except.minstret = core->minstret();
 				throw except;
 			}
-			recharge_tick(core->get_frequency());
+			recharge_tick();
 		}
 	}
 	// Wait for it to recover
 	hard_failures.inc();
 	for(auto c : components) c.second->reset(HARD);
-	while(!recovered()) recharge_tick(core->get_frequency());
+	while(!recovered()) recharge_tick();
 	for(auto c : components) c.second->reset();
 	reset_should_fail();
-#endif
 }
 
 void time_tracer_t::tabulate() {

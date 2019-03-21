@@ -7,6 +7,7 @@
 void component_base_t::reset(reset_level_t level) {
 	clock.reset();
 	for(auto &c : count) c.second.reset();
+	for(auto &e : energy) e.second.reset();
 }
 
 io::json component_base_t::to_json() const {

@@ -9,47 +9,86 @@
 void intermittent_t::set_power_trace(std::string power_trace) {
 	use_trace = true;
 	std::ifstream in(power_trace, std::ios::in | std::ios::binary);
-	if(in) {
+
+	if(!in.fail()) {
 		std::ostringstream contents;
 		double time = 0;
 		double voltage = 0;
-		double total_time = 0;
 		while (in >> time >> voltage) {
-			trace.time.push_back(total_time);
+			trace.time.push_back(time);
 			trace.voltage.push_back(voltage);
-			total_time += time;
+			if(voltage > max_voltage) max_voltage = voltage;
+			if(voltage < min_voltage) min_voltage =  voltage;
 		}
-    	in.close();
-	}
+		in.close();
+	} else assert_msg(1 == 0, "Trace file does not exist");
+
+	fprintf(stderr, "Done loading trace.\n");
+	
+	double vsquared = max_voltage * max_voltage - min_voltage * min_voltage;
+	primary_energy = 0.5 * trace_info.primary.size * vsquared * 1e9; // Convert to nJ
+	secondary_energy = 0.5 * trace_info.secondary.size * vsquared * 1e9;
+	reserve_energy = 0.5 * trace_info.reserve.size * vsquared * 1e9;
+	reset_should_fail();
 }
 
 void intermittent_t::calc_total_esr() {
 	trace_info.total_esr = 1. / trace_info.primary.esr;
+	if(trace_info.secondary.esr == 0) {
+		trace_info.total_esr = trace_info.primary.esr; 
+		return;
+	}
+
 	trace_info.total_esr += 1. / trace_info.secondary.esr;
+
+	if(trace_info.reserve.esr == 0) return;
 	trace_info.total_esr += 1. / trace_info.reserve.esr;
 }
 
 void intermittent_t::reset_should_fail() {
 	fail_cycle = intermittent_min + (rand() % static_cast<int>(
         intermittent_max - intermittent_min + 1));
-	double vsquared = avg_voltage * avg_voltage;
-	primary_energy = 0.5 * trace_info.primary.size * vsquared;
-	secondary_energy = 0.5 * trace_info.secondary.size * vsquared;
-	reserve_energy = 0.5 * trace_info.reserve.size * vsquared;
 	charged_energy = 0.;
 	soft_fail = false;
 	recover = false;
 }
 
-void intermittent_t::recharge_tick(uint32_t frequency) {
+double slope(const std::vector<double>& pts, size_t idx, size_t len) {
+	double sumx = 0., sumx2 = 0., sumxy = 0., sumy = 0., sumy2 = 0.;
+
+	for(size_t i = 0; i < len; i++) {
+		sumx += i;
+		sumx2 += i * i;
+		sumxy += i * pts[idx + i];
+		sumy += pts[idx + i];
+		sumy2 += pts[idx + i] * pts[idx + i];
+	}
+
+	double denom = len * sumx2 - sumx * sumx;
+	if(denom == 0) return 0;
+
+	return (len * sumxy - sumx * sumy) / denom;
+}
+
+void intermittent_t::recharge_tick() {
 	assert_msg(trace.idx < trace.time.size(), "Power trace exhausted");
-	double deltaT = (trace.time[trace.idx] - trace.time[trace.idx + 1]);
-	double charge = trace.voltage[trace.idx] * trace.voltage[trace.idx];
-	charged_energy += (charge / trace_info.total_esr) * deltaT;
+	size_t smoothing = 10;
 	trace.idx++;
 
-	if(charged_energy > primary_energy + secondary_energy + reserve_energy) 
+	if(slope(trace.voltage, trace.idx, smoothing) < 0) {
+
+#ifdef INTERMITTENT_LOG 
+		fprintf(stderr, "Recovered; idx: %lu time: %f voltage: %f\n", trace.idx, 
+			trace.time[trace.idx], trace.voltage[trace.idx]);
+#endif
+
+		trace.idx += smoothing;
 		recover = true;
+		while(slope(trace.voltage, trace.idx, smoothing) < 0) {
+			trace.idx++;
+		}
+		trace.idx += smoothing;
+	}
 }
 
 bool intermittent_t::should_fail(cycle_t cycle, double energy, uint32_t frequency) {
