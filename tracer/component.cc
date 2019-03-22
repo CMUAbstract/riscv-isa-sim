@@ -69,14 +69,18 @@ double component_base_t::get_dynamic_energy() {
 	double total = 0.;
 	for(auto &e : energy) {
 		double dynamic = e.second.get(0) * count[e.first].running.get();
-		e.second.inc(dynamic);
-		total += e.second.get(1);
+		e.second.set(dynamic);
+		total += dynamic;
 	}
 	return total;
 }
 
-double component_base_t::get_static_energy(uint64_t freq) {
-	return ((double)get_clock() / (double)freq) * get_static_power();
+double component_base_t::get_static_energy(uint64_t cycles, uint64_t freq) {
+	return ((double)cycles / (double)freq) * get_static_power() * 1e6;
+}
+
+double component_base_t::get_static_energy(double time) {
+	return time * get_static_power() * 1e6;
 }
 
 io::json component_base_t::power_stat_t::to_json() const {

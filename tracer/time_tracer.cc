@@ -212,7 +212,7 @@ double time_tracer_t::update_power_energy() {
 	for(auto c : components) {
 		static_power += c.second->get_static_power();
 		static_energy += c.second->get_static_energy(
-			core->get_frequency()) * 1e6; // Convert to nW from mW
+			core->get_clock(), core->get_frequency());
 	}
 	total_static_power.running.set(static_power);
 	total_static_energy.running.set(static_energy);

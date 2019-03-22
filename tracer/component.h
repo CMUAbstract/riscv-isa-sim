@@ -57,7 +57,8 @@ public:
 	double get_static_power(power_state_t state=ON);
 	double get_dynamic_power(uint64_t freq);
 	double get_dynamic_energy();
-	double get_static_energy(uint64_t freq);
+	double get_static_energy(uint64_t cycles, uint64_t freq);
+	double get_static_energy(double time);
 
 	void account(event_base_t *event);
 protected:
@@ -80,6 +81,7 @@ protected:
 		energy_stat_t() : stat_t(), per("per"), total("total") {}
 		io::json to_json() const;
 		double get(size_t idx);
+		void set(double t) { total.running.set(t); }
 		void set(double p, double t) { per.set(p); total.running.set(t); }
 		void inc(double t) { total.running.inc(t); }
 		void reset() { total.reset(); }
