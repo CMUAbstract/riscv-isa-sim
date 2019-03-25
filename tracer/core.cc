@@ -10,11 +10,12 @@ core_t::core_t(std::string _name, io::json _config, event_heap_t *_events)
 	
 	// Statistics to track
 	track_power("rf");
-	track_power("alu");
+	track_power("exec");
 	track_power("fetch_decode");
 	track_energy("reg_read");
 	track_energy("reg_write");
 	track_energy("alu");
+	track_energy("mem_req");
 	track_energy("fetch");
 	track_energy("decode");
 

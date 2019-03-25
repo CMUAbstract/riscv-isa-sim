@@ -191,7 +191,12 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 
 	if(vcu != nullptr) vcu->check_and_set_vl(event->data);
 
-	count["alu"].running.inc();
+	if(event->data->ws.input.locs.size() > 0 || 
+		event->data->ws.output.locs.size() > 0) {
+		count["mem_req"].running.inc();
+	} else {
+		count["alu"].running.inc();
+	}
 
 	auto pending_event = new pending_event_t(this, 
 		new insn_retire_event_t(this, event->data), clock.get() + 1);
@@ -255,5 +260,5 @@ void si3stage_core_t::process(vec_retire_event_t *event) {
 
 void si3stage_core_t::process(reg_read_event_t *event) {
 	core_t::process(event);
-	vcu->check_pending(event);	
+	if(vcu != nullptr) vcu->check_pending(event);	
 }
