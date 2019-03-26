@@ -8,7 +8,6 @@ vcu_t::vcu_t(std::string _name, io::json _config, event_heap_t *_events)
 	pending_handler_t::set_ref(events, &clock);
 	JSON_CHECK(int, config["lanes"], lanes, 1);
 	JSON_CHECK(int, config["reg_count"], reg_count, 0x10);
-	track_power("unit");
 	track_power("vrf");
 	track_energy("alu");
 	track_energy("reg_read");
