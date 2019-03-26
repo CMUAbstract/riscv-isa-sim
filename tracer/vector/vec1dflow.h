@@ -24,9 +24,17 @@ protected:
 	uint16_t active_insn_offset = 0;
 	uint16_t active_window_size = 0;
 
-	std::vector<bool> reg_map; // true buffer, false vrf 
-	std::vector<bool> kill_map; // true if killed
-	std::vector<bool> src_map; // true if source forwarded
+	enum forward_state_t {REG, FORWARD, BOTH};
+	struct reg_info_t {
+		uint16_t op1 = 0;
+		uint16_t op2 = 0;
+		uint16_t result = 0;
+		bool op1f = false; // True if previously forwarded
+		bool op2f = false; // True if previously forwarded
+		forward_state_t resultf = REG;
+	};
+
+	std::vector<reg_info_t> reg_info; 
 	std::vector<uint16_t> progress_map;
 };
 

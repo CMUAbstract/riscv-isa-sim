@@ -9,9 +9,13 @@ vec1dflow_t::vec1dflow_t(std::string _name, io::json _config,
 	JSON_CHECK(int, config["window_size"], window_size);
 	assert_msg(window_size > 0, "Window size must be greater than zero");
 	JSON_CHECK(bool, config["src_forwarding"], src_forwarding);
-	reg_map.resize(reg_count, false);
-	kill_map.resize(reg_count, false);
-	src_map.resize(reg_count, false);
+
+	track_power("fq");
+	track_power("issue");
+	track_energy("issue");
+	track_energy("forward");
+
+	reg_info.resize(window_size);
 	progress_map.resize(window_size, 0);
 }
 
@@ -21,17 +25,14 @@ io::json vec1dflow_t::to_json() const {
 
 void vec1dflow_t::reset(reset_level_t level) {
 	vcu_t::reset(level);
-	start = false;
+	// start = false;
 
-	idx = 0;
-	window_start = 0;
-	active_insn_offset = 0;
-	active_window_size = 0;
+	// idx = 0;
+	// window_start = 0;
+	// active_insn_offset = 0;
+	// active_window_size = 0;
 
-	std::fill(reg_map.begin(), reg_map.end(), false);
-	std::fill(kill_map.begin(), kill_map.end(), false);
-	std::fill(src_map.begin(), src_map.end(), false);
-	std::fill(progress_map.begin(), progress_map.end(), 0);
+	// std::fill(progress_map.begin(), progress_map.end(), 0);
 }
 
 void vec1dflow_t::process(vec_issue_event_t *event) {
@@ -39,7 +40,58 @@ void vec1dflow_t::process(vec_issue_event_t *event) {
 	if(promote_pending(event, [&](){
 		return !(active_window_size < window_size);
 	}) != nullptr) return;
+
 	event->data->idx = idx;
+
+	reg_info[idx].op1f = false;
+	reg_info[idx].op2f = false;
+	reg_info[idx].resultf = REG;
+	reg_info[idx].op1 = -1;
+	reg_info[idx].op2 = -1;
+	reg_info[idx].result = -1;
+	if(event->data->ws.output.vregs.size() > 0) {
+		reg_info[idx].result = strip_killed(event->data->insn.rd());
+	}
+
+	if(event->data->ws.input.vregs.size() >= 1) {
+		reg_info[idx].op1 = strip_killed(event->data->insn.rs1());
+		for(uint16_t i = 1; i <= active_window_size; i++) {
+			uint16_t window_idx = (window_size + window_start + active_window_size - i);
+			window_idx %= window_size;
+			if(reg_info[window_idx].result == reg_info[idx].op1) {
+				reg_info[window_idx].resultf = BOTH;
+				reg_info[idx].op1f = true;
+				if(check_killed(event->data->insn.rs1())) {
+					reg_info[window_idx].resultf = FORWARD;
+				}
+				break;
+			} else if(src_forwarding) {
+				assert_msg(1 == 0, "Source forwarding not yet implemented");
+			}
+		}
+	}
+
+	if(event->data->ws.input.vregs.size() >= 2) {
+		reg_info[idx].op2 = strip_killed(event->data->insn.rs2());
+		for(uint16_t i = 1; i <= active_window_size; i++) {
+			uint16_t window_idx = (window_size + window_start + active_window_size - i);
+			window_idx %= window_size;
+			if(reg_info[window_idx].result == reg_info[idx].op2) {
+				reg_info[window_idx].resultf = BOTH;
+				reg_info[idx].op2f = true;
+				if(check_killed(event->data->insn.rs2())) {
+					reg_info[window_idx].resultf = FORWARD;
+				}
+				break;
+			} else if(src_forwarding) {
+				assert_msg(1 == 0, "Source forwarding not yet implemented");
+			}
+		}
+	}
+	
+	progress_map[idx] = 0;
+	count["issue"].running.inc();
+
 	idx = (idx + 1) % window_size;
 	empty = false;
 	active_window_size++;
@@ -57,7 +109,7 @@ void vec1dflow_t::process(vec_issue_event_t *event) {
 	pending_event->add_dep<vec_start_event_t *>([](vec_start_event_t *event) {
 		return true;
 	});
-	
+
 	register_pending(pending_event);
 	events->push_back(pending_event);
 }
@@ -101,6 +153,8 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 	auto retire_event = new pending_event_t(this, nullptr, clock.get() + 1);
 	retire_event->add_fini([&](){ outstanding = 0; });
 	outstanding = 1;
+
+	count["alu"].running.inc();
 
 	// Input locations
 	if(cur_progress < event->data->ws.input.locs.size()) {
@@ -156,54 +210,53 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 		}
 	}
 
-	// Input registers
-	for(auto it : event->data->ws.input.vregs) {
-		uint8_t reg = strip_killed(it);
-		if(!reg_map[reg]) {
-			events->push_back(new vec_reg_read_event_t(
-				this, {.reg=reg, .idx=0}, clock.get()));
-			pending_event->add_dep<vec_reg_read_event_t *>(
-				[reg](vec_reg_read_event_t *e){
-					return e->data.reg == reg;
-			});
-			if(src_forwarding) {
-				reg_map[reg] = true;
-				src_map[reg] = true;
-			}
-		} else {
-			kill_map[reg] = check_killed(it);
-		}
-	}
-
-	// Output registers
-	for(auto it : event->data->ws.output.vregs) {
-		uint8_t reg = strip_killed(it);
-		events->push_back(new vec_reg_write_event_t(
-			this, {.reg=reg, .idx=0}, clock.get()));
-		pending_event->add_dep<vec_reg_write_event_t *>(
-			[reg](vec_reg_write_event_t *e){
-				return e->data.reg == reg;
-		});
-		reg_map[reg] = true;
-		src_map[reg] = false;
-	}
-
-	if(active_insn_offset + 1 == active_window_size && start) {
-		active_insn_offset = 0;
-		// Issue writes for alive registers
-		uint16_t reg = 0;
-		for(auto reg_state : reg_map) {
-			if(reg_state && !kill_map[reg] && !src_map[reg]) {
-				events->push_back(new vec_reg_write_event_t(
-				this, {.reg=reg, .idx=0}, clock.get()));
-				pending_event->add_dep<vec_reg_write_event_t *>(
-					[reg](vec_reg_write_event_t *e){
-						return e->data.reg == reg;
+	// // Input registers
+	if(event->data->ws.input.vregs.size() >= 1) {
+		uint8_t reg = reg_info[insn_idx].op1;
+		for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
+			if(!reg_info[insn_idx].op1f) {
+				events->push_back(new vec_reg_read_event_t(
+					this, {.reg=reg, .idx=i}, clock.get()));
+				pending_event->add_dep<vec_reg_read_event_t *>(
+					[reg, i](vec_reg_read_event_t *e){
+						return e->data.reg == reg && e->data.idx == i;
 				});
 			}
-			reg++;
 		}
-	} else active_insn_offset++;
+	}
+	if(event->data->ws.input.vregs.size() >= 2) {
+		uint8_t reg = reg_info[insn_idx].op2;
+		for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
+			if(!reg_info[insn_idx].op2f) {
+				events->push_back(new vec_reg_read_event_t(
+					this, {.reg=reg, .idx=i}, clock.get()));
+				pending_event->add_dep<vec_reg_read_event_t *>(
+					[reg, i](vec_reg_read_event_t *e){
+						return e->data.reg == reg && e->data.idx == i;
+				});
+			}
+		}
+	}
+
+	// Ouput registers
+	if(event->data->ws.output.vregs.size() > 0) {
+		uint8_t reg = reg_info[insn_idx].result;
+		for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
+			if(reg_info[insn_idx].resultf == REG ||
+				reg_info[insn_idx].resultf == BOTH) {
+				events->push_back(new vec_reg_write_event_t(
+					this, {.reg=reg, .idx=i}, clock.get()));
+				pending_event->add_dep<vec_reg_write_event_t *>(
+					[reg, i](vec_reg_write_event_t *e){
+						return e->data.reg == reg && e->data.idx == i;
+				});
+			}
+			if(reg_info[insn_idx].resultf == FORWARD || 
+				reg_info[insn_idx].resultf == BOTH) {
+				count["forward"].running.inc();
+			}
+		}
+	}
 
 	register_pending(pending_event);
 	register_pending(retire_event);

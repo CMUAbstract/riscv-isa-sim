@@ -9,8 +9,8 @@ vec1d_t::vec1d_t(std::string _name, io::json _config, event_heap_t *_events)
 
 void vec1d_t::reset(reset_level_t level) {
 	vcu_t::reset(level);
-	idx = 0;
-	active_lanes = 0;
+	// idx = 0;
+	// active_lanes = 0;
 }
 
 void vec1d_t::process(vec_issue_event_t *event) {

@@ -16,8 +16,8 @@ vcu_t::vcu_t(std::string _name, io::json _config, event_heap_t *_events)
 
 void vcu_t::reset(reset_level_t level) {
 	component_t::reset();
-	outstanding = 0;
-	empty = true;
+	// outstanding = 0;
+	// empty = true;
 }
 
 io::json vcu_t::to_json() const {
