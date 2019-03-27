@@ -132,6 +132,11 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 
 	if(is_vec) {
 		exec_event = new vec_issue_event_t(vcu, event->data);
+		// std::cout << "0x" << std::hex << event->data->ws.pc;
+		// std::cout << " " << is_start;
+		// std::cout << " " << is_split;
+		// std::cout << " " << last_split;
+		// std::cout << std::endl;
 	} else {
 		exec_event = new insn_exec_event_t(this, event->data);
 	}
@@ -150,7 +155,6 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		(is_vfence || (is_vec && last_split) || (is_vec && is_start))) {
 		pending_event->add_dep<vec_retire_event_t *>(
 			[&](vec_retire_event_t *e) {
-				last_split = false;
 				return true; 
 		});
 	}
@@ -269,6 +273,7 @@ void si3stage_core_t::process(vec_ready_event_t *event) {
 void si3stage_core_t::process(vec_retire_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
+	// std::cout << "Retired: " << std::hex << event->data->ws.pc << std::endl;
 }
 
 void si3stage_core_t::process(reg_read_event_t *event) {

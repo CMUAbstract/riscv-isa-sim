@@ -21,7 +21,7 @@ void vec1d_t::process(vec_issue_event_t *event) {
 }
 
 void vec1d_t::process(pe_exec_event_t *event) {
-	TIME_VIOLATION_CHECK
+	TIME_VIOLATION_CHECK 
 
 	if(promote_pending(event, [&](){
 		return !(active_lanes < lanes);

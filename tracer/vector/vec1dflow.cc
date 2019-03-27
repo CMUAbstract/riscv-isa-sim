@@ -95,6 +95,8 @@ void vec1dflow_t::process(vec_issue_event_t *event) {
 	idx = (idx + 1) % window_size;
 	empty = false;
 	active_window_size++;
+	// std::cout << "Issuing: " << std::hex << event->data->ws.pc;
+	// std::cout << " " << active_window_size << std::endl;
 	if(active_window_size == window_size || check_split(event->data->opc)) {
 		events->push_back(new vec_start_event_t(this, false, clock.get()));
 	} else { // Issue ready signals
@@ -271,6 +273,8 @@ void vec1dflow_t::process(pe_ready_event_t *event) {
 	window_start = (window_start + 1) % window_size;
 	if(active_insn_offset > 0) active_insn_offset--;
 	if(active_window_size > 0) active_window_size--;
+	// std::cout << "Readying: " << std::hex << event->data->ws.pc;
+	// std::cout << " " << active_window_size << std::endl;
 	for(auto parent : parents.raw<vec_signal_handler_t *>()) {
 		events->push_back(
 			new vec_ready_event_t(parent.second, event->data, clock.get()));
