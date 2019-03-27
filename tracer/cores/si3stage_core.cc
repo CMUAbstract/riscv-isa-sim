@@ -120,10 +120,12 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 
 	event_base_t *exec_event;
 	bool has_vcu = vcu != nullptr;
-	bool is_vec = false, is_empty = false, is_split = false, is_vfence = false;
+	bool is_vec = false, is_empty = false, is_start = false;
+	bool is_split = false, is_vfence = false;
 	if(has_vcu) {
 		is_vec = vcu->check_vec(event->data->opc);
 		is_empty = vcu->check_empty();
+		is_start = vcu->check_start();
 		is_split = vcu->check_split(event->data->opc);
 		is_vfence = vcu->check_fence(event->data->opc);
 	}
@@ -141,12 +143,18 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		stages["decode"] = false; 
 	});
 
+	// Stall the core until vcu is done
 	if(has_vcu && !is_empty && (is_vfence || (is_vec && last_split))) {
 		pending_event->add_dep<vec_retire_event_t *>(
 			[&](vec_retire_event_t *e) {
 				last_split = false;
 				return true; 
 		});
+	}
+
+	// Start the vcu because a vfence has been encountered
+	if(has_vcu && !is_empty && !is_start && is_vfence) {
+		events->push_back(new vec_start_event_t(vcu, false, clock.get()));	
 	}
 
 	for(auto it : event->data->ws.input.regs) {

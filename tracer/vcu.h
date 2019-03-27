@@ -19,6 +19,7 @@ public:
 	void set_core(core_t *_core) { core = _core; }
 	bool check_vec(insn_bits_t opc);
 	bool check_empty() { return empty; }
+	bool check_start() { return start; }
 	bool check_split(insn_bits_t opc);
 	bool check_fence(insn_bits_t opc) { return opc == MATCH_VFENCE; }
 	void check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn);
@@ -38,6 +39,7 @@ protected:
 	uint16_t reg_count;
 	uint16_t lanes;
 	uint32_t outstanding = 0;
+	bool start = false;
 	bool empty = true;
 };
 

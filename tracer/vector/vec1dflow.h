@@ -18,7 +18,6 @@ protected:
 	uint32_t window_size = 1;
 	bool src_forwarding = false;
 
-	bool start = false;
 	uint16_t idx = 0;
 	uint16_t window_start = 0;
 	uint16_t active_insn_offset = 0;
