@@ -238,7 +238,7 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 		}
 	}
 
-	// Ouput registers
+	// Output registers
 	if(event->data->ws.output.vregs.size() > 0) {
 		uint8_t reg = reg_info[insn_idx].result;
 		for(uint16_t i = cur_progress; i < cur_progress + work; i++) {

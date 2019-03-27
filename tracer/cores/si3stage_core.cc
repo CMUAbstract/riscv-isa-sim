@@ -53,7 +53,7 @@ io::json si3stage_core_t::to_json() const {
 void si3stage_core_t::reset(reset_level_t level) {
 	core_t::reset(level);
 	predictor->reset();
-	last_split = false;
+	// last_split = false;
 }
 
 void si3stage_core_t::buffer_insn(hstd::shared_ptr<timed_insn_t> insn) {
@@ -138,10 +138,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 
 	stages["decode"] = true;
 	auto pending_event = new pending_event_t(this, exec_event, clock.get() + 1);
-	pending_event->add_fini([&, is_split](){
-		if(is_split) last_split = true;
-		stages["decode"] = false; 
-	});
+	pending_event->add_fini([&](){ stages["decode"] = false; });
 
 	// Stall the core until vcu is done
 	if(has_vcu && !is_empty && (is_vfence || (is_vec && last_split))) {
@@ -151,6 +148,8 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 				return true; 
 		});
 	}
+
+	if(is_vec) last_split = is_split;
 
 	// Start the vcu because a vfence has been encountered
 	if(has_vcu && !is_empty && !is_start && is_vfence) {
