@@ -169,8 +169,8 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 					loc < last_addr + child.second->get_line_size()) continue;
 				events->push_back(
 					new mem_read_event_t(child.second, loc, clock.get()));
-				pending_event->add_dep<mem_ready_event_t *>(
-					[loc](mem_ready_event_t *e){
+				pending_event->add_dep<mem_retire_event_t *>(
+					[loc](mem_retire_event_t *e){
 					return e->data.addr == loc;
 				});
 				retire_event->add_dep<mem_retire_event_t *>(
@@ -196,8 +196,8 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 					loc < last_addr + child.second->get_line_size()) continue;
 				events->push_back(
 					new mem_write_event_t(child.second, loc, clock.get()));
-				pending_event->add_dep<mem_ready_event_t *>(
-					[loc](mem_ready_event_t *e){
+				pending_event->add_dep<mem_retire_event_t *>(
+					[loc](mem_retire_event_t *e){
 					return e->data.addr == loc;
 				});
 				retire_event->add_dep<mem_retire_event_t *>(

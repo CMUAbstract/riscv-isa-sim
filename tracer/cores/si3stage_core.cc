@@ -141,7 +141,13 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 	pending_event->add_fini([&](){ stages["decode"] = false; });
 
 	// Stall the core until vcu is done
-	if(has_vcu && !is_empty && (is_vfence || (is_vec && last_split))) {
+	// Cases:
+	// vfence: flush the vector pipeline
+	// current instruction is vector instructon and the last vector instruction
+	//.  was a split point (i.e. store, reduction, permutation)
+	// current instruction is vector and vcu is already working on instructions(s) / window
+	if(has_vcu && !is_empty && 
+		(is_vfence || (is_vec && last_split) || (is_vec && is_start))) {
 		pending_event->add_dep<vec_retire_event_t *>(
 			[&](vec_retire_event_t *e) {
 				last_split = false;
@@ -151,7 +157,7 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 
 	if(is_vec) last_split = is_split;
 
-	// Start the vcu because a vfence has been encountered
+	// Start the vcu because a vfence has been encountered and vcu not already started
 	if(has_vcu && !is_empty && !is_start && is_vfence) {
 		events->push_back(new vec_start_event_t(vcu, false, clock.get()));	
 	}
