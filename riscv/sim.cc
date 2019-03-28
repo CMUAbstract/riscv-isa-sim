@@ -152,9 +152,13 @@ void sim_t::set_exit_debug(bool value)
 void sim_t::set_trace(const char *tconfig, const char *outdir) {
   if(tconfig == nullptr) return;
   std::string config(tconfig);
+  std::string outdirs(outdir);
   for(size_t i = 0; i < procs.size(); i++) {
     auto tracer = new core_tracer_t(config, elfloader());
-    if(outdir != nullptr) tracer->set_outdir(outdir);
+    if(outdir != nullptr) {
+        tracer->set_outdir(outdirs);
+        // std::cout << outdirs << std::endl;
+    }
     procs[i]->register_tracer(tracer);
   }
 }
