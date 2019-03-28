@@ -211,6 +211,8 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 	if(event->data->ws.input.locs.size() > 0 || 
 		event->data->ws.output.locs.size() > 0) {
 		count["mem_req"].running.inc();
+	} else if(check_mul(event->data->opc)){
+		count["mul"].running.inc();
 	} else {
 		count["alu"].running.inc();
 	}

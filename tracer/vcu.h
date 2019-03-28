@@ -21,6 +21,7 @@ public:
 	bool check_empty() { return empty; }
 	bool check_start() { return start; }
 	bool check_split(insn_bits_t opc);
+	bool check_mul(insn_bits_t opc);
 	bool check_fence(insn_bits_t opc) { return opc == MATCH_VFENCE; }
 	void check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn);
 	virtual void reset(reset_level_t level);

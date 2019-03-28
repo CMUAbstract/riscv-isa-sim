@@ -10,6 +10,7 @@ vcu_t::vcu_t(std::string _name, io::json _config, event_heap_t *_events)
 	JSON_CHECK(int, config["reg_count"], reg_count, 0x10);
 	track_power("vrf");
 	track_energy("alu");
+	track_energy("mul");
 	track_energy("reg_read");
 	track_energy("reg_write");
 }
@@ -44,6 +45,15 @@ bool vcu_t::check_split(insn_bits_t opc) {
 		case MATCH_VSH: 
 		case MATCH_VSSH: 
 		case MATCH_VSXH: return true;
+	}
+	return false;
+}
+
+bool vcu_t::check_mul(insn_bits_t opc) {
+	switch(opc) {
+		case MATCH_VMUL_V:
+		case MATCH_VMUL_X:
+		case MATCH_VMUL_I: return true;
 	}
 	return false;
 }

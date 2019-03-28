@@ -156,19 +156,28 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 	retire_event->add_fini([&](){ outstanding = 0; });
 	outstanding = 1;
 
-	count["alu"].running.inc();
+	if(check_mul(event->data->opc)) {
+		count["mul"].running.inc();
+	} else {
+		count["alu"].running.inc();
+	}
 
 	// Input locations
 	if(cur_progress < event->data->ws.input.locs.size()) {
-		auto it = std::next(event->data->ws.input.locs.begin(), cur_progress);
-		auto end = std::next(event->data->ws.input.locs.begin(), cur_progress + work);
-		std::vector<addr_t> locs(it, end);
 		for(auto child : children.raw<ram_t *>()) {
-			addr_t last_bank = 0;
-			addr_t last_addr = 0;
+			
+			auto it = std::next(
+				event->data->ws.input.locs.begin(), cur_progress);
+			auto end = std::next(
+				event->data->ws.input.locs.begin(), cur_progress + work);
+			std::set<addr_t> locs;
+			addr_t line_mask = ~(child.second->get_line_size() - 1);
+			while(it != end) {
+				locs.insert(*it & line_mask);
+				++it;
+			}
+
 			for(auto loc : locs) {
-				if(last_bank == child.second->get_bank(loc) &&
-					loc < last_addr + child.second->get_line_size()) continue;
 				events->push_back(
 					new mem_read_event_t(child.second, loc, clock.get()));
 				pending_event->add_dep<mem_retire_event_t *>(
@@ -179,23 +188,26 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 					[loc](mem_retire_event_t *e){
 					return e->data.addr == loc;
 				});
-				last_addr = loc;
-				last_bank = child.second->get_bank(loc);
 			}
 		}
 	}
 
 	// Output locations
 	if(cur_progress < event->data->ws.output.locs.size()) {
-		auto it = std::next(event->data->ws.output.locs.begin(), cur_progress);
-		auto end = std::next(event->data->ws.output.locs.begin(), cur_progress + work);
-		std::vector<addr_t> locs(it, end);
 		for(auto child : children.raw<ram_t *>()) {
-			addr_t last_bank = 0;
-			addr_t last_addr = 0;
+			
+			auto it = std::next(
+				event->data->ws.output.locs.begin(), cur_progress);
+			auto end = std::next(
+				event->data->ws.output.locs.begin(), cur_progress + work);
+			std::set<addr_t> locs;
+			addr_t line_mask = ~(child.second->get_line_size() - 1);
+			while(it != end) {
+				locs.insert(*it & line_mask);
+				++it;
+			}
+			
 			for(auto loc : locs) {
-				if(last_bank == child.second->get_bank(loc) &&
-					loc < last_addr + child.second->get_line_size()) continue;
 				events->push_back(
 					new mem_write_event_t(child.second, loc, clock.get()));
 				pending_event->add_dep<mem_retire_event_t *>(
@@ -206,8 +218,6 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 					[loc](mem_retire_event_t *e){
 					return e->data.addr == loc;
 				});
-				last_addr = loc;
-				last_bank = child.second->get_bank(loc);
 			}
 		}
 	}

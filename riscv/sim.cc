@@ -156,7 +156,6 @@ void sim_t::set_trace(const char *tconfig, const char *outdir) {
     auto tracer = new core_tracer_t(config, elfloader());
     if(outdir != nullptr) {
         tracer->set_outdir(outdir);
-        std::cout << outdir << std::endl;
     }
     procs[i]->register_tracer(tracer);
   }

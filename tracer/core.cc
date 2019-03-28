@@ -15,6 +15,7 @@ core_t::core_t(std::string _name, io::json _config, event_heap_t *_events)
 	track_energy("reg_read");
 	track_energy("reg_write");
 	track_energy("alu");
+	track_energy("mul");
 	track_energy("mem_req");
 	track_energy("fetch");
 	track_energy("decode");
@@ -53,6 +54,21 @@ bool core_t::check_jump(insn_bits_t opc) {
 		case MATCH_C_JAL:
 		case MATCH_JAL:
 		case MATCH_C_JALR: return true;
+	};
+	return false;
+}
+
+bool core_t::check_mul(insn_bits_t opc) {
+	switch(opc) {
+		case MATCH_MUL:
+		case MATCH_MULH:
+		case MATCH_MULHSU:
+		case MATCH_MULHU:
+		case MATCH_MULW:
+		case MATCH_DIV: 
+		case MATCH_DIVU: 
+		case MATCH_DIVW: 
+		case MATCH_DIVUW: return true;
 	};
 	return false;
 }

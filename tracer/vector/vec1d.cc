@@ -27,7 +27,11 @@ void vec1d_t::process(pe_exec_event_t *event) {
 		return !(active_lanes < lanes);
 	}) != nullptr) return;
 
-	count["alu"].running.inc();
+	if(check_mul(event->data->opc)) {
+		count["mul"].running.inc();
+	} else {
+		count["alu"].running.inc();
+	}
 
 	uint32_t remaining = vl - idx;
 	if(remaining > lanes) remaining = lanes;
@@ -56,15 +60,20 @@ void vec1d_t::process(pe_exec_event_t *event) {
 	uint32_t outstanding_inc = outstanding + 1;
 
 	if(idx < event->data->ws.input.locs.size()) {
-		auto it = std::next(event->data->ws.input.locs.begin(), idx);
-		auto end = std::next(event->data->ws.input.locs.begin(), idx + remaining);
-		std::vector<addr_t> locs(it, end);
 		for(auto child : children.raw<ram_t *>()) {
-			addr_t last_bank = 0;
-			addr_t last_addr = 0;
+
+			auto it = std::next(
+				event->data->ws.input.locs.begin(), idx);
+			auto end = std::next(
+				event->data->ws.input.locs.begin(), idx + remaining);
+			std::set<addr_t> locs;
+			addr_t line_mask = ~(child.second->get_line_size() - 1);
+			while(it != end) {
+				locs.insert(*it & line_mask);
+				++it;
+			}
+
 			for(auto loc : locs) {
-				if(last_bank == child.second->get_bank(loc) &&
-					loc < last_addr + child.second->get_line_size()) continue;
 				events->push_back(
 					new mem_read_event_t(child.second, loc, clock.get()));
 				pending_event->add_dep<mem_ready_event_t *>(
@@ -76,8 +85,6 @@ void vec1d_t::process(pe_exec_event_t *event) {
 					return e->data.addr == loc;
 				});
 				outstanding = outstanding_inc;
-				last_addr = loc;
-				last_bank = child.second->get_bank(loc);
 			}
 		}
 	}
@@ -95,15 +102,20 @@ void vec1d_t::process(pe_exec_event_t *event) {
 	}
 
 	if(idx < event->data->ws.output.locs.size()) {
-		auto it = std::next(event->data->ws.output.locs.begin(), idx);
-		auto end = std::next(event->data->ws.output.locs.begin(), idx + remaining);
-		std::vector<addr_t> locs(it, end);
 		for(auto child : children.raw<ram_t *>()) {
-			addr_t last_bank = 0;
-			addr_t last_addr = 0;
+
+			auto it = std::next(
+				event->data->ws.output.locs.begin(), idx);
+			auto end = std::next(
+				event->data->ws.output.locs.begin(), idx + remaining);
+			std::set<addr_t> locs;
+			addr_t line_mask = ~(child.second->get_line_size() - 1);
+			while(it != end) {
+				locs.insert(*it & line_mask);
+				++it;
+			}
+
 			for(auto loc : locs) {
-				if(last_bank == child.second->get_bank(loc) &&
-					loc < last_addr + child.second->get_line_size()) continue;
 				events->push_back(
 					new mem_write_event_t(child.second, loc, clock.get()));
 				pending_event->add_dep<mem_ready_event_t *>(
@@ -115,8 +127,6 @@ void vec1d_t::process(pe_exec_event_t *event) {
 					return e->data.addr == loc;
 				});
 				outstanding = outstanding_inc;
-				last_addr = loc;
-				last_bank = child.second->get_bank(loc);
 			}
 		}
 	}

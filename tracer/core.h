@@ -51,6 +51,7 @@ protected:
 	reg_t pc = 0x1000;
 	std::map<std::string, bool> stages;
 	bool check_jump(insn_bits_t opc);
+	bool check_mul(insn_bits_t opc);
 protected: // stats
 	running_stat_t<counter_stat_t<uint32_t>> retired_insns;
 };
