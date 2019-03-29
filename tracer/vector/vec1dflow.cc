@@ -206,7 +206,7 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 				locs.insert(*it & line_mask);
 				++it;
 			}
-			
+
 			for(auto loc : locs) {
 				events->push_back(
 					new mem_write_event_t(child.second, loc, clock.get()));
@@ -225,8 +225,9 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 	// // Input registers
 	if(event->data->ws.input.vregs.size() >= 1) {
 		uint8_t reg = reg_info[insn_idx].op1;
-		for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
-			if(!reg_info[insn_idx].op1f) {
+#ifndef CACHE_VRF
+		if(!reg_info[insn_idx].op1f) {
+			for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
 				events->push_back(new vec_reg_read_event_t(
 					this, {.reg=reg, .idx=i}, clock.get()));
 				pending_event->add_dep<vec_reg_read_event_t *>(
@@ -235,11 +236,35 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 				});
 			}
 		}
+#else
+		if(!reg_info[insn_idx].op1f) {
+			for(auto child : children.raw<ram_t *>()) {
+				std::set<addr_t> locs;
+				addr_t line_mask = ~(child.second->get_line_size() - 1);
+				for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
+					locs.insert(((reg << 4) | i) & line_mask);
+				}
+				for(auto loc : locs) {
+					events->push_back(
+						new mem_read_event_t(child.second, loc, clock.get()));
+					pending_event->add_dep<mem_retire_event_t *>(
+						[loc](mem_retire_event_t *e){
+						return e->data.addr == loc;
+					});
+					retire_event->add_dep<mem_retire_event_t *>(
+						[loc](mem_retire_event_t *e){
+						return e->data.addr == loc;
+					});
+				}
+			}
+		}
+#endif
 	}
 	if(event->data->ws.input.vregs.size() >= 2) {
 		uint8_t reg = reg_info[insn_idx].op2;
-		for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
-			if(!reg_info[insn_idx].op2f) {
+#ifndef CACHE_VRF
+		if(!reg_info[insn_idx].op2f) {
+			for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
 				events->push_back(new vec_reg_read_event_t(
 					this, {.reg=reg, .idx=i}, clock.get()));
 				pending_event->add_dep<vec_reg_read_event_t *>(
@@ -248,14 +273,38 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 				});
 			}
 		}
+#else
+		if(!reg_info[insn_idx].op2f) {
+			for(auto child : children.raw<ram_t *>()) {
+				std::set<addr_t> locs;
+				addr_t line_mask = ~(child.second->get_line_size() - 1);
+				for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
+					locs.insert(((reg << 4) | i) & line_mask);
+				}
+				for(auto loc : locs) {
+					events->push_back(
+						new mem_read_event_t(child.second, loc, clock.get()));
+					pending_event->add_dep<mem_retire_event_t *>(
+						[loc](mem_retire_event_t *e){
+						return e->data.addr == loc;
+					});
+					retire_event->add_dep<mem_retire_event_t *>(
+						[loc](mem_retire_event_t *e){
+						return e->data.addr == loc;
+					});
+				}
+			}
+		}
+#endif
 	}
 
 	// Output registers
 	if(event->data->ws.output.vregs.size() > 0) {
 		uint8_t reg = reg_info[insn_idx].result;
-		for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
-			if(reg_info[insn_idx].resultf == REG ||
+#ifndef CACHE_VRF
+		if(reg_info[insn_idx].resultf == REG ||
 				reg_info[insn_idx].resultf == BOTH) {
+			for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
 				events->push_back(new vec_reg_write_event_t(
 					this, {.reg=reg, .idx=i}, clock.get()));
 				pending_event->add_dep<vec_reg_write_event_t *>(
@@ -263,10 +312,34 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 						return e->data.reg == reg && e->data.idx == i;
 				});
 			}
-			if(reg_info[insn_idx].resultf == FORWARD || 
+		}
+#else
+		if(reg_info[insn_idx].resultf == REG ||
 				reg_info[insn_idx].resultf == BOTH) {
-				count["forward"].running.inc();
+			for(auto child : children.raw<ram_t *>()) {
+				std::set<addr_t> locs;
+				addr_t line_mask = ~(child.second->get_line_size() - 1);
+				for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
+					locs.insert(((reg << 4) | i) & line_mask);
+				}
+				for(auto loc : locs) {
+					events->push_back(
+						new mem_write_event_t(child.second, loc, clock.get()));
+					pending_event->add_dep<mem_retire_event_t *>(
+						[loc](mem_retire_event_t *e){
+						return e->data.addr == loc;
+					});
+					retire_event->add_dep<mem_retire_event_t *>(
+						[loc](mem_retire_event_t *e){
+						return e->data.addr == loc;
+					});
+				}
 			}
+		}
+#endif
+		if(reg_info[insn_idx].resultf == FORWARD || 
+			reg_info[insn_idx].resultf == BOTH) {
+			count["forward"].running.inc();
 		}
 	}
 

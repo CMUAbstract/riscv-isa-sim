@@ -50,10 +50,9 @@ void component_base_t::track_energy(std::string key) {
 double component_base_t::get_dynamic_power(uint64_t freq) {
 	double total = 0.;
 	for(auto &e : energy) {
-		double dynamic = e.second.get(0) * count[e.first].running.get();
-		total += e.second.get(1);
+		total += e.second.get(0) * (double)freq / 1e9;
 	}
-	return total / ((double)get_clock() / (double)freq);
+	return total * 1e3;
 }
 
 double component_base_t::get_static_power(
