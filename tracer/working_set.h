@@ -84,9 +84,9 @@ public:
 		diff.vregs.push_back(std::make_tuple(reg, pos, value));
 		return reg;
 	}
-	uint32_t log_output_vreg(uint32_t reg, reg_t value[MAXVL]) {
+	uint32_t log_output_vreg(uint32_t reg, std::vector<reg_t>& value) {
 		output.vregs.insert(reg);
-		for(uint32_t i = 0; i < MAXVL; i++)
+		for(uint32_t i = 0; i < max_vl; i++)
 			diff.vregs.push_back(std::make_tuple(reg, i, value[i]));
 		return reg;
 	}

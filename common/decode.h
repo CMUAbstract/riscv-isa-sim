@@ -20,6 +20,8 @@
 #include <cstdint>
 #include <string.h>
 #include <strings.h>
+#include <vector>
+#include <array>
 
 typedef uint64_t cycle_t;
 typedef int64_t sreg_t;
@@ -56,7 +58,7 @@ const int NCSR = 4096;
 #define FSR_NXA (FPEXC_NX << FSR_AEXC_SHIFT)
 #define FSR_AEXC (FSR_NVA | FSR_OFA | FSR_UFA | FSR_DZA | FSR_NXA)
 
-#define MAXVL 16
+extern uint32_t max_vl;
 #define VREG_KILL 0x10
 #define VREG_MASK 0xF
 
@@ -162,16 +164,24 @@ public:
 	const T &operator[](size_t i) const { return data[i]; }
 
 protected:
-	T data[N];
+	std::array<T, N> data;
 };
 
 template <class T, size_t N>
-class vregfile_t : public regfile_t<T[MAXVL], N, false> {
+class vregfile_t : public regfile_t<std::vector<T>, N, false> {
 public:
 	void write(size_t reg, T value, size_t pos) {
-		this->data[reg & VREG_MASK][pos] = value;
+		uint32_t idx = reg & VREG_MASK;
+		if(this->data[idx].size() < max_vl) resize(max_vl, idx);
+		this->data[idx][pos] = value;
 	}
-	T read(size_t reg, size_t pos) { return this->data[reg & VREG_MASK][pos]; }
+	T read(size_t reg, size_t pos) { 
+		uint32_t idx = reg & VREG_MASK;
+		if(this->data[idx].size() < max_vl) resize(max_vl, idx);
+		return this->data[idx][pos]; 
+	}
+private:
+	void resize(size_t vl, uint32_t idx) { this->data[idx].resize(vl, 0); }
 };
 
 // helpful macros, etc

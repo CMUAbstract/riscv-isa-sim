@@ -235,6 +235,8 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 						return e->data.reg == reg && e->data.idx == i;
 				});
 			}
+		} else {
+			count["forward"].running.inc();
 		}
 #else
 		if(!reg_info[insn_idx].op1f) {
@@ -257,6 +259,8 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 					});
 				}
 			}
+		} else {
+			count["forward"].running.inc();
 		}
 #endif
 	}
@@ -272,6 +276,8 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 						return e->data.reg == reg && e->data.idx == i;
 				});
 			}
+		} else {
+			count["forward"].running.inc();
 		}
 #else
 		if(!reg_info[insn_idx].op2f) {
@@ -294,6 +300,8 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 					});
 				}
 			}
+		} else {
+			count["forward"].running.inc();
 		}
 #endif
 	}

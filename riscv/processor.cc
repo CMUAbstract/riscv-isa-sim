@@ -24,6 +24,8 @@
 #undef STATE
 #define STATE state
 
+uint32_t max_vl = 0x10;
+
 processor_t::processor_t(const char* isa, simif_t* sim, uint32_t id,
         bool halt_on_reset)
   : debug(false), halt_request(false), sim(sim), ext(NULL), id(id),
