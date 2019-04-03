@@ -299,7 +299,7 @@ void cache_t::process(mem_insert_event_t *event) {
 					child.second, event->data, clock.get() + write_latency));
 		}
 	}
-	dirty[id] = false;
+	if(event->data.reader) dirty[id] = false;
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
 			new mem_retire_event_t(
