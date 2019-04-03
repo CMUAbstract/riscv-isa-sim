@@ -11,7 +11,7 @@
 #define CACHE_LOG 0
 
 cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
-	: ram_t(_name, _config, _events) {
+	: ram_t(_name, _config, _events), writebacks("write_back") {
 	JSON_CHECK(bool, config["write_thru"], write_thru, false);
 	JSON_CHECK(int, config["lines"], lines, 64);
 	JSON_CHECK(int, config["sets"], sets, 8);
@@ -30,6 +30,8 @@ cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 	track_energy("write_hit");
 	track_energy("read_miss");
 	track_energy("write_miss");
+
+	writebacks.reset();
 
 	offset_mask = line_size - 1; 
 	uint32_t idx = line_size;
@@ -61,7 +63,7 @@ void cache_t::reset(reset_level_t level) {
 }
 
 io::json cache_t::to_json() const {
-	return io::json::merge_objects(ram_t::to_json());
+	return io::json::merge_objects(ram_t::to_json(), writebacks);
 }
 
 void cache_t::process(mem_read_event_t *event) {
@@ -290,6 +292,7 @@ void cache_t::process(mem_insert_event_t *event) {
 	repl_policy->replaced(id); // tell repl policy element replaced
 
 	if(dirty[id]) { // Determine if write back needed
+		if(!write_thru) writebacks.inc();
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_write_event_t(
@@ -332,7 +335,7 @@ void cache_t::set_dirty(mem_event_t *event) {
 	uint32_t set = get_set(event->data.addr);
 	uint32_t tag = get_tag(event->data.addr);
 	for(uint32_t id = set * set_size; id < (set + 1) * set_size; id++) 
-		dirty[id] = true;
+		if((data[id] & tag_mask) == tag) dirty[id] = true;
 }
 
 uint32_t cache_t::get_set(addr_t addr) {

@@ -49,10 +49,7 @@ protected:
 	std::vector<bool> dirty;
 
 protected:
-	counter_stat_t<uint32_t> read_misses;
-	counter_stat_t<uint32_t> read_hits;
-	counter_stat_t<uint32_t> write_misses;
-	counter_stat_t<uint32_t> write_hits;
+	counter_stat_t<uint32_t> writebacks;
 };
 
 #endif
