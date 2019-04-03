@@ -29,6 +29,7 @@ protected:
 	uint32_t get_bank(addr_t addr);
 
 protected:
+	bool write_thru = false;
 	// Cache characteristics
 	uint32_t invalid_latency;
 	uint32_t lines;

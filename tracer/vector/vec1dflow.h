@@ -16,6 +16,8 @@ public:
 	void process(pe_ready_event_t *event);
 protected:
 	uint32_t window_size = 1;
+	bool m2m = false;
+	bool forwarding = true;
 	bool src_forwarding = false;
 
 	uint16_t idx = 0;

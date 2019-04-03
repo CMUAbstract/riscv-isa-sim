@@ -9,6 +9,8 @@ vec1dflow_t::vec1dflow_t(std::string _name, io::json _config,
 	JSON_CHECK(int, config["window_size"], window_size);
 	assert_msg(window_size > 0, "Window size must be greater than zero");
 	JSON_CHECK(bool, config["src_forwarding"], src_forwarding);
+	JSON_CHECK(bool, config["m2m"], m2m);
+	JSON_CHECK(bool, config["forwarding"], forwarding, true)
 
 	track_power("fq");
 	track_power("issue");
@@ -225,118 +227,119 @@ void vec1dflow_t::process(pe_exec_event_t *event) {
 	// // Input registers
 	if(event->data->ws.input.vregs.size() >= 1) {
 		uint8_t reg = reg_info[insn_idx].op1;
-#ifndef CACHE_VRF
-		if(!reg_info[insn_idx].op1f) {
-			for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
-				events->push_back(new vec_reg_read_event_t(
-					this, {.reg=reg, .idx=i}, clock.get()));
-				pending_event->add_dep<vec_reg_read_event_t *>(
-					[reg, i](vec_reg_read_event_t *e){
-						return e->data.reg == reg && e->data.idx == i;
-				});
-			}
-		}
-#else
-		if(!reg_info[insn_idx].op1f) {
-			for(auto child : children.raw<ram_t *>()) {
-				std::set<addr_t> locs;
-				addr_t line_mask = ~(child.second->get_line_size() - 1);
+		if(!m2m) {
+			if(!reg_info[insn_idx].op1f || !forwarding) {
 				for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
-					locs.insert(((reg << 4) | i) & line_mask);
-				}
-				for(auto loc : locs) {
-					events->push_back(
-						new mem_read_event_t(child.second, loc, clock.get()));
-					pending_event->add_dep<mem_retire_event_t *>(
-						[loc](mem_retire_event_t *e){
-						return e->data.addr == loc;
-					});
-					retire_event->add_dep<mem_retire_event_t *>(
-						[loc](mem_retire_event_t *e){
-						return e->data.addr == loc;
+					events->push_back(new vec_reg_read_event_t(
+						this, {.reg=reg, .idx=i}, clock.get()));
+					pending_event->add_dep<vec_reg_read_event_t *>(
+						[reg, i](vec_reg_read_event_t *e){
+							return e->data.reg == reg && e->data.idx == i;
 					});
 				}
 			}
-		} 
-#endif
+		} else {
+			if(!reg_info[insn_idx].op1f || !forwarding) {
+				for(auto child : children.raw<ram_t *>()) {
+					std::set<addr_t> locs;
+					addr_t line_mask = ~(child.second->get_line_size() - 1);
+					for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
+						locs.insert(((reg << 4) | i) & line_mask);
+					}
+					for(auto loc : locs) {
+						events->push_back(
+							new mem_read_event_t(child.second, loc, clock.get()));
+						pending_event->add_dep<mem_retire_event_t *>(
+							[loc](mem_retire_event_t *e){
+							return e->data.addr == loc;
+						});
+						retire_event->add_dep<mem_retire_event_t *>(
+							[loc](mem_retire_event_t *e){
+							return e->data.addr == loc;
+						});
+					}
+				}
+			} 
+		}
 	}
+
 	if(event->data->ws.input.vregs.size() >= 2) {
 		uint8_t reg = reg_info[insn_idx].op2;
-#ifndef CACHE_VRF
-		if(!reg_info[insn_idx].op2f) {
-			for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
-				events->push_back(new vec_reg_read_event_t(
-					this, {.reg=reg, .idx=i}, clock.get()));
-				pending_event->add_dep<vec_reg_read_event_t *>(
-					[reg, i](vec_reg_read_event_t *e){
-						return e->data.reg == reg && e->data.idx == i;
-				});
-			}
-		}
-#else
-		if(!reg_info[insn_idx].op2f) {
-			for(auto child : children.raw<ram_t *>()) {
-				std::set<addr_t> locs;
-				addr_t line_mask = ~(child.second->get_line_size() - 1);
+		if(!m2m) {
+			if(!reg_info[insn_idx].op2f || !forwarding) {
 				for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
-					locs.insert(((reg << 4) | i) & line_mask);
-				}
-				for(auto loc : locs) {
-					events->push_back(
-						new mem_read_event_t(child.second, loc, clock.get()));
-					pending_event->add_dep<mem_retire_event_t *>(
-						[loc](mem_retire_event_t *e){
-						return e->data.addr == loc;
-					});
-					retire_event->add_dep<mem_retire_event_t *>(
-						[loc](mem_retire_event_t *e){
-						return e->data.addr == loc;
+					events->push_back(new vec_reg_read_event_t(
+						this, {.reg=reg, .idx=i}, clock.get()));
+					pending_event->add_dep<vec_reg_read_event_t *>(
+						[reg, i](vec_reg_read_event_t *e){
+							return e->data.reg == reg && e->data.idx == i;
 					});
 				}
 			}
+		} else {
+			if(!reg_info[insn_idx].op2f || !forwarding) {
+				for(auto child : children.raw<ram_t *>()) {
+					std::set<addr_t> locs;
+					addr_t line_mask = ~(child.second->get_line_size() - 1);
+					for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
+						locs.insert(((reg << 4) | i) & line_mask);
+					}
+					for(auto loc : locs) {
+						events->push_back(
+							new mem_read_event_t(child.second, loc, clock.get()));
+						pending_event->add_dep<mem_retire_event_t *>(
+							[loc](mem_retire_event_t *e){
+							return e->data.addr == loc;
+						});
+						retire_event->add_dep<mem_retire_event_t *>(
+							[loc](mem_retire_event_t *e){
+							return e->data.addr == loc;
+						});
+					}
+				}
+			}
 		}
-#endif
 	}
 
 	// Output registers
 	if(event->data->ws.output.vregs.size() > 0) {
 		uint8_t reg = reg_info[insn_idx].result;
-#ifndef CACHE_VRF
-		if(reg_info[insn_idx].resultf == REG ||
-				reg_info[insn_idx].resultf == BOTH) {
-			for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
-				events->push_back(new vec_reg_write_event_t(
-					this, {.reg=reg, .idx=i}, clock.get()));
-				pending_event->add_dep<vec_reg_write_event_t *>(
-					[reg, i](vec_reg_write_event_t *e){
-						return e->data.reg == reg && e->data.idx == i;
-				});
-			}
-		}
-#else
-		if(reg_info[insn_idx].resultf == REG ||
-				reg_info[insn_idx].resultf == BOTH) {
-			for(auto child : children.raw<ram_t *>()) {
-				std::set<addr_t> locs;
-				addr_t line_mask = ~(child.second->get_line_size() - 1);
+		if(!m2m) {
+			if(reg_info[insn_idx].resultf == REG ||
+				reg_info[insn_idx].resultf == BOTH || !forwarding) {
 				for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
-					locs.insert(((reg << 4) | i) & line_mask);
-				}
-				for(auto loc : locs) {
-					events->push_back(
-						new mem_write_event_t(child.second, loc, clock.get()));
-					pending_event->add_dep<mem_retire_event_t *>(
-						[loc](mem_retire_event_t *e){
-						return e->data.addr == loc;
-					});
-					retire_event->add_dep<mem_retire_event_t *>(
-						[loc](mem_retire_event_t *e){
-						return e->data.addr == loc;
+					events->push_back(new vec_reg_write_event_t(
+						this, {.reg=reg, .idx=i}, clock.get()));
+					pending_event->add_dep<vec_reg_write_event_t *>(
+						[reg, i](vec_reg_write_event_t *e){
+							return e->data.reg == reg && e->data.idx == i;
 					});
 				}
 			}
+		} else {
+			if(reg_info[insn_idx].resultf == REG ||
+				reg_info[insn_idx].resultf == BOTH || !forwarding) {
+				for(auto child : children.raw<ram_t *>()) {
+					std::set<addr_t> locs;
+					addr_t line_mask = ~(child.second->get_line_size() - 1);
+					for(uint16_t i = cur_progress; i < cur_progress + work; i++) {
+						locs.insert(((reg << 4) | i) & line_mask);
+					}
+					for(auto loc : locs) {
+						events->push_back(
+							new mem_write_event_t(child.second, loc, clock.get()));
+						pending_event->add_dep<mem_retire_event_t *>(
+							[loc](mem_retire_event_t *e){
+							return e->data.addr == loc;
+						});
+						retire_event->add_dep<mem_retire_event_t *>(
+							[loc](mem_retire_event_t *e){
+							return e->data.addr == loc;
+						});
+					}
+				}
+			}
 		}
-#endif
 		if(reg_info[insn_idx].resultf == FORWARD || 
 			reg_info[insn_idx].resultf == BOTH) {
 			count["forward"].running.inc();

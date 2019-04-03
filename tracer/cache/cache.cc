@@ -12,6 +12,7 @@
 
 cache_t::cache_t(std::string _name, io::json _config, event_heap_t *_events)
 	: ram_t(_name, _config, _events) {
+	JSON_CHECK(bool, config["write_thru"], write_thru, false);
 	JSON_CHECK(int, config["lines"], lines, 64);
 	JSON_CHECK(int, config["sets"], sets, 8);
 	JSON_CHECK(int, config["invalid_latency"], invalid_latency, 1);
@@ -192,14 +193,60 @@ void cache_t::process(mem_write_event_t *event) {
 	}
 
 	count["write_hit"].running.inc();
-	set_dirty(event); // Mark line as dirty
-	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
-		events->push_back(
-			new mem_ready_event_t(
-				parent.second, event->data, clock.get() + 1));
-		events->push_back(
-			new mem_retire_event_t(
-				parent.second, event->data, clock.get() + write_latency));
+	if(write_thru) {
+		std::vector<pending_event_t *> retire_pending_events;
+		std::vector<pending_event_t *> ready_pending_events;
+
+		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
+			retire_pending_events.push_back(
+				new pending_event_t(this, 
+					new mem_retire_event_t(
+						parent.second, event->data), clock.get() + 1));
+			ready_pending_events.push_back(
+				new pending_event_t(this, 
+					new mem_ready_event_t(
+						parent.second, event->data), clock.get()));
+		}
+
+		for(auto child : children.raw<ram_t *>()) {
+			events->push_back(
+				new mem_write_event_t(
+					child.second, event->data, clock.get()));
+			
+			for(auto pe : retire_pending_events) {
+				pe->add_dep<mem_retire_event_t *>(
+					[addr=event->data.addr](mem_retire_event_t *e){
+					return e->data.addr == addr;
+				});
+			}
+
+			for(auto pe : ready_pending_events) {
+				pe->add_dep<mem_ready_event_t *>(
+					[addr=event->data.addr](mem_ready_event_t *e){
+					return e->data.addr == addr;
+				});
+			}
+		}
+
+		for(auto pe : retire_pending_events) {
+			register_pending(pe);
+			events->push_back(pe);
+		}
+
+		for(auto pe : ready_pending_events) {
+			register_pending(pe);
+			events->push_back(pe);
+		}
+	} else {
+		set_dirty(event); // Mark line as dirty
+		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
+			events->push_back(
+				new mem_ready_event_t(
+					parent.second, event->data, clock.get() + 1));
+			events->push_back(
+				new mem_retire_event_t(
+					parent.second, event->data, clock.get() + write_latency));
+		}
 	}
 }
 
