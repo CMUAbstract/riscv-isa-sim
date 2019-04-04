@@ -291,15 +291,27 @@ void cache_t::process(mem_insert_event_t *event) {
 	data[id] = event->data.addr & tag_mask; // record new element in cache
 	repl_policy->replaced(id); // tell repl policy element replaced
 
-	if(dirty[id]) { // Determine if write back needed
-		if(!write_thru) writebacks.inc();
+	if(dirty[id] && !write_thru) { // Determine if write back needed
+		writebacks.inc();
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_write_event_t(
 					child.second, event->data, clock.get() + write_latency));
 		}
 	}
-	if(event->data.reader) dirty[id] = false;
+
+	if(event->data.reader && !write_thru) {
+		dirty[id] = false;
+	} else if(!event->data.reader && write_thru) {
+		// Issue a write because insert was initiated by a write and cache is write
+		// through
+		for(auto child : children.raw<ram_t *>()) {
+			events->push_back(
+				new mem_write_event_t(
+					child.second, event->data, clock.get() + write_latency));
+		}
+	}
+
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
 			new mem_retire_event_t(
