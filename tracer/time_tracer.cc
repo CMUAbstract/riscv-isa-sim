@@ -144,11 +144,44 @@ void time_tracer_t::reset(reset_level_t level, uint32_t minstret) {
 
 void time_tracer_t::tabulate() {
 	core->next_insn();
-	while(!events.empty() && !events.ready() &&
+
+	bool move_pending = false;
+	bool check_pending = false;
+	cycle_t pending_cycle = 0;
+	hstd::uuid wrapid;
+	while(!events.ready() && !events.empty() && 
 		(core->get_clock() != TICK_LIMIT || !TICK_LIMIT_ENABLE)) {
 		event_base_t *e = events.pop_back();
+		
+		if(!e->pending) { // Redo pending checks
+			// std::cerr << "regular" << std::endl;
+			move_pending = false;
+			check_pending = false;
+		} else if(e->pending && !check_pending && !move_pending) { // Check first pending
+			// std::cerr << "starting check: " << e->to_string() << std::endl;
+			check_pending = true;
+			wrapid = e->id;
+		} else if(e->pending && e->id == wrapid && check_pending && !move_pending) { // Move pending to next cycle
+			// std::cerr << "starting move: " << e->to_string() << std::endl;
+			move_pending = true;
+			check_pending = false;
+			pending_cycle = e->cycle;
+			e->cycle += 1;
+			events.push_back(e);
+			continue;
+		} else if(e->pending && e->cycle == pending_cycle && !check_pending && move_pending) {
+			// std::cerr << "doing move: " << e->to_string() << std::endl;
+			e->cycle += 1;
+			events.push_back(e);
+			continue;
+		} else if(e->pending && e->cycle != pending_cycle && move_pending && !check_pending) {
+			// std::cerr << "done with move" << std::endl;
+			move_pending = false;
+		}
+
 		if(!e->squashed) e->handle();
 		if(e->ready_gc || e->squashed) {
+			check_pending = false;
 			events.invalidate(e);
 			delete e;
 		}
@@ -177,11 +210,43 @@ void time_tracer_t::trace(
 		hyperdrive_disabled = false;
 	}
 
+	bool move_pending = false;
+	bool check_pending = false;
+	cycle_t pending_cycle = 0;
+	hstd::uuid wrapid;
 	while(!events.ready() && !events.empty() && 
 		(core->get_clock() != TICK_LIMIT || !TICK_LIMIT_ENABLE)) {
 		event_base_t *e = events.pop_back();
+		
+		if(!e->pending) { // Redo pending checks
+			// std::cerr << "regular" << std::endl;
+			move_pending = false;
+			check_pending = false;
+		} else if(e->pending && !check_pending && !move_pending) { // Check first pending
+			// std::cerr << "starting check: " << e->to_string() << std::endl;
+			check_pending = true;
+			wrapid = e->id;
+		} else if(e->pending && e->id == wrapid && check_pending && !move_pending) { // Move pending to next cycle
+			// std::cerr << "starting move: " << e->to_string() << std::endl;
+			move_pending = true;
+			check_pending = false;
+			pending_cycle = e->cycle;
+			e->cycle += 1;
+			events.push_back(e);
+			continue;
+		} else if(e->pending && e->cycle == pending_cycle && !check_pending && move_pending) {
+			// std::cerr << "doing move: " << e->to_string() << std::endl;
+			e->cycle += 1;
+			events.push_back(e);
+			continue;
+		} else if(e->pending && e->cycle != pending_cycle && move_pending && !check_pending) {
+			// std::cerr << "done with move" << std::endl;
+			move_pending = false;
+		}
+
 		if(!e->squashed) e->handle();
 		if(e->ready_gc || e->squashed) {
+			check_pending = false;
 			events.invalidate(e);
 			delete e;
 		}

@@ -69,6 +69,16 @@ io::json cache_t::to_json() const {
 void cache_t::process(mem_read_event_t *event) {
 	TIME_VIOLATION_CHECK
 
+	if(outstanding.count(get_line(event->data.addr)) != 0) {
+		subline_outstanding.insert(event->data.addr);
+		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
+			events->push_back(
+				new mem_ready_event_t(
+					parent.second, event->data, clock.get()));
+		}
+		return;
+	}
+
 	auto bank = get_bank(event->data.addr);
 	if(promote_pending(event, [&, bank](){
 		return !(banks[bank].readers < read_ports_per_bank &&
@@ -80,11 +90,19 @@ void cache_t::process(mem_read_event_t *event) {
 			for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 				events->push_back(
 					new mem_ready_event_t(
-						parent.second, event->data, clock.get() + 1));
+						parent.second, event->data, clock.get()));
 			}
 		}
 		return;
 	}
+
+#if CACHE_LOG
+	uint32_t set = get_set(event->data.addr);
+	uint32_t tag = get_tag(event->data.addr);
+	std::cerr << "READ: " << name << "(set: 0x" << std::hex << set;
+	std::cerr << ", tag: 0x" << tag << ", addr:" << event->data.addr;
+	std::cerr << ", clock: " << event->cycle << ")" << std::endl;
+#endif
 
 	// Increment readers
 	banks[bank].readers++;
@@ -95,15 +113,9 @@ void cache_t::process(mem_read_event_t *event) {
 	register_pending(pending_event);
 	events->push_back(pending_event);
 
-#if CACHE_LOG
-	uint32_t set = get_set(event->data.addr);
-	uint32_t tag = get_tag(event->data.addr);
-	std::cerr << "READ: " << name << "(set: 0x" << std::hex << set;
-	std::cerr << ", tag: 0x" << tag << ", addr:" << event->data.addr;
-	std::cerr << ", clock: " << event->cycle << ")" << std::endl;
-#endif
 	if(!access(event)) { // Read Miss
 		count["read_miss"].running.inc();
+		outstanding.insert(get_line(event->data.addr));
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_read_event_t(
@@ -120,15 +132,16 @@ void cache_t::process(mem_read_event_t *event) {
 		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 			events->push_back(
 				new mem_ready_event_t(
-					parent.second, event->data, clock.get() + 1));
+					parent.second, event->data, clock.get()));
 		}
 		return;
 	}
+
 	count["read_hit"].running.inc();
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) { // Blocking
 		events->push_back(
 			new mem_ready_event_t(
-				parent.second, event->data, clock.get() + 1));
+				parent.second, event->data, clock.get()));
 		events->push_back(
 			new mem_retire_event_t(
 				parent.second, event->data, clock.get() + read_latency));
@@ -138,6 +151,16 @@ void cache_t::process(mem_read_event_t *event) {
 void cache_t::process(mem_write_event_t *event) {
 	TIME_VIOLATION_CHECK
 	
+	if(outstanding.count(get_line(event->data.addr)) != 0) {
+		subline_outstanding.insert(event->data.addr);
+		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
+			events->push_back(
+				new mem_ready_event_t(
+					parent.second, event->data, clock.get()));
+		}
+		return;
+	}
+
 	auto bank = get_bank(event->data.addr);
 	if(promote_pending(event, [&, bank](){
 		return !(banks[bank].writers < write_ports_per_bank &&
@@ -149,7 +172,7 @@ void cache_t::process(mem_write_event_t *event) {
 			for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 				events->push_back(
 					new mem_ready_event_t(
-						parent.second, event->data, clock.get() + 1));
+						parent.second, event->data, clock.get()));
 			}
 		}
 		return;
@@ -173,6 +196,7 @@ void cache_t::process(mem_write_event_t *event) {
 
 	if(!access(event)) { // Write Miss
 		count["write_miss"].running.inc();
+		outstanding.insert(get_line(event->data.addr));
 		for(auto child : children.raw<ram_t *>()) {
 			events->push_back(
 				new mem_write_event_t(
@@ -189,12 +213,13 @@ void cache_t::process(mem_write_event_t *event) {
 		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 			events->push_back(
 				new mem_ready_event_t(
-					parent.second, event->data, clock.get() + 1));
+					parent.second, event->data, clock.get()));
 		}
 		return;
 	}
 
 	count["write_hit"].running.inc();
+
 	if(write_thru) {
 		std::vector<pending_event_t *> retire_pending_events;
 		std::vector<pending_event_t *> ready_pending_events;
@@ -244,7 +269,7 @@ void cache_t::process(mem_write_event_t *event) {
 		for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 			events->push_back(
 				new mem_ready_event_t(
-					parent.second, event->data, clock.get() + 1));
+					parent.second, event->data, clock.get()));
 			events->push_back(
 				new mem_retire_event_t(
 					parent.second, event->data, clock.get() + write_latency));
@@ -282,6 +307,8 @@ void cache_t::process(mem_insert_event_t *event) {
 	register_pending(pending_event);
 	events->push_back(pending_event);
 
+	outstanding.erase(get_line(event->data.addr));
+
 	uint32_t set = get_set(event->data.addr);
 	uint32_t tag = get_tag(event->data.addr);
 	std::vector<repl_cand_t> cands; // Create a set of candidates
@@ -312,11 +339,20 @@ void cache_t::process(mem_insert_event_t *event) {
 		}
 	}
 
+	std::vector<addr_t> subline_remove;
 	for(auto parent : parents.raw<ram_signal_handler_t *>()) {
 		events->push_back(
 			new mem_retire_event_t(
 				parent.second, event->data, clock.get() + invalid_latency));
+		for(auto sub : subline_outstanding) {
+			if(sub == event->data.addr) continue;
+			mem_event_info_t mem_event_info = {.addr=sub, .reader=false};
+			events->push_back(new mem_retire_event_t(
+				parent.second, mem_event_info, clock.get() + invalid_latency));
+			subline_remove.push_back(sub);
+		}
 	}
+	for(auto sub : subline_remove) subline_outstanding.erase(sub);
 }
 
 bool cache_t::access(mem_event_t *event) {
@@ -350,14 +386,18 @@ void cache_t::set_dirty(mem_event_t *event) {
 		if((data[id] & tag_mask) == tag) dirty[id] = true;
 }
 
-uint32_t cache_t::get_set(addr_t addr) {
+addr_t cache_t::get_line(addr_t addr) {
+	return addr & (~offset_mask);
+}
+
+addr_t cache_t::get_set(addr_t addr) {
 	return (addr & set_mask) >> set_offset;
 }
 
-uint32_t cache_t::get_tag(addr_t addr) {
+addr_t cache_t::get_tag(addr_t addr) {
 	return addr & tag_mask;
 }
 
-uint32_t cache_t::get_bank(addr_t addr) {
+addr_t cache_t::get_bank(addr_t addr) {
 	return (addr & bank_mask) >> set_offset;
 }

@@ -16,8 +16,21 @@
 #define SQUASH_LOG 0
 
 si3stage_core_t::si3stage_core_t(std::string _name, io::json _config, 
-	event_heap_t *_events) : core_t(_name, _config, _events), squashes("squashes") {
+	event_heap_t *_events) : core_t(_name, _config, _events), 
+	squashes("squashes"), flushes("flushes"), jumps("jumps"), branches("branches"),
+	pending_fetch("pending_fetch"), pending_decode("pending_decode"),
+	pending_exec("pending_exec"), pending_retire("pending_retire") {
+	
 	squashes.reset();
+	flushes.reset();
+	jumps.reset();
+	branches.reset();
+
+	pending_fetch.reset();
+	pending_decode.reset();
+	pending_exec.reset();
+	pending_retire.reset();
+
 	io::json branch_config;
 	std::string branch_type = "tournament";
 	if(config["branch_predictor"].is_object()) {
@@ -47,7 +60,9 @@ void si3stage_core_t::init() {
 }
 
 io::json si3stage_core_t::to_json() const {
-	return io::json::merge_objects(core_t::to_json(), squashes);
+	return io::json::merge_objects(core_t::to_json(), 
+		squashes, flushes, jumps, branches,
+		pending_fetch, pending_decode, pending_exec, pending_retire);
 }
 
 void si3stage_core_t::reset(reset_level_t level) {
@@ -103,6 +118,12 @@ void si3stage_core_t::process(insn_decode_event_t *event) {
 		predictor->predict(event->data->ws.pc) && !event->data->resolved;
 	bool take_jump = check_jump(event->data->opc) && !event->data->resolved;
 	
+	if(predictor->check_branch(event->data->opc) && !event->data->resolved) {
+		branches.inc();
+	}
+
+	if(take_jump) jumps.inc();
+
 	if(take_jump || take_branch) {
 		event->data->resolved = true;
 #if SQUASH_LOG
@@ -184,22 +205,29 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 	TIME_VIOLATION_CHECK
 	check_pending(event);
 	// Check for branch misprediction
-	if(predictor->check_branch(event->data->opc) && 
-		!predictor->check_predict(event->data->ws.pc, event->data->ws.next_pc)) {
-		predictor->update(event->data->ws.pc, event->data->ws.next_pc);
-		event->data->resolved = true;
-		squashes.inc();
-		// ADD 2x BUBBLE
+	if(predictor->check_branch(event->data->opc)) {
+		if(!predictor->check_predict(event->data->ws.pc, event->data->ws.next_pc)) {
+			event->data->resolved = true;
+			flushes.inc();
+			// ADD 2x BUBBLE
 #if SQUASH_LOG
-		std::cerr << "================================================" << std::endl;
-		std::cerr << "Squashing pipeline status: decode, fetch (0x";
-		std::cerr << std::hex << event->data->insn.bits() << std::dec << ")" << std::endl;
-		std::cerr << "================================================" << std::endl;
+			std::cerr << "================================================" << std::endl;
+			std::cerr << "Squashing pipeline status: decode, fetch (0x";
+			std::cerr << std::hex << (uint32_t)event->data->insn.bits() << ", ";
+			std::cerr << "predict: " << predictor->predict(event->data->ws.pc) << ", ";
+			std::cerr << "check: " << predictor->check_predict(event->data->ws.pc, event->data->ws.next_pc) << ", ";
+			std::cerr << "cur: 0x" << event->data->ws.pc << ", actual: 0x" << event->data->ws.next_pc;
+			std::cerr << std::dec << ")" << std::endl;
+			std::cerr << "================================================" << std::endl;
 #endif
-		events->push_back(
-			new squash_event_t(this, 
+			predictor->update(event->data->ws.pc, event->data->ws.next_pc);
+			events->push_back(new squash_event_t(this, 
 				{.idx=event->data->idx, .stages={"fetch", "decode"}}, clock.get()));
+		} else {
+			predictor->update(event->data->ws.pc, event->data->ws.next_pc);
+		}
 	}
+	
 	// Effectively commit instruction (as in branch resolved)
 	insns.pop_front();
 	insn_idx--;
@@ -220,12 +248,22 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 	auto pending_event = new pending_event_t(this, 
 		new insn_retire_event_t(this, event->data), clock.get() + 1);
 	pending_event->add_fini([&](){ stages["exec"] = false; });
-	for(auto it : event->data->ws.input.regs) {
-		events->push_back(new reg_write_event_t(this, it, clock.get()));
+
+	std::vector<pending_event_t*> reg_pending_events;
+	for(auto it : event->data->ws.output.regs) {
+		if(event->data->ws.input.locs.size() == 0) {
+			events->push_back(new reg_write_event_t(this, it, clock.get()));
+		} else {
+			reg_pending_events.push_back(new pending_event_t(
+				this, new reg_write_event_t(this, it), clock.get()));
+			register_pending(reg_pending_events.back());
+			events->push_back(reg_pending_events.back());
+		}
 		pending_event->add_dep<reg_write_event_t *>([it](reg_write_event_t *e){
 			return e->data == it;
 		});
 	}
+
 	for(auto it : event->data->ws.input.locs) {
 		for(auto child : children.raw<ram_handler_t *>()) {
 			if(child.second == icache) continue;
@@ -234,8 +272,14 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 			pending_event->add_dep<mem_ready_event_t *>([it](mem_ready_event_t *e) {
 				return e->data.addr == it;
 			});
+			for(auto reg_pending : reg_pending_events) {
+				reg_pending->add_dep<mem_retire_event_t *>([it](mem_retire_event_t *e) {
+					return e->data.addr == it;
+				});
+			}
 		}
 	}
+
 	for(auto it : event->data->ws.output.locs) {
 		for(auto child : children.raw<ram_handler_t *>()) {
 			if(child.second == icache) continue;
@@ -246,6 +290,7 @@ void si3stage_core_t::process(insn_exec_event_t *event) {
 			});
 		}
 	}
+
 	register_pending(pending_event);
 	events->push_back(pending_event);
 }
@@ -282,3 +327,32 @@ void si3stage_core_t::process(reg_read_event_t *event) {
 	core_t::process(event);
 	if(vcu != nullptr) vcu->check_pending(event);	
 }
+
+#if 0
+void si3stage_core_t::process(pending_event_t *event) {
+	pending_handler_t::process(event);
+	insn_fetch_event_t *fetch = dynamic_cast<insn_fetch_event_t *>(event->data);
+	if(fetch != nullptr) {
+		pending_fetch.inc();
+		return;
+	}
+
+	insn_decode_event_t *decode = dynamic_cast<insn_decode_event_t *>(event->data);
+	if(decode != nullptr) {
+		pending_decode.inc();
+		return;
+	}
+
+	insn_exec_event_t *exec = dynamic_cast<insn_exec_event_t *>(event->data);
+	if(exec != nullptr) {
+		pending_exec.inc();
+		return;
+	}
+
+	insn_retire_event_t *retire = dynamic_cast<insn_retire_event_t *>(event->data);
+	if(retire != nullptr) {
+		pending_retire.inc();
+		return;
+	}
+}
+#endif

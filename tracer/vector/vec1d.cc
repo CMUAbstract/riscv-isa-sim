@@ -9,8 +9,8 @@ vec1d_t::vec1d_t(std::string _name, io::json _config, event_heap_t *_events)
 
 void vec1d_t::reset(reset_level_t level) {
 	vcu_t::reset(level);
-	// idx = 0;
-	// active_lanes = 0;
+	idx = 0;
+	active_lanes = 0;
 }
 
 void vec1d_t::process(vec_issue_event_t *event) {
@@ -59,6 +59,28 @@ void vec1d_t::process(pe_exec_event_t *event) {
 	retire_event->add_fini([&] { if(outstanding > 0) outstanding--; });
 	uint32_t outstanding_inc = outstanding + 1;
 
+	// Issue vector register file writes
+	std::vector<pending_event_t *> reg_pending_events;
+	for(auto it : event->data->ws.output.vregs) {
+		for(auto loc = idx; loc < idx + remaining; loc++) {
+			if(event->data->ws.input.locs.size() == 0) {
+				events->push_back(
+					new vec_reg_write_event_t(
+						this, {.reg=it, .idx=loc}, clock.get()));
+			} else {
+				reg_pending_events.push_back(new pending_event_t(
+					this, new vec_reg_write_event_t(
+						this, {.reg=it, .idx=loc}), clock.get()));
+				register_pending(reg_pending_events.back());
+				events->push_back(reg_pending_events.back());
+			}
+			pending_event->add_dep<vec_reg_write_event_t *>(
+				[it, loc](vec_reg_write_event_t *e){
+					return e->data.reg == it && e->data.idx == loc;
+			});
+		}
+	}
+
 	if(idx < event->data->ws.input.locs.size()) {
 		for(auto child : children.raw<ram_t *>()) {
 
@@ -85,6 +107,12 @@ void vec1d_t::process(pe_exec_event_t *event) {
 					return e->data.addr == loc;
 				});
 				outstanding = outstanding_inc;
+				for(auto reg_pending : reg_pending_events) {
+					reg_pending->add_dep<mem_retire_event_t *>(
+						[loc](mem_retire_event_t *e) {
+						return e->data.addr == loc;
+					});
+				}
 			}
 		}
 	}
@@ -128,21 +156,6 @@ void vec1d_t::process(pe_exec_event_t *event) {
 				});
 				outstanding = outstanding_inc;
 			}
-		}
-	}
-
-	// Issue vector register file writes
-	uint32_t latency = 0;
-	if(event->data->ws.input.vregs.size() > 0) latency = 1;
-	for(auto it : event->data->ws.output.vregs) {
-		for(auto loc = idx; loc < idx + remaining; loc++) {
-			events->push_back(
-				new vec_reg_write_event_t(
-					this, {.reg=it, .idx=loc}, clock.get() + latency));
-			pending_event->add_dep<vec_reg_write_event_t *>(
-				[it, loc](vec_reg_write_event_t *e){
-					return e->data.reg == it && e->data.idx == loc;
-			});
 		}
 	}
 

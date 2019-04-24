@@ -47,6 +47,15 @@ private:
 	bool last_split = false;
 private:
 	counter_stat_t<uint32_t> squashes;
+	counter_stat_t<uint32_t> flushes;
+	counter_stat_t<uint32_t> jumps;
+	counter_stat_t<uint32_t> branches;
+
+private:
+	counter_stat_t<uint32_t> pending_fetch;
+	counter_stat_t<uint32_t> pending_decode;
+	counter_stat_t<uint32_t> pending_exec;
+	counter_stat_t<uint32_t> pending_retire;
 };
 
 #endif

@@ -29,8 +29,8 @@ local_predictor_t::local_predictor_t(io::json config) {
 }
 
 void local_predictor_t::reset() {
-	std::fill(predictors.begin(), predictors.end(), 0);
-	std::fill(counters.begin(), counters.end(), 0);
+	std::fill(predictors.begin(), predictors.end(), 2);
+	std::fill(counters.begin(), counters.end(), 2);
 }
 
 bool local_predictor_t::predict(addr_t cur_pc) {
@@ -41,12 +41,17 @@ bool local_predictor_t::predict(addr_t cur_pc) {
 
 void local_predictor_t::update(addr_t cur_pc, addr_t next_pc) {
 	uint32_t idx = cur_pc & mask;
+	// std::cout << "0x" << std::hex << cur_pc << " ";
+	// std::cout << idx << " " << (uint16_t)counters[idx] << std::endl;
 	if(predictors[idx] != cur_pc) {
 		predictors[idx] = cur_pc;
 		if(next_pc == cur_pc + 4) counters[idx] = 1;
 		else if(next_pc != cur_pc + 4) counters[idx] = 2;
-	} else if(next_pc == cur_pc + 4 && counters[idx] > 0) counters[idx]--;
-	else if(next_pc != cur_pc + 4 && counters[idx] < 3) counters[idx]++;
+	} else if(next_pc == cur_pc + 4 && counters[idx] > 0) {
+		counters[idx]--;
+	} else if(next_pc != cur_pc + 4 && counters[idx] < 3) {
+		counters[idx]++;
+	}
 }
 
 void global_predictor_t::reset() {

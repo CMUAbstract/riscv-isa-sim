@@ -328,7 +328,7 @@ void sim_t::trace_roi(addr_t start_pc, addr_t end_pc) {
 }
 
 void sim_t::stop_trace(void) {
-  fprintf(stderr, "Stopping tracers\n");
+  // fprintf(stderr, "Stopping tracers\n");
   for(size_t i = 0; i < procs.size(); i++) {
     procs[i]->stop_tracer();
   }

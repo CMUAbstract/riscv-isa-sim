@@ -16,7 +16,8 @@ struct insn_event_t: public event_t<T, hstd::shared_ptr<timed_insn_t>> {
 	using event_t<T, hstd::shared_ptr<timed_insn_t>>::event_t;
 	std::string to_string() {
 		std::ostringstream os;
-		os << " (" << this->cycle << ", 0x" << std::hex << this->data->ws.pc << ")"; 
+		os << " (" << this->cycle << ", 0x" << std::hex << this->data->ws.pc;
+		os << ", " << this->data->idx << ")"; 
 		return os.str();
 	}
 };

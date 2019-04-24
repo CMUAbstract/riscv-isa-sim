@@ -36,7 +36,7 @@ struct event_base_t {
 	bool squashed = false;
 };
 
-#define HANDLER_INFO 0
+#define HANDLER_INFO 1
 #if HANDLER_INFO == 2
 #define HANDLER 																\
 	void handle() { 															\
@@ -138,7 +138,7 @@ private:
 			if(a->cycle == b->cycle) {
 				if((a->pending && b->pending) || (!a->pending && !b->pending))
 					return a->priority > b->priority;
-				return a->pending <= b->pending;
+				return a->pending > b->pending;
 			}
 			return a->cycle > b->cycle;
 		}

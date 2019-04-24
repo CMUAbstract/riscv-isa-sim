@@ -1,6 +1,7 @@
 #ifndef CACHE_H
 #define CACHE_H
 
+#include <set>
 #include <vector>
 #include <tuple>
 
@@ -24,9 +25,10 @@ public:
 protected:
 	bool access(mem_event_t *event);
 	void set_dirty(mem_event_t *event);
-	uint32_t get_tag(addr_t addr);
-	uint32_t get_set(addr_t addr);
-	uint32_t get_bank(addr_t addr);
+	addr_t get_line(addr_t addr);
+	addr_t get_tag(addr_t addr);
+	addr_t get_set(addr_t addr);
+	addr_t get_bank(addr_t addr);
 
 protected:
 	bool write_thru = false;
@@ -47,6 +49,10 @@ protected:
 	repl_policy_t *repl_policy;
 	std::vector<uint32_t> data;
 	std::vector<bool> dirty;
+
+	// Outstanding accesses
+	std::set<addr_t> outstanding;
+	std::set<addr_t> subline_outstanding;
 
 protected:
 	counter_stat_t<uint32_t> writebacks;

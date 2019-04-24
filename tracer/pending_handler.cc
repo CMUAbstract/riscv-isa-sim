@@ -9,7 +9,7 @@ void pending_handler_t::process(pending_event_t *event) {
 	ref_clock->set(event->cycle);
 	if(!event->resolved()) {
 		// Recheck during next cycle
-		event->cycle = event->cycle + 1;
+		event->cycle = event->cycle;
 		event->ready_gc = false;
 		ref_events->push_back(event);
 		return;
