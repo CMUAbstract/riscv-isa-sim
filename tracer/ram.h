@@ -4,23 +4,17 @@
 #include <fesvr/memif.h>
 #include <stat/stat.h>
 
-#include "component.h"
-#include "ram_handler.h"
-#include "pending_handler.h"
+#include "module.h"
 
-struct mem_ready_event_t;
-struct mem_retire_event_t;
-struct mem_match_event_t; 
-class ram_t: public component_t<ram_t, ram_handler_t, ram_signal_handler_t, pending_handler_t> {
+class ram_t: public module_t {
 public:
-	ram_t(std::string _name, io::json _config, event_heap_t *_events);
+	ram_t(std::string _name, io::json _config, scheduler_t *_scheduler);
 	virtual ~ram_t() {}
 	virtual void reset(reset_level_t level);
 	virtual io::json to_json() const;
+
 	addr_t get_bank(addr_t addr);
 	uint32_t get_line_size() { return line_size; }
-	void process(mem_ready_event_t *event);
-	void process(mem_retire_event_t *event);
 protected:
 	uint32_t line_size;
 	uint32_t read_latency;

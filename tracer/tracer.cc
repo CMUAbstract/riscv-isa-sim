@@ -9,11 +9,11 @@
 
 #include "log.h"
 
-#include "basic_tracer.h"
-#include "curve_tracer.h"
-#include "insn_tracer.h"
-#include "time_tracer.h"
-#include "vector_tracer.h"
+#include "tracer/basic_tracer.h"
+#include "tracer/curve_tracer.h"
+#include "tracer/insn_tracer.h"
+#include "tracer/time_tracer.h"
+#include "tracer/vector_tracer.h"
 
 tracer_impl_t::tracer_impl_t(std::string _name, io::json _config, elfloader_t *_elf) 
 	: tracer_t(), name(_name), config(_config), elf(_elf) {

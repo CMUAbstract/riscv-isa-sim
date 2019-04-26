@@ -4,12 +4,13 @@
 #include <string>
 #include <map> 
 
+#include <stat/stat.h>
+
 #include "tracer.h"
 #include "intermittent.h"
-#include "event.h"
+#include "scheduler.h"
+#include "module.h"
 
-class component_base_t;
-class core_t;
 class time_tracer_t: public tracer_impl_t, public intermittent_t {
 public:
 	time_tracer_t(io::json _config, elfloader_t *_elf);
@@ -31,10 +32,9 @@ public:
 		this->intermittent = _intermittent;
 	} 
 private:
-	event_heap_t events;
-	core_t *core = nullptr;
+	scheduler_t scheduler;
+	composite_t modules;
 	bool hyperdrive_disabled = false;
-	std::map<std::string, component_base_t *> components;
 	double update_power_energy();
 private: // Stats
 	counter_stat_t<uint32_t> soft_failures;

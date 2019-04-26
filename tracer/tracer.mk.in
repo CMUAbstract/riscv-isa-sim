@@ -2,64 +2,34 @@ tracer_subproject_deps = common io
 
 tracer_hdrs = \
         tracer.h \
-        basic_tracer.h \
-        curve_tracer.h \
-        insn_tracer.h \
-        time_tracer.h \
-        vector_tracer.h \
-        intermittent.h \
-        except.h \
-        event.h \
-        component.h \
-        core.h \
-        ram.h \
-        vcu.h \
-        core_handler.h \
-        ram_handler.h \
-        pending_handler.h \
-        squash_handler.h \
-        vector_handler.h \
+        tracer/time_tracer.h \
+        scheduler.h \
+        module.h \
+        port.h \
+        insn_info.h \
+        working_set.h \
+        parse.h \
+        helpers.h \
         log.h \
-        components.h \
-        core_event.h \
-        mem_event.h \
-        pending_event.h \
-        squash_event.h \
-        vector_event.h \
-        cores/si2stage_core.h \
-        cores/si3stage_core.h \
-        cores/branch_predictor.h \
-        cache/main_mem.h \
-        cache/cache.h \
-        cache/repl_policy.h \
-        vector/vec1d.h \
-        vector/vec1dflow.h \
-        vector/vec1dmulti.h \
+        modules.h \
+        core/fetch.h \
+        core/decode.h \
+        core/exec.h \
+        core/retire.h
+        
 
 tracer_srcs = \
         tracer.cc \
-        event.cc \
-        core.cc \
-        ram.cc \
-        vcu.cc \
-        component.cc \
-        basic_tracer.cc \
-        curve_tracer.cc \
-        insn_tracer.cc \
-        time_tracer.cc \
-        vector_tracer.cc \
-        mem_event.cc \
-        intermittent.cc \
-        pending_handler.cc \
-        cores/si2stage_core.cc \
-        cores/si3stage_core.cc \
-        cores/branch_predictor.cc \
-        cache/main_mem.cc \
-        cache/cache.cc \
-        cache/repl_policy.cc \
-        vector/vec1d.cc \
-        vector/vec1dflow.cc \
-        vector/vec1dmulti.cc \
+        tracer/time_tracer.cc \
+        scheduler.cc \
+        module.cc \
+        parse.cc \
+        modules.cc \
+        core/fetch.cc \
+        core/decode.cc \
+        core/exec.cc \
+        core/retire.cc
+        
 
 tracer_test_srcs =
 

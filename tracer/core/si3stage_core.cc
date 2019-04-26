@@ -15,21 +15,16 @@
 
 #define SQUASH_LOG 0
 
-si3stage_core_t::si3stage_core_t(std::string _name, io::json _config, 
-	event_heap_t *_events) : core_t(_name, _config, _events), 
-	squashes("squashes"), flushes("flushes"), jumps("jumps"), branches("branches"),
-	pending_fetch("pending_fetch"), pending_decode("pending_decode"),
-	pending_exec("pending_exec"), pending_retire("pending_retire") {
-	
+si3stage_core_t::si3stage_core_t(
+	std::string _name, io::json _config, scheduler_t *_scheduler) 
+	: core_t(_name, _config, _scheduler), 
+	fetch("fetch", _config, _scheduler), decode("decode", _config, _scheduler),
+	exec("exec", _config, _scheduler), retire("retire", _config, _scheduler),
+	squashes("squashes"), flushes("flushes"), jumps("jumps"), branches("branches") {	
 	squashes.reset();
 	flushes.reset();
 	jumps.reset();
 	branches.reset();
-
-	pending_fetch.reset();
-	pending_decode.reset();
-	pending_exec.reset();
-	pending_retire.reset();
 
 	io::json branch_config;
 	std::string branch_type = "tournament";
@@ -38,37 +33,24 @@ si3stage_core_t::si3stage_core_t(std::string _name, io::json _config,
 		JSON_CHECK(string, branch_config["type"], branch_type);
 	}
 	predictor = branch_predictor_type_map.at(branch_type)(branch_config);
-}
 
-void si3stage_core_t::init() {
-	{
-		std::string id;
-		JSON_CHECK(string, config["icache"], id);
-		auto child = children.find<ram_t *>(id);
-		assert_msg(child != children.end<ram_t *>(), "icache not found");
-		icache = child->second;
-	}
-	{
-		std::string id;
-		JSON_CHECK(string, config["vcu"], id);
-		if(id.size() != 0) {
-			auto child = children.find<vcu_t *>(id);
-			vcu = child->second;
-			vcu->set_core(this);
-		}
-	}
+	icache_read_port = create_port("icache_read_port");
+	create_port("icache_retire_port");
+	fetch.connect(decode);
+	decode.connect(exec);
+	exec.connect(retire);
+	ports["mem_retire_port"].connect(fetch["mem_retire_port"], 0);
+	ports[""]
 }
 
 io::json si3stage_core_t::to_json() const {
 	return io::json::merge_objects(core_t::to_json(), 
-		squashes, flushes, jumps, branches,
-		pending_fetch, pending_decode, pending_exec, pending_retire);
+		squashes, flushes, jumps, branches);
 }
 
-void si3stage_core_t::reset(reset_level_t level) {
+void si3stage_core_t::reset() {
 	core_t::reset(level);
 	predictor->reset();
-	// last_split = false;
 }
 
 void si3stage_core_t::buffer_insn(hstd::shared_ptr<timed_insn_t> insn) {
@@ -89,6 +71,7 @@ void si3stage_core_t::next_insn() {
 	}
 }
 
+#if 0
 void si3stage_core_t::process(insn_fetch_event_t *event) {
 	TIME_VIOLATION_CHECK
 	count["fetch"].running.inc();
@@ -326,33 +309,5 @@ void si3stage_core_t::process(vec_retire_event_t *event) {
 void si3stage_core_t::process(reg_read_event_t *event) {
 	core_t::process(event);
 	if(vcu != nullptr) vcu->check_pending(event);	
-}
-
-#if 0
-void si3stage_core_t::process(pending_event_t *event) {
-	pending_handler_t::process(event);
-	insn_fetch_event_t *fetch = dynamic_cast<insn_fetch_event_t *>(event->data);
-	if(fetch != nullptr) {
-		pending_fetch.inc();
-		return;
-	}
-
-	insn_decode_event_t *decode = dynamic_cast<insn_decode_event_t *>(event->data);
-	if(decode != nullptr) {
-		pending_decode.inc();
-		return;
-	}
-
-	insn_exec_event_t *exec = dynamic_cast<insn_exec_event_t *>(event->data);
-	if(exec != nullptr) {
-		pending_exec.inc();
-		return;
-	}
-
-	insn_retire_event_t *retire = dynamic_cast<insn_retire_event_t *>(event->data);
-	if(retire != nullptr) {
-		pending_retire.inc();
-		return;
-	}
 }
 #endif
