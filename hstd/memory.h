@@ -1,6 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include <cstdint>
 #include <algorithm>
 
 namespace hstd {

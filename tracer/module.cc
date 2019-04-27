@@ -32,9 +32,9 @@ void module_t::register_action(action_t *action) {
 	actions.insert({action->get_name(), action});
 }
 
-void module_t::connect(module_t *other) {
-	assert_msg(1 == 0, "Not yet implemented");
-	return;
+void module_t::add_port(const std::string& _name, port_t *other) {
+	port_t *tmp = other->clone(_name, scheduler, &clock);
+	ports.insert({_name, tmp});
 }
 
 double module_t::get_static_power() {
@@ -84,6 +84,6 @@ composite_t::composite_t(std::string _name, io::json _config, scheduler_t *_sche
 	assert_msg(config.is_object(), "%s has no config", name.c_str());
 	assert_msg(config["modules"].is_object(), "%s has no modules", name.c_str());
 	assert_msg(config["cxns"].is_object(), "%s has no connections", name.c_str());
-	auto module_types = parse_modules(config["modules"]);	
-	modules = parse_cxns(config["cxns"], module_types);
+	auto types = parse_types(config["modules"]);
+	modules = parse_cxns(config["cxns"], types, scheduler);
 }

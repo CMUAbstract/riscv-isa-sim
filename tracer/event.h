@@ -11,9 +11,9 @@ struct event_base_t : public io::serializable {
 	event_base_t(cycle_t _cycle) : cycle(_cycle) {}
 	virtual ~event_base_t() {}
 
-	virtual std::string get_name() = 0;
+	virtual std::string get_name() const = 0;
 	virtual io::json to_json() const = 0;
-	virtual std::string to_string() = 0;
+	virtual std::string to_string() const = 0;
 	
 	cycle_t cycle = 0;
 };

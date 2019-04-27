@@ -16,7 +16,7 @@ public:
 	fetch_t(std::string _name, io::json _config, scheduler_t *_scheduler);
 private:
 	bool occupied = false;
-	hstd::shared_ptr<insn_info_t *> cur_insn;
+	hstd::shared_ptr<insn_info_t> cur_insn;
 private:
 	persistent_port_t<bool> *bp_port;
 	signal_port_t<insn_fetch_event_t *> *insn_fetch_port;

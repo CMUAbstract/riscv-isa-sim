@@ -20,8 +20,9 @@ public:
 	virtual void reset();
 	virtual io::json to_json() const;
 
-	void connect(module_t *other);
 	port_t* operator[](const std::string& key) { return ports[key]; }
+	void add_port(const std::string& _name, port_t *port);
+	port_t* get(const std::string& key) { return ports[key]; }
 	bool has(const std::string& key) { return ports.find(key) != ports.end(); }
 	
 	std::string get_name() { return name; }

@@ -9,6 +9,7 @@
 #include <stat/stat.h>
 #include <io/io.h>
 
+#include "log.h"
 #include "event.h"
 #include "scheduler.h"
 
@@ -47,7 +48,7 @@ public:
 		// otherwise I would have to write a ton of code to parse the input
 		T *cxn = dynamic_cast<T *>(p);
 		assert_msg(cxn, 
-			"Connection between %s and %s failed", to_string(), p->to_string());
+			"Connection between %s and %s failed", to_string().c_str(), p->to_string().c_str());
 		cxns.push_back({.port=cxn, delay=delay});
 	}
 
@@ -68,7 +69,7 @@ public:
 	
 	std::string to_string() {
 		std::ostringstream os;
-		os << this->name << "(" << size << ")"; 
+		os << this->name << "(" << this->size() << ")"; 
 		return os.str();
 	}
 
@@ -108,19 +109,13 @@ protected:
 template<typename T>
 class persistent_port_t : public port_impl_t<persistent_port_t<T>> {
 public:
-	using port_impl_t<signal_port_t<T>>::port_impl_t;
+	using port_impl_t<persistent_port_t<T>>::port_impl_t;
 
-	virtual T set_default(T e) { data = e; }
+	virtual void set_default(T e) { data = e; }
 
 	virtual T peek() { return data; }
 
-	virtual void pop() {
-		for(auto cxn : this->cxns) {
-			// set tick of event and do a copy if necessary
-			this->scheduler->schedule([&](){ cxn.port->accept(data); }, 
-				this->clock->get() + 1);
-		}
-	}
+	virtual void pop() {}
 
 	virtual void push(T e) {
 		for(auto cxn : this->cxns) {

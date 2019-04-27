@@ -14,26 +14,23 @@
 // #include "vector/vec1d.h"
 // #include "vector/vec1dflow.h"
 
-typedef module_t*(*create_module_t)(std::string, io::json, scheduler_t *);
+typedef std::function<module_t*(std::string name, scheduler_t *scheduler)> module_creator_t;
 
-template<typename T> 
-module_t* create_module(
-	std::string name, io::json config, scheduler_t *scheduler) {
-	return new T(name, config, scheduler);
-};
+template<typename T>
+module_creator_t create_module_type(io::json config) {
+	return [config](std::string name, scheduler_t *scheduler) {
+		return new T(name, config, scheduler);
+	};
+}
 
-std::function<module_t *()> 
-create_module_type(std::string type, 
-	std::string name, io::json config, scheduler_t *scheduler);
-
-const std::map<std::string, create_module_t> 
-module_map = {
-	{"composite", &create_module<composite_t>},
+const std::map<std::string, module_creator_t(*)(io::json)> 
+module_type_map = {
 	// Core stages
-	{"fetch", &create_module<fetch_t>},
-	{"decode", &create_module<decode_t>},
-	{"exec", &create_module<exec_t>},
-	{"retire", &create_module<retire_t>}
+	{"composite", &create_module_type<composite_t>},
+	{"fetch", &create_module_type<fetch_t>},
+	{"decode", &create_module_type<decode_t>},
+	{"exec", &create_module_type<exec_t>},
+	{"retire", &create_module_type<retire_t>}
 	// Memory elements
 	// {"cache", &create_module<cache_t>},
 	// {"main", &create_module<main_t>},

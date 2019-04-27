@@ -1,11 +1,11 @@
 #include "exec.h"
 
-#include "core_event.h"
-#include "mem_event.h"
+#include "event/core_event.h"
+#include "event/mem_event.h"
 
 exec_t::exec_t(std::string _name, io::json _config, scheduler_t *_scheduler)
 	: module_t("exec", _config, _scheduler) {
-	bp_port = create_port<persitent_port_t<bool>>("bp_port");
+	bp_port = create_port<persistent_port_t<bool>>("bp_port");
 	bp_port->set_default(false);
 	insn_exec_port = create_port<signal_port_t<insn_exec_event_t *>>("insn_exec_port");
 	insn_retire_port = create_port<signal_port_t<insn_retire_event_t *>>("insn_retire_port");
@@ -17,9 +17,9 @@ exec_t::exec_t(std::string _name, io::json _config, scheduler_t *_scheduler)
 
 	assert_msg(1 == 0, "Not yet implemented beyond this point");
 	register_action(new action_t("exec", [&](){
-		if(!occupied && !insn_exec_port.empty()) {
-			cur_insn = insn_exec_port.peek()->data;
-			insn_exec_port.pop();
+		if(!occupied && !insn_exec_port->empty()) {
+			// cur_insn = insn_exec_port.peek()->data;
+			// insn_exec_port.pop();
 		}
 	}));
 }

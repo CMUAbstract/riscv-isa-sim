@@ -24,7 +24,6 @@ tracer_srcs = \
         scheduler.cc \
         module.cc \
         parse.cc \
-        modules.cc \
         core/fetch.cc \
         core/decode.cc \
         core/exec.cc \
