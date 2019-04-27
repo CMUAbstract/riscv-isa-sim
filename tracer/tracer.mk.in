@@ -2,7 +2,11 @@ tracer_subproject_deps = common io
 
 tracer_hdrs = \
         tracer.h \
+        tracer/basic_tracer.h \
+        tracer/curve_tracer.h \
+        tracer/insn_tracer.h \
         tracer/time_tracer.h \
+        tracer/vector_tracer.h \
         scheduler.h \
         module.h \
         port.h \
@@ -15,19 +19,25 @@ tracer_hdrs = \
         core/fetch.h \
         core/decode.h \
         core/exec.h \
-        core/retire.h
+        core/retire.h \
+        intermittent.h
         
 
 tracer_srcs = \
         tracer.cc \
+        tracer/basic_tracer.cc \
+        tracer/curve_tracer.cc \
+        tracer/insn_tracer.cc \
         tracer/time_tracer.cc \
+        tracer/vector_tracer.cc \
         scheduler.cc \
         module.cc \
         parse.cc \
         core/fetch.cc \
         core/decode.cc \
         core/exec.cc \
-        core/retire.cc
+        core/retire.cc \
+        intermittent.cc
         
 
 tracer_test_srcs =
