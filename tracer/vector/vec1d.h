@@ -5,11 +5,11 @@
 
 class vec1d_t: public vcu_t {
 public:
-	vec1d_t(std::string _name, io::json _config, event_heap_t *_events);
+	vec1d_t(std::string _name, io::json _config, value_heap_t *_values);
 	void reset(reset_level_t level);
-	void process(vec_issue_event_t *event);
-	void process(pe_exec_event_t *event);
-	void process(pe_ready_event_t *event);
+	void process(vec_issue_value_tvalue);
+	void process(pe_exec_value_tvalue);
+	void process(pe_ready_value_tvalue);
 protected:
 	// Data
 	uint32_t idx = 0;

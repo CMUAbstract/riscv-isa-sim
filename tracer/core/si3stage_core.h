@@ -7,13 +7,13 @@
 #include <fesvr/memif.h>
 #include <stat/stat.h>
 
-#include "event.h"
+#include "value.h"
 #include "core.h"
 
 class si3stage_core_t : core_t {
 public:
 	friend class vcu_t; 
-	si3stage_core_t(std::string _name, io::json _config, event_heap_t *_events);
+	si3stage_core_t(std::string _name, io::json _config, value_heap_t *_values);
 	
 	io::json to_json() const;
 	void reset();
@@ -29,19 +29,19 @@ public:
 		hstd::shared_pointer<insn_info_t *> cur_insn;
 	private:
 		port_t<bool> *bp_port;
-		port_t<insn_fetch_event_t *> *insn_fetch_port;
-		port_t<insn_decode_event_t *> *insn_decode_port;
-		port_t<mem_read_event_t *> *mem_read_port;
-		port_t<mem_retire_event_t *> *mem_retire_port;
+		port_t<insn_fetch_value_t> *insn_fetch_port;
+		port_t<insn_decode_value_t> *insn_decode_port;
+		port_t<mem_read_value_t> *mem_read_port;
+		port_t<mem_retire_value_t> *mem_retire_port;
 	};
 
 private:
-	port_t<mem_read_event_t *> icache_read_port;
-	port_t<mem_read_event_t *> icache_retire_port;
-	port_t<mem_read_event_t *> mem_read_port;
-	port_t<mem_write_event_t *> mem_write_port;
-	port_t<mem_ready_event_t *> mem_ready_port;
-	port_t<mem_retire_event_t *> mem_retire_port;
+	port_t<mem_read_value_t> icache_read_port;
+	port_t<mem_read_value_t> icache_retire_port;
+	port_t<mem_read_value_t> mem_read_port;
+	port_t<mem_write_value_t> mem_write_port;
+	port_t<mem_ready_value_t> mem_ready_port;
+	port_t<mem_retire_value_t> mem_retire_port;
 
 private:
 	branch_predictor_t *predictor;

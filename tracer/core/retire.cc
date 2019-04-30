@@ -1,10 +1,10 @@
 #include "retire.h"
 
-#include "event/core_event.h"
+#include "value/core_value.h"
 
 retire_t::retire_t(std::string _name, io::json _config, scheduler_t *_scheduler)
 	: module_t("retire", _config, _scheduler), retired_insns("retired_insns") {
-	insn_retire_port = create_port<insn_retire_event_t *>("insn_retire_port");
+	insn_retire_port = create_port<insn_retire_value_t>("insn_retire_port");
 	retired_insns.reset();
 }
 

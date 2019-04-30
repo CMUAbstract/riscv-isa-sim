@@ -7,9 +7,9 @@
 #include <fesvr/memif.h>
 #include <common/decode.h>
 
-struct event_base_t : public io::serializable {
-	event_base_t(cycle_t _cycle) : cycle(_cycle) {}
-	virtual ~event_base_t() {}
+struct value_base_t : public io::serializable {
+	value_base_t(cycle_t _cycle) : cycle(_cycle) {}
+	virtual ~value_base_t() {}
 
 	virtual std::string get_name() const = 0;
 	virtual io::json to_json() const = 0;
@@ -19,12 +19,12 @@ struct event_base_t : public io::serializable {
 };
 
 template <typename T>
-struct event_t: public event_base_t {
-	event_t(T _data)
-		: event_base_t(0), data(_data) {}
-	event_t(T *_data, cycle_t _cycle)
-		: event_base_t(_cycle), data(_data) {}
-	virtual ~event_t() {}
+struct value_t: public value_base_t {
+	value_t(T _data)
+		: value_base_t(0), data(_data) {}
+	value_t(T *_data, cycle_t _cycle)
+		: value_base_t(_cycle), data(_data) {}
+	virtual ~value_t() {}
 	T data;
 };
 

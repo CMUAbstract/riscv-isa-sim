@@ -7,6 +7,7 @@
 namespace hstd {
 
 	// This is custom because normal shared pointers are really slow
+
 	template<typename T>
 	class shared_ptr {
 	public:
@@ -51,10 +52,13 @@ namespace hstd {
 		// Access to smart pointer state
 		T* get() const {return data;}
 		explicit operator bool() const {return data;}
-	private:
+	protected:
 		T* data;
 		uint32_t* count;
 	};
+
+	template<typename T> struct is_shared_ptr : std::false_type {};
+	template<typename T> struct is_shared_ptr<shared_ptr<T>> : std::true_type {};
 
 }
 

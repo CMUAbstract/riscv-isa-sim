@@ -14,7 +14,7 @@ class vcu_t: public component_t<vcu_t, vec_handler_t,
 	pending_handler_t, ram_signal_handler_t> {
 	friend class core_t;
 public:
-	vcu_t(std::string _name, io::json _config, event_heap_t *_events);
+	vcu_t(std::string _name, io::json _config, value_heap_t *_values);
 	~vcu_t() {}
 	void set_core(core_t *_core) { core = _core; }
 	bool check_vec(insn_bits_t opc);
@@ -26,11 +26,11 @@ public:
 	void check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn);
 	virtual void reset(reset_level_t level);
 	virtual io::json to_json() const;
-	void process(vec_start_event_t *event);
-	void process(vec_reg_read_event_t *event);
-	void process(vec_reg_write_event_t *event);
-	void process(mem_ready_event_t *event);
-	void process(mem_retire_event_t *event);
+	void process(vec_start_value_tvalue);
+	void process(vec_reg_read_value_tvalue);
+	void process(vec_reg_write_value_tvalue);
+	void process(mem_ready_value_tvalue);
+	void process(mem_retire_value_tvalue);
 protected:
 	void set_core_stage(std::string stage, bool val) { core->stages[stage] = val; }
 	bool check_killed(uint8_t reg) { return (reg & 0x10) > 0; }

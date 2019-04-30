@@ -37,14 +37,9 @@ void scheduler_t::tick() {
 }
 
 void scheduler_t::make_deliveries() {
-	cycle_t min_cycle = schedule_cycle;
-	while(min_cycle == schedule_cycle && ready_flag) {
-		if(deliveries.size() == 0) continue;
-		while(deliveries.front().cycle == min_cycle) {
-			deliveries.front().trigger(schedule_cycle);
-			std::pop_heap(deliveries.begin(), deliveries.end());
-			deliveries.pop_back();
-		}
-		min_cycle = deliveries.front().cycle;
+	while(!deliveries.empty() && deliveries.front().cycle == schedule_cycle) {
+		deliveries.front().trigger(schedule_cycle);
+		std::pop_heap(deliveries.begin(), deliveries.end());
+		deliveries.pop_back();
 	}
 }

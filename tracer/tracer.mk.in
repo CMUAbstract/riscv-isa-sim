@@ -16,6 +16,9 @@ tracer_hdrs = \
         helpers.h \
         log.h \
         modules.h \
+        value.h \
+        value/core_value.h \
+        value/mem_value.h \
         core/fetch.h \
         core/decode.h \
         core/exec.h \
@@ -35,6 +38,7 @@ tracer_srcs = \
         scheduler.cc \
         module.cc \
         parse.cc \
+        value.cc \
         core/fetch.cc \
         core/decode.cc \
         core/exec.cc \

@@ -4,9 +4,9 @@ common_hdrs = \
 	vector.h \
 	map.h \
 	memory.h \
-	uuid.h \
+	uuid.h
 
-common_srcs =
+common_srcs = \
 
 common_test_srcs =
 

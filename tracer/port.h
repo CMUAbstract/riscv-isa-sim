@@ -11,7 +11,7 @@
 #include <io/io.h>
 
 #include "log.h"
-#include "event.h"
+#include "value.h"
 #include "scheduler.h"
 
 class port_base_t : public io::serializable {
@@ -104,9 +104,13 @@ public:
 			idx++;
 		}
 	}
+
 	virtual void accept(T e, cycle_t cycle) {
 		assert_msg(cycle >= this->module->get_clock(), "Timing violation %s",
 			this->get_name().c_str());
+		if(this->scheduler->debug()) {
+			std::cerr << e << "@" << cycle << std::endl;
+		}
 		this->module->set_clock(cycle);
 		data.push(e);
 	}

@@ -4,10 +4,10 @@
 #include "port.h"
 #include "module.h"
 
-class insn_decode_event_t;
-class insn_exec_event_t;
-class insn_squash_event_t;
-class reg_read_event_t;
+class insn_decode_value_t;
+class insn_exec_value_t;
+class insn_squash_value_t;
+class reg_read_value_t;
 class decode_t : public module_t {
 public:
 	decode_t(std::string _name, io::json _config, scheduler_t *_scheduler);
@@ -16,11 +16,11 @@ private:
 private:
 	port_t<bool> *bp_input_port;
 	port_t<bool> *bp_output_port;
-	port_t<insn_decode_event_t *> *insn_decode_port;
-	port_t<insn_exec_event_t *> *insn_exec_port;
-	port_t<insn_squash_event_t *> *insn_squash_input_port;
-	port_t<insn_squash_event_t *> *insn_squash_output_port;
-	port_t<reg_read_event_t *> *reg_read_port;
+	port_t<insn_decode_value_t> *insn_decode_port;
+	port_t<insn_exec_value_t> *insn_exec_port;
+	port_t<insn_squash_value_t> *insn_squash_input_port;
+	port_t<insn_squash_value_t> *insn_squash_output_port;
+	port_t<reg_read_value_t> *reg_read_port;
 };
 
 #endif

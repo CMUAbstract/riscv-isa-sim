@@ -7,7 +7,7 @@
 #include "insn_info.h"
 #include "working_set.h"
 #include "parse.h"
-#include "event/core_event.h"
+#include "value/core_value.h"
 
 #define TICK_LIMIT_ENABLE 0
 #define TICK_LIMIT 60
@@ -31,12 +31,16 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 	core = modules[core_str];
 	assert_msg(core->has(entry_port_str), "%s does not exist on %s",
 		entry_port_str.c_str(), core_str.c_str());
-	entry_port = dynamic_cast<port_t<insn_fetch_event_t *> *>(
+	entry_port = dynamic_cast<port_t<insn_fetch_value_t> *>(
 		core->get(entry_port_str));
 	assert_msg(entry_port, "Could not synthesize %s entry port",
 		entry_port_str.c_str());
 
 	JSON_CHECK(int, config["config"]["depth"], depth);
+
+	bool debug = false;
+	JSON_CHECK(bool, config["config"]["debug"], debug);
+	scheduler.set_debug(debug);
 
 	insns.resize(0x100);
 
@@ -150,11 +154,8 @@ io::json time_tracer_t::to_json() const {
 void time_tracer_t::trace(
 	const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
 	hyperdrive_disabled = false;
-
-	auto shared_timed_insn = hstd::shared_ptr<insn_info_t>(
-		new insn_info_t(ws, opc, insn));
 	
-	insns[head] = new insn_fetch_event_t(shared_timed_insn);
+	insns[head] = insn_fetch_value_t(new insn_info_t(ws, opc, insn));
 	head = (head + 1) % insns.size();
 
 	if(head >= tail && head - tail < depth) return;

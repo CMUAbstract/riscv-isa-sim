@@ -6,7 +6,7 @@
 
 #include <fesvr/memif.h>
 
-#include "event.h"
+#include "value.h"
 #include "core.h"
 
 class ram_t;
@@ -15,7 +15,7 @@ class branch_predictor_t;
 class si2stage_core_t: public core_t, public vec_signal_handler_t {
 	friend class vcu_t; 
 public:
-	si2stage_core_t(std::string _name, io::json _config, event_heap_t *_events);
+	si2stage_core_t(std::string _name, io::json _config, value_heap_t *_values);
 	void init();
 	io::json to_json() const;
 	void reset(reset_level_t level);
@@ -31,13 +31,13 @@ public:
 	}	
 	void buffer_insn(hstd::shared_ptr<timed_insn_t> insn);
 	void next_insn();
-	void process(insn_fetch_event_t *event);
-	void process(insn_decode_event_t *event) {}
-	void process(insn_exec_event_t *event);
-	void process(insn_retire_event_t *event);
-	void process(squash_event_t *event);
-	void process(vec_ready_event_t *event);
-	void process(vec_retire_event_t *event);
+	void process(insn_fetch_value_tvalue);
+	void process(insn_decode_value_tvalue) {}
+	void process(insn_exec_value_tvalue);
+	void process(insn_retire_value_tvalue);
+	void process(squash_value_tvalue);
+	void process(vec_ready_value_tvalue);
+	void process(vec_retire_value_tvalue);
 private:
 	ram_t *icache = nullptr;
 	vcu_t *vcu = nullptr;

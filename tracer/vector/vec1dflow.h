@@ -7,13 +7,13 @@
 
 class vec1dflow_t: public vcu_t {
 public:
-	vec1dflow_t(std::string _name, io::json _config, event_heap_t *_events);
+	vec1dflow_t(std::string _name, io::json _config, value_heap_t *_values);
 	io::json to_json() const;
 	void reset(reset_level_t level);
-	void process(vec_issue_event_t *event);
-	void process(vec_start_event_t *event);
-	void process(pe_exec_event_t *event);
-	void process(pe_ready_event_t *event);
+	void process(vec_issue_value_tvalue);
+	void process(vec_start_value_tvalue);
+	void process(pe_exec_value_tvalue);
+	void process(pe_ready_value_tvalue);
 protected:
 	uint32_t window_size = 1;
 	bool m2m = false;

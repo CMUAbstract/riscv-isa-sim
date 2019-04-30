@@ -12,7 +12,7 @@
 #include "module.h"
 #include "port.h"
 
-class insn_fetch_event_t;
+class insn_fetch_value_t;
 class time_tracer_t: public tracer_impl_t, public intermittent_t {
 public:
 	time_tracer_t(io::json _config, elfloader_t *_elf);
@@ -39,8 +39,8 @@ private:
 	scheduler_t scheduler;
 	composite_t modules;
 	module_t *core;
-	port_t<insn_fetch_event_t *> *entry_port;
-	std::vector<insn_fetch_event_t *> insns;
+	port_t<insn_fetch_value_t> *entry_port;
+	std::vector<insn_fetch_value_t> insns;
 	size_t head = 0;
 	size_t tail = 0;
 	size_t depth = 3;

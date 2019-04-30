@@ -9,11 +9,11 @@
 
 class vec1dmulti_t: public vcu_t {
 public:
-	struct pe_read_event_t: public event_t<vec1dmulti_t, std::set<uint8_t> *> {
-		using event_t<vec1dmulti_t, std::set<uint8_t> *>::event_t;
+	struct pe_read_value_t: public value_t<vec1dmulti_t, std::set<uint8_t> *> {
+		using value_t<vec1dmulti_t, std::set<uint8_t> *>::value_t;
 		std::string to_string() {
 			std::ostringstream os;
-			os << "pe_read_event_t (" << this->cycle << ", ";
+			os << "pe_read_value_t (" << this->cycle << ", ";
 			auto it = this->data->begin();
 			auto end = std::prev(this->data->end(), 1);
 			while(it != this->data->end()) {
@@ -23,14 +23,14 @@ public:
 			os << static_cast<uint16_t>(*it) << ")";
 			return os.str();
 		}
-		std::string get_name() { return "pe_read_event_t"; }
+		std::string get_name() { return "pe_read_value_t"; }
 		HANDLER;
 	};
-	struct pe_write_event_t: public event_t<vec1dmulti_t, std::set<uint8_t> *> {
-		using event_t<vec1dmulti_t, std::set<uint8_t> *>::event_t;
+	struct pe_write_value_t: public value_t<vec1dmulti_t, std::set<uint8_t> *> {
+		using value_t<vec1dmulti_t, std::set<uint8_t> *>::value_t;
 		std::string to_string() {
 			std::ostringstream os;
-			os << "pe_write_event_t (" << this->cycle << ", ";
+			os << "pe_write_value_t (" << this->cycle << ", ";
 			auto it = this->data->begin();
 			auto end = std::prev(this->data->end(), 1);
 			while(it != this->data->end()) {
@@ -40,18 +40,18 @@ public:
 			os << static_cast<uint16_t>(*it) << ")";
 			return os.str();
 		}
-		std::string get_name() { return "pe_write_event_t"; }
+		std::string get_name() { return "pe_write_value_t"; }
 		HANDLER;
 	};
 public:
-	vec1dmulti_t(std::string _name, io::json _config, event_heap_t *_events);
+	vec1dmulti_t(std::string _name, io::json _config, value_heap_t *_values);
 	io::json to_json() const;
 	void reset(reset_level_t level);
-	void process(vec_issue_event_t *event);
-	void process(pe_read_event_t *event);
-	void process(pe_exec_event_t *event);
-	void process(pe_write_event_t *event);
-	void process(pe_ready_event_t *event);
+	void process(vec_issue_value_tvalue);
+	void process(pe_read_value_tvalue);
+	void process(pe_exec_value_tvalue);
+	void process(pe_write_value_tvalue);
+	void process(pe_ready_value_tvalue);
 protected:
 	uint32_t window_size = 1;
 	uint32_t rf_ports = 1;

@@ -14,9 +14,10 @@ class scheduler_t {
 public:
 	scheduler_t() {}
 	void reset();
-	void set_ready() { ready_flag = true; }
-	void set_ready(bool flag) { ready_flag = flag; }
+	void set_debug(bool flag=true) { debug_flag = flag; }
+	void set_ready(bool flag=true) { ready_flag = flag; }
 	bool ready() { return ready_flag; }
+	bool debug() { return debug_flag; }
 	void tick();
 	void exec(module_t *module);
 	void schedule(std::function<void(cycle_t)> _trigger, cycle_t _cycle);
@@ -37,6 +38,7 @@ private:
 	};
 	std::vector<event_t> deliveries;
 	bool ready_flag = true;
+	bool debug_flag = false;
 };
 
 #endif

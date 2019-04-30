@@ -6,10 +6,10 @@
 #include "module.h"
 #include "port.h"
 
-class predict_event_t;
-class check_predict_event_t;
-class branch_event_t;
-class insn_squash_event_t;
+class predict_value_t;
+class check_predict_value_t;
+class branch_value_t;
+class insn_squash_value_t;
 class branch_predictor_t : public module_t {
 public:
 	branch_predictor_t(std::string _name, io::json _config, scheduler_t *_scheduler);
@@ -18,10 +18,10 @@ public:
 	virtual bool predict(addr_t cur_pc) = 0;
 	virtual void update(addr_t cur_pc, addr_t next_pc) = 0;
 protected:
-	port_t<predict_event_t *> *predict_port;
-	port_t<check_predict_event_t *> *check_predict_port;
-	port_t<insn_squash_event_t *> *insn_squash_port;
-	port_t<branch_event_t *> *branch_port;
+	port_t<predict_value_t> *predict_port;
+	port_t<check_predict_value_t> *check_predict_port;
+	port_t<insn_squash_value_t> *insn_squash_port;
+	port_t<branch_value_t> *branch_port;
 protected:
 	bool check_predict(addr_t cur_pc, addr_t next_pc);
 };

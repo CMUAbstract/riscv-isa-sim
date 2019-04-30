@@ -1,6 +1,7 @@
 #ifndef STAT_H
 #define STAT_H
 
+#include <sstream>
 #include <array>
 #include <string>
 #include <vector>
@@ -43,16 +44,6 @@ protected:
 	std::vector<T> list;
 };
 
-template<class T>
-struct to_string {
-	std::string operator()(T t) { return std::to_string(t); }
-};
-
-template<>
-struct to_string<std::string> {
-	std::string operator()(std::string t) { return t; }
-};
-
 template<typename Key, typename Value = stat_t *>
 class map_stat_t : public stat_t {
 public:
@@ -72,8 +63,11 @@ public:
 	Value& operator[](const Key& k) { return m[k]; }
 	io::json to_json() const {
 		std::map<std::string, Value> sm;
-		for(auto it : m) 
-			sm.insert(std::make_pair(to_string<Key>{}(it.first), it.second));
+		for(auto it : m) {
+			std::ostringstream os;
+			os << it.first;
+			sm.insert(std::make_pair(os.str(), it.second));
+		}
 		if(name.size() > 0) return io::json::object{{name, sm}};
 		return io::json(sm);
 	}

@@ -1,6 +1,6 @@
 #include "branch_predictor.h"
 
-#include "event/core_event.h"
+#include "value/core_value.h"
 
 #if 0
 bool branch_predictor_t::check_branch(insn_bits_t opc) {
@@ -22,10 +22,10 @@ branch_predictor_t::branch_predictor_t(
 	std::string _name, io::json _config, scheduler_t *_scheduler)
 	: module_t(_name, _config, _scheduler) {
 
-	predict_port = create_port<predict_event_t *>("predict_port");	
-	check_predict_port = create_port<check_predict_event_t *>("check_predict_port");	
-	insn_squash_port = create_port<insn_squash_event_t *>("insn_squash_port");	
-	branch_port = create_port<branch_event_t *>("branch_port");
+	predict_port = create_port<predict_value_t>("predict_port");	
+	check_predict_port = create_port<check_predict_value_t>("check_predict_port");	
+	insn_squash_port = create_port<insn_squash_value_t>("insn_squash_port");	
+	branch_port = create_port<branch_value_t>("branch_port");
 	init();
 }
 

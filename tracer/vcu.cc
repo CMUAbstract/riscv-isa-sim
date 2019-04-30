@@ -1,11 +1,11 @@
 #include "vcu.h"
 
-#include "mem_event.h"
-#include "vector_event.h"
+#include "mem_value.h"
+#include "vector_value.h"
 
-vcu_t::vcu_t(std::string _name, io::json _config, event_heap_t *_events)
-	: component_t(_name, _config, _events) {
-	pending_handler_t::set_ref(events, &clock);
+vcu_t::vcu_t(std::string _name, io::json _config, value_heap_t *_values)
+	: component_t(_name, _config, _values) {
+	pending_handler_t::set_ref(values, &clock);
 	JSON_CHECK(int, config["lanes"], lanes, 1);
 	JSON_CHECK(int, config["reg_count"], reg_count, 0x10);
 	JSON_CHECK(int, config["vl"], max_vl, 0x10);
@@ -69,29 +69,29 @@ void vcu_t::check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn) {
 	}
 }
 
-void vcu_t::process(vec_start_event_t *event) {
+void vcu_t::process(vec_start_value_tvalue) {
 	TIME_VIOLATION_CHECK
-	check_pending(event);
+	check_pending(value);
 }
 
-void vcu_t::process(vec_reg_read_event_t *event) {
+void vcu_t::process(vec_reg_read_value_tvalue) {
 	TIME_VIOLATION_CHECK
-	check_pending(event);
+	check_pending(value);
 	count["reg_read"].running.inc();
 }
 
-void vcu_t::process(vec_reg_write_event_t *event) {
+void vcu_t::process(vec_reg_write_value_tvalue) {
 	TIME_VIOLATION_CHECK
-	check_pending(event);
+	check_pending(value);
 	count["reg_write"].running.inc();
 }
 
-void vcu_t::process(mem_ready_event_t *event) {
+void vcu_t::process(mem_ready_value_tvalue) {
 	TIME_VIOLATION_CHECK
-	check_pending(event);
+	check_pending(value);
 }
 
-void vcu_t::process(mem_retire_event_t *event) {
+void vcu_t::process(mem_retire_value_tvalue) {
 	TIME_VIOLATION_CHECK
-	check_pending(event);
+	check_pending(value);
 }

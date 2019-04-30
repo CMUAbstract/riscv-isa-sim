@@ -1,9 +1,9 @@
 #include "ram.h"
 
-#include "mem_event.h"
+#include "mem_value.h"
 
-ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events) 
-	: component_t(_name, _config, _events), bank_conflicts("bank_conflicts") {
+ram_t::ram_t(std::string _name, io::json _config, value_heap_t *_values) 
+	: component_t(_name, _config, _values), bank_conflicts("bank_conflicts") {
 	JSON_CHECK(int, config["line_size"], line_size, 4);
 	JSON_CHECK(int, config["read_latency"], read_latency, 1);
 	JSON_CHECK(int, config["write_latency"], write_latency, 1);
@@ -36,7 +36,7 @@ ram_t::ram_t(std::string _name, io::json _config, event_heap_t *_events)
 	}
 	bank_mask = bank_count - 1;
 
-	pending_handler_t::set_ref(events, &clock);
+	pending_handler_t::set_ref(values, &clock);
 }
 
 void ram_t::reset(reset_level_t level) {
@@ -58,12 +58,12 @@ addr_t ram_t::get_bank(addr_t addr) {
 	return addr & bank_mask;
 }
 
-void ram_t::process(mem_ready_event_t *event) {
+void ram_t::process(mem_ready_value_tvalue) {
 	TIME_VIOLATION_CHECK
-	check_pending(event);
+	check_pending(value);
 }
 
-void ram_t::process(mem_retire_event_t *event) {
+void ram_t::process(mem_retire_value_tvalue) {
 	TIME_VIOLATION_CHECK
-	check_pending(event);
+	check_pending(value);
 }
