@@ -8,12 +8,12 @@
 module_t::module_t(std::string _name, io::json _config, scheduler_t *_scheduler)
 	: name(_name), config(_config), scheduler(_scheduler), 
 	clock("clock"), power("power"), energy("energy") {
+	scheduler->register_module(this);
 	clock.reset();
 }
 
 module_t::~module_t() {
 	for(auto it : ports) delete it.second;
-	for(auto it : actions) delete it.second;	
 }
 
 void module_t::reset() {
@@ -21,22 +21,12 @@ void module_t::reset() {
 }
 
 io::json module_t::to_json() const {
-	map_stat_t<std::string, io::json> counts("counts");
-	for(auto it : actions) counts.insert(it.first, it.second->count);
-	return io::json::merge_objects(
-		clock, power.to_json(), energy.to_json(), counts.to_json());
+	return io::json::merge_objects(clock, power.to_json(), energy.to_json());
 }
 
-void module_t::register_action(action_t *action, 
-	const std::vector<std::string>& inputs,
-	const std::vector<std::string>& outputs) {
-	scheduler->register_action(this, action, inputs, outputs);
-	actions.insert({action->get_name(), action});
-}
-
-void module_t::add_port(const std::string& _port, port_t *other) {
+void module_t::add_port(const std::string& _port, port_base_t *other) {
 	std::string port = name + "::" + _port;
-	port_t *tmp = other->clone(port, scheduler, &clock);
+	port_base_t *tmp = other->clone(port, this, scheduler);
 	ports.insert({_port, tmp});
 }
 
@@ -90,10 +80,4 @@ composite_t::composite_t(std::string _name, io::json _config, scheduler_t *_sche
 	assert_msg(config["cxns"].is_object(), "%s has no connections", name.c_str());
 	auto types = parse_types(config["modules"]);
 	modules = parse_cxns(this, config["cxns"], types, scheduler);
-
-	for(auto port : ports) {
-		register_action(new action_t(port.first, [&](){
-			port.second->forward();
-		}), {port.first}, {port.first});
-	}
 }

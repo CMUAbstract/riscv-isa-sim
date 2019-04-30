@@ -2,52 +2,40 @@
 #define SCHEDULER_H
 
 #include <string>
-#include <map>
 #include <set>
-#include <unordered_set>
 #include <vector>
+#include <unordered_set>
 #include <functional>
 
 #include <common/decode.h>
 
 class module_t;
-struct action_t;
 class scheduler_t {
 public:
 	scheduler_t() {}
-	~scheduler_t();
 	void reset();
 	void set_ready() { ready_flag = true; }
 	void set_ready(bool flag) { ready_flag = flag; }
 	bool ready() { return ready_flag; }
-	bool empty() { return deliveries.empty(); }
 	void tick();
-	void schedule(std::function<void()> _trigger, cycle_t _cycle);
-	void schedule_actions();
-	void register_action(module_t *_module, action_t *_action,
-		const std::vector<std::string>& inputs,
-		const std::vector<std::string>& outputs);
+	void exec(module_t *module);
+	void schedule(std::function<void(cycle_t)> _trigger, cycle_t _cycle);
+	void register_module(module_t *module) { modules.insert(module); }
 private:
-	struct node_t {
-		action_t *action;
-		std::set<node_t *> deps;
-		std::unordered_set<node_t *> links;
-	};
-	// From port to action_node_t
-	std::map<std::string, std::unordered_set<node_t *>> input_graph;
-	std::map<std::string, std::unordered_set<node_t *>> output_graph;
-	std::vector<node_t *> nodes;
+	void make_deliveries();
+private:
 	std::unordered_set<module_t *> modules;
-	std::vector<action_t *> actions;
+	std::set<module_t *> resolved;
+	cycle_t schedule_cycle = -1;
 
-	struct trigger_t {
-		std::function<void()> trigger;
+	struct event_t {
+		std::function<void(cycle_t)> trigger;
 		cycle_t cycle;
-		bool operator<(trigger_t other) const {
+		bool operator<(event_t other) const {
 			return cycle > other.cycle;
 		}
 	};
-	std::vector<trigger_t> deliveries;
+	std::vector<event_t> deliveries;
 	bool ready_flag = true;
 };
 

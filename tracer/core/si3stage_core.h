@@ -28,20 +28,20 @@ public:
 		bool occupied = false;
 		hstd::shared_pointer<insn_info_t *> cur_insn;
 	private:
-		persistent_port_t<bool> *bp_port;
-		signal_port_t<insn_fetch_event_t *> *insn_fetch_port;
-		signal_port_t<insn_decode_event_t *> *insn_decode_port;
-		signal_port_t<mem_read_event_t *> *mem_read_port;
-		signal_port_t<mem_retire_event_t *> *mem_retire_port;
+		port_t<bool> *bp_port;
+		port_t<insn_fetch_event_t *> *insn_fetch_port;
+		port_t<insn_decode_event_t *> *insn_decode_port;
+		port_t<mem_read_event_t *> *mem_read_port;
+		port_t<mem_retire_event_t *> *mem_retire_port;
 	};
 
 private:
-	signal_port_t<mem_read_event_t *> icache_read_port;
-	signal_port_t<mem_read_event_t *> icache_retire_port;
-	signal_port_t<mem_read_event_t *> mem_read_port;
-	signal_port_t<mem_write_event_t *> mem_write_port;
-	signal_port_t<mem_ready_event_t *> mem_ready_port;
-	signal_port_t<mem_retire_event_t *> mem_retire_port;
+	port_t<mem_read_event_t *> icache_read_port;
+	port_t<mem_read_event_t *> icache_retire_port;
+	port_t<mem_read_event_t *> mem_read_port;
+	port_t<mem_write_event_t *> mem_write_port;
+	port_t<mem_ready_event_t *> mem_ready_port;
+	port_t<mem_retire_event_t *> mem_retire_port;
 
 private:
 	branch_predictor_t *predictor;

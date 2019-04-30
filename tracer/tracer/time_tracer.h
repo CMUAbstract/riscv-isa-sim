@@ -2,7 +2,7 @@
 #define TIME_TRACER_H
 
 #include <string>
-#include <map> 
+#include <vector>
 
 #include <stat/stat.h>
 
@@ -10,7 +10,9 @@
 #include "intermittent.h"
 #include "scheduler.h"
 #include "module.h"
+#include "port.h"
 
+class insn_fetch_event_t;
 class time_tracer_t: public tracer_impl_t, public intermittent_t {
 public:
 	time_tracer_t(io::json _config, elfloader_t *_elf);
@@ -32,10 +34,17 @@ public:
 		this->intermittent = _intermittent;
 	} 
 private:
+	double update_power_energy();
+private:
 	scheduler_t scheduler;
 	composite_t modules;
+	module_t *core;
+	port_t<insn_fetch_event_t *> *entry_port;
+	std::vector<insn_fetch_event_t *> insns;
+	size_t head = 0;
+	size_t tail = 0;
+	size_t depth = 3;
 	bool hyperdrive_disabled = false;
-	double update_power_energy();
 private: // Stats
 	counter_stat_t<uint32_t> soft_failures;
 	counter_stat_t<uint32_t> hard_failures;

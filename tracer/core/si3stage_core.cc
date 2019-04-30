@@ -34,8 +34,8 @@ si3stage_core_t::si3stage_core_t(
 	}
 	predictor = branch_predictor_type_map.at(branch_type)(branch_config);
 
-	icache_read_port = create_port("icache_read_port");
-	create_port("icache_retire_port");
+	icache_read_port = create_port<("icache_read_port");
+	create_port<("icache_retire_port");
 	fetch.connect(decode);
 	decode.connect(exec);
 	exec.connect(retire);

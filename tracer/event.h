@@ -28,10 +28,4 @@ struct event_t: public event_base_t {
 	T data;
 };
 
-struct event_comparator_t {
-	bool operator()(const event_base_t *a,const event_base_t *b) const{
-		return a->cycle > b->cycle;
-	}	
-};
-
 #endif

@@ -22,15 +22,15 @@ private:
 	bool occupied = false;
 	hstd::shared_ptr<insn_info_t *> cur_insn;
 private:
-	persistent_port_t<bool> *bp_port;
-	signal_port_t<insn_exec_event_t *> *insn_exec_port;
-	signal_port_t<insn_retire_event_t *> *insn_retire_port;
-	signal_port_t<insn_squash_event_t *> *insn_squash_port;
-	signal_port_t<mem_read_event_t *> *mem_read_port;
-	signal_port_t<mem_write_event_t *> *mem_write_port;
-	signal_port_t<mem_retire_event_t *> *mem_retire_port;
-	signal_port_t<mem_ready_event_t *> *mem_ready_port;
-	signal_port_t<reg_write_event_t *> *reg_write_port;
+	port_t<bool> *bp_port;
+	port_t<insn_exec_event_t *> *insn_exec_port;
+	port_t<insn_retire_event_t *> *insn_retire_port;
+	port_t<insn_squash_event_t *> *insn_squash_port;
+	port_t<mem_read_event_t *> *mem_read_port;
+	port_t<mem_write_event_t *> *mem_write_port;
+	port_t<mem_retire_event_t *> *mem_retire_port;
+	port_t<mem_ready_event_t *> *mem_ready_port;
+	port_t<reg_write_event_t *> *reg_write_port;
 };
 
 #endif

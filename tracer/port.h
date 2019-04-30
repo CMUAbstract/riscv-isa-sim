@@ -3,6 +3,7 @@
 
 #include <string>
 #include <sstream>
+#include <queue>
 #include <vector>
 #include <algorithm>
 
@@ -13,159 +14,134 @@
 #include "event.h"
 #include "scheduler.h"
 
-class port_t : public io::serializable {
+class port_base_t : public io::serializable {
 public:
-	port_t(scheduler_t *_scheduler, counter_stat_t<cycle_t> *_clock)
-		: port_t("", _scheduler, _clock) {}
-	port_t(const std::string& _name, scheduler_t *_scheduler, 
-		counter_stat_t<cycle_t> *_clock) 
-		: name(_name), scheduler(_scheduler), clock(_clock) {}
-	virtual ~port_t() {}
+	port_base_t(const std::string& _name, module_t *_module, scheduler_t *_scheduler) 
+		: name(_name),  module(_module), scheduler(_scheduler) {}
+	virtual ~port_base_t() {}
+	virtual port_base_t * clone(const std::string& _name, module_t *_module,
+		scheduler_t *scheduler) = 0;
 
-	std::string get_name() { return name; }
-	virtual std::string to_string() { return name; }
+	std::string get_name() const { return name; }
+	module_t *get_module() const { return module; }
+	virtual std::string to_string() const { return name; }
 	virtual io::json to_json() const { return nullptr; }
 
-	virtual void connect(port_t *p, cycle_t delay) = 0;
-	virtual void forward() = 0;
-	virtual port_t * clone(const std::string& _name, 
-		scheduler_t *scheduler, counter_stat_t<cycle_t> *_clock) = 0;
-
-	const std::vector<std::string>& get_links() { return links; }
+	virtual void connect(port_base_t *p, cycle_t delay) = 0;
+	virtual void link(port_base_t *p) { links.push_back(p->get_module()); }
+	
+	const std::vector<module_t *>& get_links() { return links; }
 	const std::vector<cycle_t>& get_delays() { return delays; }
 
 protected:
+	void eval() { 
+		size_t idx = 0;
+		for(auto link : links) if(delays[idx++] == 0) scheduler->exec(link); 
+	}
 	std::string name;
+	module_t *module;
 	scheduler_t *scheduler;
-	counter_stat_t<cycle_t> *clock;
-	std::vector<std::string> links;
+	std::vector<module_t *> links;
 	std::vector<cycle_t> delays;
 };
 
-template<typename T>
-class port_impl_t : public port_t {
+template<template<typename...> typename S, typename T>
+class port_impl_t : public port_base_t {
 public:
-	using port_t::port_t;
+	using port_base_t::port_base_t;
 
-	virtual void connect(port_t *p, cycle_t delay=0) {
+	virtual void connect(port_base_t *p, cycle_t delay=0) {
 		// I don't think it is feasible to implement without dynamic_cast
 		// and it will probably be a whole lot slower too because
 		// the dynamic cast allows easy conversion from string to type;
 		// otherwise I would have to write a ton of code to parse the input
-		T *cxn = dynamic_cast<T *>(p);
+		S<T> *cxn = dynamic_cast<S<T> *>(p);
 		assert_msg(cxn, "Connection between %s and %s failed", 
 			to_string().c_str(), p->to_string().c_str());
 		cxns.push_back(cxn);
 		delays.push_back(delay);
-		links.push_back(p->get_name());
+		p->link(this); // Add a dependent link
 	}
 
 	virtual bool connected() { return !cxns.empty(); }
+	
+	virtual T peek() = 0;
+	virtual void pop() = 0;
+	virtual void push(T e) = 0;
+	virtual void accept(T e, cycle_t cycle) = 0;
+	virtual bool empty() = 0;
+	virtual size_t size() = 0;
 
 protected:
-	std::vector<T *> cxns;
+	std::vector<S<T> *> cxns;
 };
 
-template<typename T, typename Compare=event_comparator_t>
-class signal_port_t : public port_impl_t<signal_port_t<T>> {
+template<typename T>
+class port_t : public port_impl_t<port_t, T> {
 public:
-	using port_impl_t<signal_port_t<T>>::port_impl_t;
+	using port_impl_t<port_t, T>::port_impl_t;
 	
 	std::string to_string() {
 		std::ostringstream os;
-		os << this->name << "(" << this->size() << ")"; 
+		os << this->get_name() << "(" << this->size() << ")"; 
 		return os.str();
 	}
 
-	virtual T peek() { return heap.front(); }
-
+	virtual T peek() {
+		this->eval();
+		return data.front();
+	}
 	virtual void pop() {
-		std::pop_heap(heap.begin(), heap.end(), comparator);
-		heap.pop_back();
+		this->eval();
+		data.pop();
 	}
 
 	virtual void push(T e) {
 		size_t idx = 0;
 		for(auto cxn : this->cxns) {
-			this->scheduler->schedule([&](){ cxn->accept(e); }, 
-				this->clock->get() + this->delays[idx]);
+			this->scheduler->schedule([&](cycle_t cycle){ cxn->accept(e, cycle); }, 
+				this->module->get_clock() + this->delays[idx]);
 			idx++;
 		}
 	}
-	virtual void accept(T e) {
-		heap.push_back(e);
-		std::push_heap(heap.begin(), heap.end(), comparator);
+	virtual void accept(T e, cycle_t cycle) {
+		assert_msg(cycle >= this->module->get_clock(), "Timing violation %s",
+			this->get_name().c_str());
+		this->module->set_clock(cycle);
+		data.push(e);
 	}
+#if 0
 	virtual void forward() {
 		size_t idx = 0;
 		for(auto cxn : this->cxns) {
 			for(auto e : heap) {
 				this->scheduler->schedule([&](){ cxn->accept(e); }, 
-					this->clock->get() + this->delays[idx]);
+					this->module->get_clock() + this->delays[idx]);
 			}
 			idx++;
 		}
 		heap.clear();
 		std::make_heap(heap.begin(), heap.end(), comparator);
 	}
+#endif
 
-	virtual bool empty() { return heap.empty(); }
-	virtual size_t size() { return heap.size(); }
+	virtual bool empty() {
+		this->eval();
+		return data.empty();
+	}
+	virtual size_t size() {
+		this->eval();
+		return data.size();
+	}
 
 	// Yay covariant return types!
-	virtual signal_port_t<T>* clone(const std::string& _name, 
-		scheduler_t *_scheduler, counter_stat_t<cycle_t> *_clock) {
-		return new signal_port_t<T>(_name, _scheduler, _clock);
+	virtual port_t<T>* clone(const std::string& _name, 
+		module_t *_module, scheduler_t *_scheduler) {
+		return new port_t<T>(_name, _module, _scheduler);
 	}
 
 protected:
-	std::vector<T> heap;
-	Compare comparator;
-};
-
-template<typename T>
-class persistent_port_t : public port_impl_t<persistent_port_t<T>> {
-public:
-	using port_impl_t<persistent_port_t<T>>::port_impl_t;
-
-	virtual void set_default(T e) { data = e; }
-
-	virtual T peek() { return data; }
-
-	virtual void pop() {}
-
-	virtual void push(T e) {
-		size_t idx = 0;
-		for(auto cxn : this->cxns) {
-			// set tick of event and do a copy if necessary
-			this->scheduler->schedule([&](){ cxn->accept(e); }, 
-				this->clock->get() + this->delays[idx]);
-			idx++;
-		}
-	}
-	virtual void accept(T e) { data = e; }
-	virtual void forward() {
-		size_t idx = 0;
-		for(auto cxn : this->cxns) {
-			this->scheduler->schedule([&](){ cxn->accept(data); }, 
-				this->clock->get() + this->delays[idx]);
-			idx++;
-		}
-	}
-
-	virtual bool empty() { return false; }
-	virtual size_t size() { return 0; }
-
-	// Yay covariant return types!
-	virtual persistent_port_t<T> * clone(const std::string& _name, 
-		scheduler_t *_scheduler, counter_stat_t<cycle_t> *_clock) {
-		auto tmp = new persistent_port_t<T>(_name, _scheduler, _clock);
-		tmp->set_default(data);
-		return tmp;
-	}
-
-protected:
-	T data;
+	std::queue<T> data;
 };
 
 #endif

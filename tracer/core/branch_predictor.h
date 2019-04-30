@@ -18,10 +18,10 @@ public:
 	virtual bool predict(addr_t cur_pc) = 0;
 	virtual void update(addr_t cur_pc, addr_t next_pc) = 0;
 protected:
-	signal_port_t<predict_event_t *> *predict_port;
-	signal_port_t<check_predict_event_t *> *check_predict_port;
-	signal_port_t<insn_squash_event_t *> *insn_squash_port;
-	signal_port_t<branch_event_t *> *branch_port;
+	port_t<predict_event_t *> *predict_port;
+	port_t<check_predict_event_t *> *check_predict_port;
+	port_t<insn_squash_event_t *> *insn_squash_port;
+	port_t<branch_event_t *> *branch_port;
 protected:
 	bool check_predict(addr_t cur_pc, addr_t next_pc);
 };
