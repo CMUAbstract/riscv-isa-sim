@@ -9,7 +9,7 @@
 #include "core/retire.h"
 
 // #include "ram/cache.h"
-// #include "ram/main.h"
+#include "ram/main.h"
 
 // #include "vector/vec1d.h"
 // #include "vector/vec1dflow.h"
@@ -30,10 +30,10 @@ module_type_map = {
 	{"fetch", &create_module_type<fetch_t>},
 	{"decode", &create_module_type<decode_t>},
 	{"exec", &create_module_type<exec_t>},
-	{"retire", &create_module_type<retire_t>}
+	{"retire", &create_module_type<retire_t>},
 	// Memory elements
 	// {"cache", &create_module<cache_t>},
-	// {"main", &create_module<main_t>},
+	{"main", &create_module_type<main_t>}
 	// Branch predictors
 	// {"local", &create_module<local_branch_predictor_t>},
 	// {"global", &create_module<global_branch_predictor_t>},

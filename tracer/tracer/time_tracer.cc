@@ -21,6 +21,8 @@ time_tracer_t::time_tracer_t(io::json _config, elfloader_t *_elf)
 	total_static_power("total_static_power") {
 
 	assert_msg(config["config"].is_object(), "No config provided");
+
+	scheduler.schedule_actions();
 	
 	#if 0
 	if(config["intermittent"].is_object()) {
@@ -111,8 +113,8 @@ void time_tracer_t::tabulate() {
 		scheduler.tick();
 	}
 
-#endif
 	update_power_energy();
+#endif
 }
 
 io::json time_tracer_t::to_json() const {

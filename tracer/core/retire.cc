@@ -11,7 +11,7 @@ retire_t::retire_t(std::string _name, io::json _config, scheduler_t *_scheduler)
 			insn_retire_port->pop();
 			retired_insns.inc();
 		}
-	}));
+	}), {"insn_retire_port"}, {});
 
 	retired_insns.reset();
 }

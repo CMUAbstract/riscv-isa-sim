@@ -1,5 +1,8 @@
 #include "branch_predictor.h"
 
+#include "event/core_event.h"
+
+#if 0
 bool branch_predictor_t::check_branch(insn_bits_t opc) {
 	switch(opc) {
 		case MATCH_BNE:
@@ -13,6 +16,18 @@ bool branch_predictor_t::check_branch(insn_bits_t opc) {
 	};
 	return false;
 }
+#endif
+
+branch_predictor_t::branch_predictor_t(
+	std::string _name, io::json _config, scheduler_t *_scheduler)
+	: module_t(_name, _config, _scheduler) {
+
+	predict_port = create_port<signal_port_t<predict_event_t *>>("predict_port");	
+	check_predict_port = create_port<signal_port_t<check_predict_event_t *>>("check_predict_port");	
+	insn_squash_port = create_port<signal_port_t<insn_squash_event_t *>>("insn_squash_port");	
+	branch_port = create_port<signal_port_t<branch_event_t *>>("branch_port");
+	init();
+}
 
 bool branch_predictor_t::check_predict(addr_t cur_pc, addr_t next_pc) {
 	bool prediction = predict(cur_pc);
@@ -21,7 +36,7 @@ bool branch_predictor_t::check_predict(addr_t cur_pc, addr_t next_pc) {
 	return true;
 }
 
-local_predictor_t::local_predictor_t(io::json config) {
+void local_predictor_t::init() {
 	JSON_CHECK(int, config["slots"], slots);
 	mask = slots - 1;
 	predictors.resize(slots);

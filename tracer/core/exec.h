@@ -9,6 +9,7 @@
 
 class insn_exec_event_t;
 class insn_retire_event_t;
+class insn_squash_event_t;
 class mem_read_event_t;
 class mem_write_event_t;
 class mem_retire_event_t;
@@ -24,6 +25,7 @@ private:
 	persistent_port_t<bool> *bp_port;
 	signal_port_t<insn_exec_event_t *> *insn_exec_port;
 	signal_port_t<insn_retire_event_t *> *insn_retire_port;
+	signal_port_t<insn_squash_event_t *> *insn_squash_port;
 	signal_port_t<mem_read_event_t *> *mem_read_port;
 	signal_port_t<mem_write_event_t *> *mem_write_port;
 	signal_port_t<mem_retire_event_t *> *mem_retire_port;

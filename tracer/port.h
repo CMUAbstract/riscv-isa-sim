@@ -27,13 +27,19 @@ public:
 	virtual io::json to_json() const { return nullptr; }
 
 	virtual void connect(port_t *p, cycle_t delay) = 0;
+	virtual void forward() = 0;
 	virtual port_t * clone(const std::string& _name, 
 		scheduler_t *scheduler, counter_stat_t<cycle_t> *_clock) = 0;
+
+	const std::vector<std::string>& get_links() { return links; }
+	const std::vector<cycle_t>& get_delays() { return delays; }
 
 protected:
 	std::string name;
 	scheduler_t *scheduler;
 	counter_stat_t<cycle_t> *clock;
+	std::vector<std::string> links;
+	std::vector<cycle_t> delays;
 };
 
 template<typename T>
@@ -47,19 +53,17 @@ public:
 		// the dynamic cast allows easy conversion from string to type;
 		// otherwise I would have to write a ton of code to parse the input
 		T *cxn = dynamic_cast<T *>(p);
-		assert_msg(cxn, 
-			"Connection between %s and %s failed", to_string().c_str(), p->to_string().c_str());
-		cxns.push_back({.port=cxn, delay=delay});
+		assert_msg(cxn, "Connection between %s and %s failed", 
+			to_string().c_str(), p->to_string().c_str());
+		cxns.push_back(cxn);
+		delays.push_back(delay);
+		links.push_back(p->get_name());
 	}
 
 	virtual bool connected() { return !cxns.empty(); }
 
 protected:
-	struct cxn_t {
-		T *port;
-		cycle_t delay;
-	};
-	std::vector<cxn_t> cxns;
+	std::vector<T *> cxns;
 };
 
 template<typename T, typename Compare=event_comparator_t>
@@ -81,15 +85,28 @@ public:
 	}
 
 	virtual void push(T e) {
+		size_t idx = 0;
 		for(auto cxn : this->cxns) {
-			// set tick of event and do a copy if necessary
-			this->scheduler->schedule([&](){ cxn.port->accept(e); }, 
-				this->clock->get() + cxn.delay);
+			this->scheduler->schedule([&](){ cxn->accept(e); }, 
+				this->clock->get() + this->delays[idx]);
+			idx++;
 		}
 	}
 	virtual void accept(T e) {
 		heap.push_back(e);
 		std::push_heap(heap.begin(), heap.end(), comparator);
+	}
+	virtual void forward() {
+		size_t idx = 0;
+		for(auto cxn : this->cxns) {
+			for(auto e : heap) {
+				this->scheduler->schedule([&](){ cxn->accept(e); }, 
+					this->clock->get() + this->delays[idx]);
+			}
+			idx++;
+		}
+		heap.clear();
+		std::make_heap(heap.begin(), heap.end(), comparator);
 	}
 
 	virtual bool empty() { return heap.empty(); }
@@ -118,13 +135,23 @@ public:
 	virtual void pop() {}
 
 	virtual void push(T e) {
+		size_t idx = 0;
 		for(auto cxn : this->cxns) {
 			// set tick of event and do a copy if necessary
-			this->scheduler->schedule([&](){ cxn.port->accept(e); }, 
-				this->clock->get() + cxn.delay);
+			this->scheduler->schedule([&](){ cxn->accept(e); }, 
+				this->clock->get() + this->delays[idx]);
+			idx++;
 		}
 	}
 	virtual void accept(T e) { data = e; }
+	virtual void forward() {
+		size_t idx = 0;
+		for(auto cxn : this->cxns) {
+			this->scheduler->schedule([&](){ cxn->accept(data); }, 
+				this->clock->get() + this->delays[idx]);
+			idx++;
+		}
+	}
 
 	virtual bool empty() { return false; }
 	virtual size_t size() { return 0; }

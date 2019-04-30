@@ -20,6 +20,8 @@ tracer_hdrs = \
         core/decode.h \
         core/exec.h \
         core/retire.h \
+        core/branch_predictor.h \
+        ram/main.h \
         intermittent.h
         
 
@@ -37,6 +39,8 @@ tracer_srcs = \
         core/decode.cc \
         core/exec.cc \
         core/retire.cc \
+        core/branch_predictor.cc \
+        ram/main.cc \
         intermittent.cc
         
 

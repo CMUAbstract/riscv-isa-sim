@@ -27,14 +27,17 @@ io::json module_t::to_json() const {
 		clock, power.to_json(), energy.to_json(), counts.to_json());
 }
 
-void module_t::register_action(action_t *action) { 
-	scheduler->register_action(action);
+void module_t::register_action(action_t *action, 
+	const std::vector<std::string>& inputs,
+	const std::vector<std::string>& outputs) {
+	scheduler->register_action(this, action, inputs, outputs);
 	actions.insert({action->get_name(), action});
 }
 
-void module_t::add_port(const std::string& _name, port_t *other) {
-	port_t *tmp = other->clone(_name, scheduler, &clock);
-	ports.insert({_name, tmp});
+void module_t::add_port(const std::string& _port, port_t *other) {
+	std::string port = name + "::" + _port;
+	port_t *tmp = other->clone(port, scheduler, &clock);
+	ports.insert({_port, tmp});
 }
 
 double module_t::get_static_power() {
@@ -81,9 +84,16 @@ io::json module_t::work_stat_t::to_json() const {
 
 composite_t::composite_t(std::string _name, io::json _config, scheduler_t *_scheduler)
 	: module_t(_name, _config, _scheduler) {
+	std::cerr << "Synthesizing: " << name << std::endl;
 	assert_msg(config.is_object(), "%s has no config", name.c_str());
 	assert_msg(config["modules"].is_object(), "%s has no modules", name.c_str());
 	assert_msg(config["cxns"].is_object(), "%s has no connections", name.c_str());
 	auto types = parse_types(config["modules"]);
-	modules = parse_cxns(config["cxns"], types, scheduler);
+	modules = parse_cxns(this, config["cxns"], types, scheduler);
+
+	for(auto port : ports) {
+		register_action(new action_t(port.first, [&](){
+			port.second->forward();
+		}), {port.first}, {port.first});
+	}
 }

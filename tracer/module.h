@@ -21,9 +21,11 @@ public:
 	virtual io::json to_json() const;
 
 	port_t* operator[](const std::string& key) { return ports[key]; }
-	void add_port(const std::string& _name, port_t *port);
+	void add_port(const std::string& _port, port_t *other);
 	port_t* get(const std::string& key) { return ports[key]; }
 	bool has(const std::string& key) { return ports.find(key) != ports.end(); }
+	std::map<std::string, port_t *>::iterator pbegin() { return ports.begin(); }
+	std::map<std::string, port_t *>::iterator pend() { return ports.end(); }
 	
 	std::string get_name() { return name; }
 	virtual io::json get_config() { return config; }
@@ -40,13 +42,15 @@ protected:
 	void track_energy(std::string key);
 
 	template<typename T>
-	T *create_port(std::string name) { 
-		T *tmp = new T(name, scheduler, &clock);
-		ports.insert({name, tmp}); 
+	T *create_port(const std::string& _port) { 
+		std::string port = name + "::" + _port;
+		T *tmp = new T(port, scheduler, &clock);
+		ports.insert({_port, tmp}); 
 		return tmp;
 	}
 
-	void register_action(action_t *action);
+	void register_action(action_t *action, const std::vector<std::string>& inputs,
+		const std::vector<std::string>& outputs);
 
 protected:
 	std::string name;
