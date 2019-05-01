@@ -28,21 +28,27 @@ public:
 	virtual io::json to_json() const { return nullptr; }
 
 	virtual void connect(port_base_t *p, cycle_t delay) = 0;
-	virtual void link(port_base_t *p) { links.push_back(p->get_module()); }
+	virtual void link(port_base_t *p, cycle_t cycle) {
+		links.push_back(p->get_module());
+		link_delays.push_back(cycle);
+	}
+	virtual void forward() = 0;
 	
 	const std::vector<module_t *>& get_links() { return links; }
-	const std::vector<cycle_t>& get_delays() { return delays; }
+	const std::vector<cycle_t>& get_link_delays() { return link_delays; }
 
 protected:
 	void eval() { 
 		size_t idx = 0;
-		for(auto link : links) if(delays[idx++] == 0) scheduler->exec(link); 
+		for(auto link : links) {
+			if(link_delays[idx++] == 0) scheduler->exec(link);
+		}
 	}
 	std::string name;
 	module_t *module;
 	scheduler_t *scheduler;
 	std::vector<module_t *> links;
-	std::vector<cycle_t> delays;
+	std::vector<cycle_t> link_delays;
 };
 
 template<template<typename...> typename S, typename T>
@@ -60,10 +66,12 @@ public:
 			to_string().c_str(), p->to_string().c_str());
 		cxns.push_back(cxn);
 		delays.push_back(delay);
-		p->link(this); // Add a dependent link
+		p->link(this, delay); // Add a dependent link
 	}
 
 	virtual bool connected() { return !cxns.empty(); }
+	const std::vector<S<T> *>& get_cxns() { return cxns; }
+	const std::vector<cycle_t>& get_delays() { return delays; }
 	
 	virtual T peek() = 0;
 	virtual void pop() = 0;
@@ -74,6 +82,7 @@ public:
 
 protected:
 	std::vector<S<T> *> cxns;
+	std::vector<cycle_t> delays;
 };
 
 template<typename T>
@@ -104,7 +113,6 @@ public:
 			idx++;
 		}
 	}
-
 	virtual void accept(T e, cycle_t cycle) {
 		assert_msg(cycle >= this->module->get_clock(), "Timing violation %s",
 			this->get_name().c_str());
@@ -114,20 +122,13 @@ public:
 		this->module->set_clock(cycle);
 		data.push(e);
 	}
-#if 0
 	virtual void forward() {
-		size_t idx = 0;
-		for(auto cxn : this->cxns) {
-			for(auto e : heap) {
-				this->scheduler->schedule([&](){ cxn->accept(e); }, 
-					this->module->get_clock() + this->delays[idx]);
-			}
-			idx++;
+		this->eval();
+		while(data.size() > 0) {
+			push(data.front());
+			data.pop();
 		}
-		heap.clear();
-		std::make_heap(heap.begin(), heap.end(), comparator);
 	}
-#endif
 
 	virtual bool empty() {
 		this->eval();

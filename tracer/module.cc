@@ -81,3 +81,7 @@ composite_t::composite_t(std::string _name, io::json _config, scheduler_t *_sche
 	auto types = parse_types(config["modules"]);
 	modules = parse_cxns(this, config["cxns"], types, scheduler);
 }
+
+void composite_t::exec() {
+	for(auto port : ports) port.second->forward();
+}

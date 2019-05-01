@@ -94,7 +94,7 @@ public:
 	composite_t(std::string _name, io::json _config, scheduler_t *_scheduler);
 	~composite_t() { for(auto it : modules) delete it.second; }
 	module_t * operator[](const std::string& key) { return modules[key]; }
-	virtual void exec() {}
+	virtual void exec();
 protected:
 	std::map<std::string, module_t *> modules;
 };
