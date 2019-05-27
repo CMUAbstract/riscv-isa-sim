@@ -65,7 +65,7 @@ public:
 		: stat_t(_name, _desc), m(_m) {} 
 	stat_t* get(Key key) const { return m[key]; }
 	void insert(Key key, Value s) { m.insert(std::pair<Key, Value>(key, s)); }
-	void update(std::pair<Key, Value> s) { m.insert(s); }
+	void update(std::pair<Key, Value> s) { m[s.first] = s.second; }
 	typename std::map<Key, Value>::iterator find(Key key) { return m.find(key); }
 	typename std::map<Key, Value>::iterator begin() { return m.begin(); }
 	typename std::map<Key, Value>::iterator end() { return m.end(); }

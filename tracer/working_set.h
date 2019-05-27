@@ -56,6 +56,13 @@ public:
 		std::vector<std::tuple<addr_t, uint8_t>> locs;
 		std::vector<std::tuple<uint32_t, reg_t>> csrs;
 	} diff;
+	struct {
+		std::vector<std::tuple<uint32_t, reg_t>> regs;
+		std::vector<std::tuple<uint32_t, freg_t>> fregs;
+		std::vector<std::tuple<uint32_t, uint32_t, reg_t>> vregs;
+		std::vector<std::tuple<addr_t, uint8_t>> locs;
+		std::vector<std::tuple<uint32_t, reg_t>> csrs;
+	} update;
 public:
 	uint32_t log_input_reg(uint32_t reg) {
 		input.regs.insert(reg);
@@ -69,25 +76,31 @@ public:
 		input.vregs.insert(reg);
 		return reg;
 	}
-	uint32_t log_output_reg(uint32_t reg, reg_t value) {
+	uint32_t log_output_reg(uint32_t reg, reg_t old_value, reg_t new_value) {
 		output.regs.insert(reg);
-		diff.regs.push_back(std::make_tuple(reg, value));
+		update.regs.push_back(std::make_tuple(reg, new_value));
+		diff.regs.push_back(std::make_tuple(reg, old_value));
 		return reg;
 	}
-	uint32_t log_output_freg(uint32_t reg, freg_t value) {
+	uint32_t log_output_freg(uint32_t reg, freg_t old_value, freg_t new_value) {
 		output.fregs.insert(reg);
-		diff.fregs.push_back(std::make_tuple(reg, value));
+		update.fregs.push_back(std::make_tuple(reg, new_value));
+		diff.fregs.push_back(std::make_tuple(reg, old_value));
 		return reg;
 	}
-	uint32_t log_output_vreg(uint32_t reg, reg_t value, uint32_t pos) {
+	uint32_t log_output_vreg(uint32_t reg, reg_t old_value, reg_t new_value, uint32_t pos) {
 		output.vregs.insert(reg);
-		diff.vregs.push_back(std::make_tuple(reg, pos, value));
+		update.vregs.push_back(std::make_tuple(reg, pos, new_value));
+		diff.vregs.push_back(std::make_tuple(reg, pos, old_value));
 		return reg;
 	}
-	uint32_t log_output_vreg(uint32_t reg, std::vector<reg_t>& value) {
+	uint32_t log_output_vreg(uint32_t reg, std::vector<reg_t>& old_value, 
+		std::vector<reg_t>& new_value) {
 		output.vregs.insert(reg);
-		for(uint32_t i = 0; i < max_vl; i++)
-			diff.vregs.push_back(std::make_tuple(reg, i, value[i]));
+		for(uint32_t i = 0; i < max_vl; i++) {
+			update.vregs.push_back(std::make_tuple(reg, i, new_value[i]));
+			diff.vregs.push_back(std::make_tuple(reg, i, old_value[i]));
+		}
 		return reg;
 	}
 	template <typename T>
@@ -97,12 +110,14 @@ public:
 		return addr;
 	}
 	template <typename T>
-	addr_t log_output_loc(addr_t addr, T value) {
+	addr_t log_output_loc(addr_t addr, T old_value, T new_value) {
 		output.locs.push_back(addr);
 		if(sizeof(T) == 8) output.locs.push_back(addr + sizeof(uint32_t));
-		uint8_t *bytes = (uint8_t *)&value;
+		uint8_t *old_bytes = (uint8_t *)&old_value;
+		uint8_t *new_bytes = (uint8_t *)&new_value;
 		for(uint32_t i = 0; i < sizeof(T); i++) {
-			diff.locs.push_back(std::make_tuple(addr + i, bytes[i]));
+			update.locs.push_back(std::make_tuple(addr + i, new_bytes[i]));
+			diff.locs.push_back(std::make_tuple(addr + i, old_bytes[i]));
 		}
 		return addr;
 	}
@@ -113,6 +128,7 @@ public:
 	uint32_t log_output_csr(uint32_t reg, reg_t old_value, reg_t new_value) {
 		output.csrs.insert(std::make_tuple(reg, new_value));
 		diff.csrs.push_back(std::make_tuple(reg, old_value));
+		update.csrs.push_back(std::make_tuple(reg, new_value));
 		return reg;
 	}
 	addr_t log_next_pc(addr_t addr) {

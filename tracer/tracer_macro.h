@@ -13,22 +13,22 @@
 # define WRITE_REG(reg, value) ({												\
 		reg_t wdata = value;													\
 		STATE.XPR.write(														\
-			ws.log_output_reg(reg, STATE.XPR[reg]), wdata);						\
+			ws.log_output_reg(reg, STATE.XPR[reg], wdata), wdata);				\
 	})
 # define WRITE_FREG(reg, value) ({												\
 		freg_t wdata = freg(value);												\
-		DO_WRITE_FREG(ws.log_output_freg(reg, STATE.FPR[reg]), wdata);			\
+		DO_WRITE_FREG(ws.log_output_freg(reg, STATE.FPR[reg], wdata), wdata);	\
 	})
 #else
 # define WRITE_REG(reg, value) ({ 												\
     reg_t wdata = (value); /* value may have side effects */ 					\
     STATE.log_reg_write = (commit_log_reg_t){(reg) << 1, {wdata, 0}}; 			\
-    STATE.XPR.write(ws.log_output_reg(reg, STATE.XPR[reg]), wdata); 			\
+    STATE.XPR.write(ws.log_output_reg(reg, STATE.XPR[reg], wdata), wdata); 		\
   })
 # define WRITE_FREG(reg, value) ({ 												\
     freg_t wdata = freg(value); /* value may have side effects */ 				\
     STATE.log_reg_write = (commit_log_reg_t){((reg) << 1) | 1, wdata}; 			\
-    DO_WRITE_FREG(ws.log_output_freg(reg, STATE.FPR[reg]), wdata); 				\
+    DO_WRITE_FREG(ws.log_output_freg(reg, STATE.FPR[reg], wdata), wdata); 		\
   })
 #endif
 
@@ -37,13 +37,13 @@
 #define WRITE_VREG(reg, value) ({												\
 		auto wdata = value;														\
 		STATE.VPR.write(														\
-			ws.log_output_vreg(reg, STATE.VPR[reg]), wdata);					\
+			ws.log_output_vreg(reg, STATE.VPR[reg], wdata), wdata);				\
 	})
 #define WRITEP_VREG(reg, value, pos) ({											\
 		auto wdata = value;														\
 		auto wpos = pos;														\
 		STATE.VPR.write(														\
-			ws.log_output_vreg(reg, STATE.VPR.read(reg, pos), pos), wdata, wpos);\
+			ws.log_output_vreg(reg, STATE.VPR.read(reg, pos), wdata, pos), wdata, wpos); \
 	})
 
 #define load_uint8(addr) load_uint8(ws.log_input_loc<uint8_t>(addr))
@@ -56,21 +56,21 @@
 #define load_int64(addr) load_int64(ws.log_input_loc<int64_t>(addr))
 
 #define store_uint8(addr, val) store_uint8(										\
-	ws.log_output_loc<uint8_t>(addr, MMU.load_uint8_(addr)), val);
+	ws.log_output_loc<uint8_t>(addr, MMU.load_uint8_(addr), val), val);
 #define store_uint16(addr, val) store_uint16(									\
-	ws.log_output_loc<uint16_t>(addr, MMU.load_uint16_(addr)), val);
+	ws.log_output_loc<uint16_t>(addr, MMU.load_uint16_(addr), val), val);
 #define store_uint32(addr, val) store_uint32(									\
-	ws.log_output_loc<uint32_t>(addr, MMU.load_uint32_(addr)), val);
+	ws.log_output_loc<uint32_t>(addr, MMU.load_uint32_(addr), val), val);
 #define store_uint64(addr, val) store_uint64(									\
-	ws.log_output_loc<uint64_t>(addr, MMU.load_uint64_(addr)), val);
+	ws.log_output_loc<uint64_t>(addr, MMU.load_uint64_(addr), val), val);
 #define store_int8(addr, val) store_int8(										\
-	ws.log_output_loc<int8_t>(addr, MMU.load_int8_(addr)), val);
+	ws.log_output_loc<int8_t>(addr, MMU.load_int8_(addr), val), val);
 #define store_int16(addr, val) store_int16(										\
-	ws.log_output_loc<int16_t>(addr, MMU.load_int16_(addr)), val);
+	ws.log_output_loc<int16_t>(addr, MMU.load_int16_(addr), val), val);
 #define store_int32(addr, val) store_int32(										\
-	ws.log_output_loc<int32_t>(addr, MMU.load_int32_(addr)), val);
+	ws.log_output_loc<int32_t>(addr, MMU.load_int32_(addr), val), val);
 #define store_int64(addr, val) store_int64(										\
-	ws.log_output_loc<int64_t>(addr, MMU.load_int64_(addr)), val);
+	ws.log_output_loc<int64_t>(addr, MMU.load_int64_(addr), val), val);
 
 #define get_csr(reg) get_csr(ws.log_input_csr(reg))
 #define set_csr(reg, value) set_csr(ws.log_output_csr(reg, p->get_csr(reg), value), value)
