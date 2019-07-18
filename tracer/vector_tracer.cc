@@ -12,7 +12,7 @@ mask_tracer_t::mask_tracer_t(io::json _config, elfloader_t *_elf)
 
 bool mask_tracer_t::interested(
 		const working_set_t &ws, const insn_bits_t opc, const insn_t &insn) {
-	if(opc == MATCH_VSETVL) {
+	if(opc == MATCH_VSETVLH) {
 		for(auto csr : ws.output.csrs) {
 			if(std::get<0>(csr) == CSR_VL) {
 				vl = std::get<1>(csr);
@@ -50,12 +50,12 @@ void mask_tracer_t::trace(
 		mask_count.inc();
 		for(uint16_t i = 0; i < vl; i++)
 			if((vregs[0][i] & 0x1) == 0) masked_lanes.inc();
-	} else if(opc == MATCH_VMV_V) {
+	} /* else if(opc == MATCH_VMV_V) {
 		mask_count.inc();
 		uint16_t mvreg = insn.rs2() & 0xF;
 		for(uint16_t i = 0; i < vl; i++)
 			if((vregs[mvreg][i] & 0x1) == 0) masked_lanes.inc();	
-	}
+	} */
 }
 
 io::json mask_tracer_t::to_json() const {

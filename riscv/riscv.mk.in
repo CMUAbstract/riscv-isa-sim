@@ -287,7 +287,9 @@ riscv_insn_list = \
 	wfi \
 	xor \
 	xori \
-	vsetvl \
+	vsetvlb \
+	vsetvlh \
+	vsetvlw \
 	vfence \
 	vadd_v \
 	vadd_x \
@@ -327,7 +329,6 @@ riscv_insn_list = \
 	vsge_i \
 	vredsum_v \
 	vpermute_v \
-	vmv_v \
 	vclip_x \
 	vclip_i \
 	vlh \

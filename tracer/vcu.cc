@@ -60,7 +60,7 @@ bool vcu_t::check_mul(insn_bits_t opc) {
 }
 
 void vcu_t::check_and_set_vl(hstd::shared_ptr<timed_insn_t> insn) {
-	if(insn->opc != MATCH_VSETVL) return;
+	if(insn->opc != MATCH_VSETVLH) return;
 	for(auto csr : insn->ws.output.csrs) {
 		if(std::get<0>(csr) == CSR_VL) {
 			vl = std::get<1>(csr);
