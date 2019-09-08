@@ -324,11 +324,15 @@ riscv_insn_list = \
 	vsgt_v \
 	vsgt_x \
 	vsgt_i \
-	vsge_v \
-	vsge_x \
-	vsge_i \
+	vsrl_v \
+	vsrl_x \
+	vsrl_i \
+	vsll_v \
+	vsll_x \
+	vsll_i \
 	vredsum_v \
 	vpermute_v \
+	vpresum_v \
 	vclip_x \
 	vclip_i \
 	vlh \
