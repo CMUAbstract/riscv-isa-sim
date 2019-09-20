@@ -331,6 +331,7 @@ riscv_insn_list = \
 	vsll_x \
 	vsll_i \
 	vredsum_v \
+	vredor_v \
 	vpermute_v \
 	vpresum_v \
 	vclip_x \
@@ -338,9 +339,15 @@ riscv_insn_list = \
 	vlh \
 	vlsh \
 	vlxh \
+	vlw \
+	vlsw \
+	vlxw \
 	vsh \
 	vssh \
 	vsxh \
+	vsw \
+	vssw \
+	vsxw \
 
 riscv_gen_srcs = \
 	$(addsuffix .cc,$(riscv_insn_list))
