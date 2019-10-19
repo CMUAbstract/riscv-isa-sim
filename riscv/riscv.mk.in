@@ -333,6 +333,7 @@ riscv_insn_list = \
 	vredsum_v \
 	vredor_v \
 	vpermute_v \
+	vmask_i \
 	vpresum_v \
 	vclip_x \
 	vclip_i \

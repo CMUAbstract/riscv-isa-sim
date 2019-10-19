@@ -60,7 +60,7 @@ std::map<std::string, tracer_t*(*)(io::json, elfloader_t *)> tracer_type_map = {
 	{"perf_tracer", &create_tracer<perf_tracer_t>},
 	{"energy_tracer", &create_tracer<energy_tracer_t>},
 	{"time_tracer", &create_tracer<time_tracer_t>},
-	{"mask_tracer", &create_tracer<mask_tracer_t>},
+	{"vector_tracer", &create_tracer<vector_tracer_t>},
 	{"rtl_tracer", &create_tracer<rtl_tracer_t>}
 };
 
