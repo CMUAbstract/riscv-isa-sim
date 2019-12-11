@@ -32,6 +32,7 @@ static void help()
   fprintf(stderr, "  --isa=<name>          RISC-V ISA string [default %s]\n", DEFAULT_ISA);
   fprintf(stderr, "  --pc=<address>        Override ELF entry point\n");
   fprintf(stderr, "  --hyperdrive=<sim> / <pc_start, (pc_end)> Stop tracing until ROI\n");
+  fprintf(stderr, "  --maxvl=<vl>          Maximum vector length\n");
   fprintf(stderr, "  --hartids=<a,b,...>   Explicitly specify hartids, default is 0,1,...\n");
   fprintf(stderr, "  --extension=<name>    Specify RoCC Extension\n");
   fprintf(stderr, "  --outdir=<dir>        Directory for output files.\n");
@@ -99,6 +100,7 @@ int main(int argc, char** argv)
   bool track_state = false;
   const char* tconfig = nullptr;
   const char* outdir = nullptr;
+  uint32_t maxvl = 0x10;
 
   auto const hartids_parser = [&](const char *s) {
     std::string const str(s);
@@ -157,6 +159,7 @@ int main(int argc, char** argv)
   parser.option(0, "rbb-port", 1, [&](const char* s){use_rbb = true; rbb_port = atoi(s);});
   parser.option(0, "pc", 1, [&](const char* s){start_pc = strtoull(s, 0, 0);});
   parser.option(0, "hartids", 1, hartids_parser);
+  parser.option(0, "maxvl", 1, [&](const char* s){maxvl = atoi(s);});
   parser.option(0, "hyperdrive", 1, hyperdrive_parser);
   parser.option(0, "isa", 1, [&](const char* s){isa = s;});
   parser.option(0, "inter", 0, [&](const char* s){run_intermittent = true;});
@@ -207,6 +210,7 @@ int main(int argc, char** argv)
   s.set_intermittent(run_intermittent);
   s.set_log(log);
   s.set_histogram(histogram);
+  s.set_maxvl(maxvl);
   if(segmented.enabled) s.set_segmented(segmented.base, segmented.size);
   if(hyperdrive.simcall || hyperdrive.start_pc) s.stop_trace();
   if(hyperdrive.start_pc) s.trace_roi(hyperdrive.start_pc, hyperdrive.end_pc);

@@ -908,3 +908,7 @@ void processor_t::stop_tracer() {
 void processor_t::set_intermittent(bool val) {
   if(tracer != nullptr) tracer->set_intermittent(val);
 }
+
+void processor_t::set_maxvl(uint32_t vl) {
+  max_vl = vl;
+}

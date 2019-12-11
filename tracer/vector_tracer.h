@@ -35,6 +35,7 @@ private:
 		io::json to_json() const {
 			return io::json::object{
 				{"opc", opc},
+				{"pc", pc},
 				{"type", type},
 				{"mask", mask},
 				{"src1", src1},
@@ -45,6 +46,7 @@ private:
 			};
 		}
 	public:
+		addr_t pc;
 		insn_bits_t opc;
 		std::string type;
 		std::vector<bool> mask;

@@ -347,3 +347,9 @@ void sim_t::disable_intermittent(void) {
     procs[i]->set_intermittent(false); 
   }
 }
+
+void sim_t::set_maxvl(uint32_t vl) {
+  for(size_t i = 0; i < procs.size(); i++) {
+    procs[i]->set_maxvl(vl); 
+  }
+}

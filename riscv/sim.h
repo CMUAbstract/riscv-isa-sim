@@ -34,6 +34,7 @@ public:
   void set_exit_debug(bool value);
   void set_trace(const char *tconfig, const char *outdir=nullptr);
   void set_intermittent(bool value);
+  void set_maxvl(uint32_t vl);
   void set_segmented(uint32_t base, uint32_t size);
   void set_log(bool value);
   void set_histogram(bool value);

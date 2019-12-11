@@ -76,6 +76,7 @@ void vector_tracer_t::trace(
 	}
 
 	vinsn_stat_t *vinsn = new vinsn_stat_t();
+	vinsn->pc = ws.pc & 0xFFFFFFFF;
 	vinsn->opc = opc;
 	vinsn->mask = mask;
 	vinsn->src1 = -1;
