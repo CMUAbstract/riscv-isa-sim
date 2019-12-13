@@ -358,6 +358,18 @@ void processor_t::disasm(insn_t insn)
         fprintf(stderr, "\n");
       }
     }
+
+    // for (int r = 0; r < NVECR; ++r) {
+    //   fprintf(stderr, "%-8d     ", r);
+    // }
+    // fprintf(stderr, "\n");
+    // for (uint32_t l = 0; l < max_vl; ++l) {
+    //   for (int r = 0; r < NVECR; ++r) {
+    //     fprintf(stderr, "0x%08" PRIx32 "   ", (int)state.VPR.read(r, l));
+    //   }
+    //   fprintf(stderr, "\n");
+    // }
+
     last_pc = state.pc;
     last_bits = bits;
     executions = 1;
@@ -911,4 +923,8 @@ void processor_t::set_intermittent(bool val) {
 
 void processor_t::set_maxvl(uint32_t vl) {
   max_vl = vl;
+}
+
+uint32_t processor_t::get_maxvl() {
+  return max_vl;
 }

@@ -312,6 +312,7 @@ public:
   void stop_tracer();
   void set_intermittent(bool val);
   void set_maxvl(uint32_t vl);
+  uint32_t get_maxvl();
   core_tracer_t* get_tracer(void) { return tracer; }
 
 private:

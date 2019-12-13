@@ -68,6 +68,7 @@ void sim_t::setup_interactive()
   inter_funcs["step"] = &sim_t::interactive_step;
   inter_funcs["reverse"] = &sim_t::interactive_reverse;
   inter_funcs["reg"] = &sim_t::interactive_reg;
+  inter_funcs["vreg"] = &sim_t::interactive_vreg;
   inter_funcs["freg"] = &sim_t::interactive_freg;
   inter_funcs["fregs"] = &sim_t::interactive_fregs;
   inter_funcs["fregd"] = &sim_t::interactive_fregd;
@@ -90,6 +91,7 @@ void sim_t::interactive_help(const std::string& cmd, const std::vector<std::stri
   std::cerr <<
     "Interactive commands:\n"
     "reg <core> [reg]                # Display [reg] (all if omitted) in <core>\n"
+    "vreg <core> [reg]               # Display [vreg] (all if omitted) in <core>\n"
     "fregs <core> <reg>              # Display single precision <reg> in <core>\n"
     "fregd <core> <reg>              # Display double precision <reg> in <core>\n"
     "pc [core]                       # Show current PC in [core]\n"
@@ -226,6 +228,32 @@ void sim_t::interactive_reg(const std::string& cmd, const std::vector<std::strin
     }
   } else
     fprintf(stderr, "0x%016" PRIx64 "\n", get_reg(args));
+}
+
+void sim_t::interactive_vreg(const std::string& cmd, const std::vector<std::string>& args) {
+  if (args.size() == 1) {
+    processor_t *p = get_core(args[0]);
+
+    for (int r = 0; r < NVECR; ++r) {
+      fprintf(stderr, "%-8d     ", r);
+    }
+    fprintf(stderr, "\n");
+    for (uint32_t l = 0; l < p->get_maxvl(); ++l) {
+      for (int r = 0; r < NVECR; ++r) {
+        fprintf(stderr, "0x%08" PRIx32 "   ", (int)p->get_state()->VPR.read(r, l));
+      }
+      fprintf(stderr, "\n");
+    }
+  } else if (args.size() == 2) {
+    processor_t *p = get_core(args[0]);
+    int r = atoi(args[1].c_str());
+    if (r > NVECR) trap_interactive();
+    for (uint32_t l = 0; l < p->get_maxvl(); ++l) {
+      fprintf(stderr, "0x%08"  PRIx32 "   ", (int)p->get_state()->VPR.read(r, l));
+      if(((l + 1) % 8) == 0) fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+  }
 }
 
 union fpr

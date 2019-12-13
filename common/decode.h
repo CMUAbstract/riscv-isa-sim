@@ -29,7 +29,7 @@ typedef uint64_t reg_t;
 
 const int NXPR = 32;
 const int NFPR = 32;
-const int NVECR = 32;
+const int NVECR = 16;
 const int NCSR = 4096;
 
 #define X_RA 1
