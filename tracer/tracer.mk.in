@@ -8,6 +8,7 @@ tracer_hdrs = \
         time_tracer.h \
         rtl_tracer.h \
         vector_tracer.h \
+        mem_tracer.h \
         intermittent.h \
         except.h \
         event.h \
@@ -50,6 +51,7 @@ tracer_srcs = \
         time_tracer.cc \
         vector_tracer.cc \
         rtl_tracer.cc \
+        mem_tracer.cc \
         mem_event.cc \
         intermittent.cc \
         pending_handler.cc \
