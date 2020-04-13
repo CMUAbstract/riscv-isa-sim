@@ -16,6 +16,7 @@
 #include "vector_tracer.h"
 #include "rtl_tracer.h"
 #include "mem_tracer.h"
+#include "cache_tracer.h"
 
 tracer_impl_t::tracer_impl_t(std::string _name, io::json _config, elfloader_t *_elf) 
 	: tracer_t(), name(_name), config(_config), elf(_elf) {
@@ -63,7 +64,8 @@ std::map<std::string, tracer_t*(*)(io::json, elfloader_t *)> tracer_type_map = {
 	{"time_tracer", &create_tracer<time_tracer_t>},
 	{"vector_tracer", &create_tracer<vector_tracer_t>},
 	{"rtl_tracer", &create_tracer<rtl_tracer_t>},
-	{"mem_tracer", &create_tracer<mem_tracer_t>}
+	{"mem_tracer", &create_tracer<mem_tracer_t>},
+	{"cache_tracer", &create_tracer<cache_tracer_t>}
 };
 
 core_tracer_t::diff_list_t::diff_list_t(diff_list_t &d, uint32_t offset) {
