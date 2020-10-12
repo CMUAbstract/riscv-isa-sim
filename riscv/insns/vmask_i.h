@@ -1,15 +1,20 @@
 require_extension('V');
 
-#define CLEAR 0
-#define FIRST 1
-#define LAST 2
-#define ODD 3
-#define EVEN 4
-#define IDX 5
+#define ONE 0
+#define ZERO 1
+#define FIRST 2
+#define LAST 3
+#define ODD 4
+#define EVEN 5
+#define IDX 6
 
 for(uint8_t i = 0; i < VL; i++) {
 	switch(insn.vsimm5()) {
-		case CLEAR: {
+		case ONE: {
+			WRITEP_VREG(0x0, 0x1, i);
+			break;
+		}
+		case ZERO: {
 			WRITEP_VREG(0x0, 0x0, i);
 			break;
 		}

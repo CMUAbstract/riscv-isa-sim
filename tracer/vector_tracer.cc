@@ -106,8 +106,18 @@ void vector_tracer_t::trace(
 
 	vinsn->dest = *ws.output.vregs.begin();
 	vinsn->vl = vl;
-	vinsn->type = "ARITHMETIC";
+	vinsn->type = "SIMPLE";
 	vinsn->repeat = -1;
+
+	switch(opc) {
+		case MATCH_VMUL_I:
+		case MATCH_VMUL_V:
+		case MATCH_VMUL_X:
+		case MATCH_VCLIP_I:
+		case MATCH_VCLIP_X: {
+			vinsn->type = "COMPLEX";
+		}
+	}
 
 	switch(opc) {
 		case MATCH_VLB:
